@@ -32,38 +32,6 @@ const LANGUAGE_OPTIONS = [
   { value: 'si',    label: '🇱🇰 Sinhala (Sri Lanka)',   accentInstruction: 'Write the dialogue entirely in Sinhala (සිංහල). Keep it natural and conversational.' },
 ];
 
-const VOICE_OPTIONS = [
-  { name: 'Kore',          gender: 'Female', style: 'Firm' },
-  { name: 'Puck',          gender: 'Male',   style: 'Upbeat' },
-  { name: 'Aoede',         gender: 'Female', style: 'Breezy' },
-  { name: 'Charon',        gender: 'Male',   style: 'Informational' },
-  { name: 'Fenrir',        gender: 'Male',   style: 'Excitable' },
-  { name: 'Leda',          gender: 'Female', style: 'Youthful' },
-  { name: 'Orus',          gender: 'Male',   style: 'Firm' },
-  { name: 'Zephyr',        gender: 'Female', style: 'Bright' },
-  { name: 'Callirrhoe',    gender: 'Female', style: 'Easy-going' },
-  { name: 'Autonoe',       gender: 'Female', style: 'Bright' },
-  { name: 'Enceladus',     gender: 'Male',   style: 'Breathy' },
-  { name: 'Iapetus',       gender: 'Male',   style: 'Clear' },
-  { name: 'Umbriel',       gender: 'Male',   style: 'Easy-going' },
-  { name: 'Algieba',       gender: 'Male',   style: 'Smooth' },
-  { name: 'Despina',       gender: 'Female', style: 'Smooth' },
-  { name: 'Erinome',       gender: 'Female', style: 'Clear' },
-  { name: 'Algenib',       gender: 'Male',   style: 'Gravelly' },
-  { name: 'Rasalgethi',    gender: 'Male',   style: 'Informational' },
-  { name: 'Laomedeia',     gender: 'Female', style: 'Upbeat' },
-  { name: 'Achernar',      gender: 'Female', style: 'Soft' },
-  { name: 'Alnilam',       gender: 'Male',   style: 'Firm' },
-  { name: 'Schedar',       gender: 'Male',   style: 'Even' },
-  { name: 'Gacrux',        gender: 'Female', style: 'Mature' },
-  { name: 'Pulcherrima',   gender: 'Female', style: 'Forward' },
-  { name: 'Achird',        gender: 'Male',   style: 'Friendly' },
-  { name: 'Zubenelgenubi', gender: 'Male',   style: 'Casual' },
-  { name: 'Vindemiatrix',  gender: 'Female', style: 'Gentle' },
-  { name: 'Sadachbia',     gender: 'Male',   style: 'Lively' },
-  { name: 'Sadaltager',    gender: 'Male',   style: 'Knowledgeable' },
-  { name: 'Sulafat',       gender: 'Female', style: 'Warm' },
-] as const;
 
 const DURATION_OPTIONS = [
   { value: 30,  label: '30 seconds' },
@@ -200,33 +168,6 @@ function ModelSelect({
   );
 }
 
-function VoiceSelect({ id, label, value, onChange }: {
-  id: string; label: string; value: string; onChange: (v: string) => void;
-}) {
-  const selected = VOICE_OPTIONS.find((v) => v.name === value);
-  return (
-    <div>
-      <label className="block text-xs text-gray-500 dark:text-gray-500 mb-1.5" htmlFor={id}>{label}</label>
-      <select
-        id={id} value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-all"
-      >
-        {VOICE_OPTIONS.map((v) => (
-          <option key={v.name} value={v.name}>
-            {v.gender === 'Female' ? '♀' : '♂'} {v.name} — {v.style}
-          </option>
-        ))}
-      </select>
-      {selected && (
-        <p className="mt-1.5 text-xs text-gray-500">
-          <span className={`font-semibold ${selected.gender === 'Female' ? 'text-pink-500' : 'text-sky-500'}`}>
-            {selected.gender}
-          </span>{' '}· {selected.style}
-        </p>
-      )}
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────
 // KEY SETUP SCREEN
@@ -348,8 +289,8 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
   const [transLangValue, setTransLangValue] = useState('');
   const [textModel,  setTextModel]  = useState('');
   const [audioModel, setAudioModel] = useState('');
-  const [voice1, setVoice1] = useState('Kore');
-  const [voice2, setVoice2] = useState('Puck');
+  const [voice1, setVoice1] = useState('');
+  const [voice2, setVoice2] = useState('');
   const [durationSecs, setDurationSecs] = useState(60);
 
   // Theme
@@ -414,8 +355,6 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
         const saved = raw ? JSON.parse(raw) as Record<string, string> : {};
         if (saved.langValue && LANGUAGE_OPTIONS.some(l => l.value === saved.langValue)) setLangValue(saved.langValue);
         if (saved.transLangValue === '' || LANGUAGE_OPTIONS.some(l => l.value === saved.transLangValue)) setTransLangValue(saved.transLangValue || '');
-        if (saved.voice1 && VOICE_OPTIONS.some(v => v.name === saved.voice1)) setVoice1(saved.voice1);
-        if (saved.voice2 && VOICE_OPTIONS.some(v => v.name === saved.voice2)) setVoice2(saved.voice2);
         if (saved.durationSecs && DURATION_OPTIONS.some(d => d.value === Number(saved.durationSecs))) setDurationSecs(Number(saved.durationSecs));
         if (saved.theme && ['system','dark','light'].includes(saved.theme)) setTheme(saved.theme as Theme);
         const savedText  = saved.textModel  && res.textModels.includes(saved.textModel)  ? saved.textModel  : pickTextModel(res.textModels);
@@ -435,9 +374,9 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
   useEffect(() => {
     if (!prefsLoaded.current) return;
     try {
-      localStorage.setItem(STORAGE_KEY_PREFS, JSON.stringify({ langValue, transLangValue, voice1, voice2, durationSecs, textModel, audioModel, theme }));
+      localStorage.setItem(STORAGE_KEY_PREFS, JSON.stringify({ langValue, transLangValue, durationSecs, textModel, audioModel, theme }));
     } catch { /* ignore */ }
-  }, [langValue, transLangValue, voice1, voice2, durationSecs, textModel, audioModel, theme]);
+  }, [langValue, transLangValue, durationSecs, textModel, audioModel, theme]);
 
   // Generate dialogue
   const handleGenerateDialogue = useCallback(async () => {
@@ -456,8 +395,12 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
       translationTargetLabel: transLangValue ? LANGUAGE_OPTIONS.find(l => l.value === transLangValue)?.label.replace(/^.+?\s/, '') : undefined,
     });
     setDialogueLoading(false);
-    if (res.success) { setDialogueTitle(res.title); setDialogueLines(res.lines); }
-    else setDialogueError(res.error);
+    if (res.success) {
+      setDialogueTitle(res.title);
+      setDialogueLines(res.lines);
+      setVoice1(res.voice1);
+      setVoice2(res.voice2);
+    } else setDialogueError(res.error);
   }, [apiKey, currentLang, transLangValue, selectedScenario, customText, textModel, durationSecs]);
 
   // Generate audio
@@ -510,41 +453,32 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
             <ErrorBanner message={`Could not load model list: ${modelsError}`} />
           )}
           <GlassCard className="grid md:grid-cols-2 gap-6 md:gap-8">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" htmlFor="language-select">
-                  Audio Language
-                </label>
-                <select
-                  id="language-select" value={langValue} onChange={(e) => setLangValue(e.target.value)}
-                  className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all"
-                >
-                  {LANGUAGE_OPTIONS.map((l) => (
-                    <option key={l.value} value={l.value}>{l.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" htmlFor="translation-select">
-                  Translation Language
-                </label>
-                <select
-                  id="translation-select" value={transLangValue} onChange={(e) => setTransLangValue(e.target.value)}
-                  className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all"
-                >
-                  <option value="">None</option>
-                  {LANGUAGE_OPTIONS.map((l) => (
-                    <option key={l.value} value={l.value}>{l.label}</option>
-                  ))}
-                </select>
-              </div>
-
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" htmlFor="language-select">
+                Audio Language
+              </label>
+              <select
+                id="language-select" value={langValue} onChange={(e) => setLangValue(e.target.value)}
+                className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all"
+              >
+                {LANGUAGE_OPTIONS.map((l) => (
+                  <option key={l.value} value={l.value}>{l.label}</option>
+                ))}
+              </select>
             </div>
-            <div className="space-y-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Voice Assignment</p>
-              <VoiceSelect id="voice1-select" label="Speaker 1 Voice" value={voice1} onChange={setVoice1} />
-              <VoiceSelect id="voice2-select" label="Speaker 2 Voice" value={voice2} onChange={setVoice2} />
-
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" htmlFor="translation-select">
+                Translation Language
+              </label>
+              <select
+                id="translation-select" value={transLangValue} onChange={(e) => setTransLangValue(e.target.value)}
+                className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all"
+              >
+                <option value="">None</option>
+                {LANGUAGE_OPTIONS.map((l) => (
+                  <option key={l.value} value={l.value}>{l.label}</option>
+                ))}
+              </select>
             </div>
           </GlassCard>
         </section>

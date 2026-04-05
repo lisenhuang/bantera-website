@@ -1,6 +1,9 @@
 'use server';
 
 import { GoogleGenAI } from '@google/genai';
+import { VOICE_OPTIONS } from './constants';
+
+const VOICE_NAMES = new Set(VOICE_OPTIONS.map(v => v.name));
 
 // ── Types ─────────────────────────────────────────────────────────
 export type DialogueLine = { speaker: 'Speaker1' | 'Speaker2'; text: string; translation?: string };
@@ -10,7 +13,7 @@ export type ListModelsResult =
   | { success: false; error: string };
 
 export type GenerateDialogueResult =
-  | { success: true; title: string; lines: DialogueLine[] }
+  | { success: true; title: string; lines: DialogueLine[]; voice1: string; voice2: string }
   | { success: false; error: string };
 
 export type GenerateAudioResult =
@@ -85,9 +88,11 @@ export async function generateDialogueAction(opts: {
     ? `\nProvide an accurate, natural translation into ${translationTargetLabel} for every single line in the field "translation".` 
     : '';
 
+  const voiceList = VOICE_OPTIONS.map(v => `${v.name} (${v.gender}, ${v.style})`).join(' | ');
+
   const jsonTemplate = translationTargetLabel
-    ? `{\n  "title": "...",\n  "lines": [\n    { "speaker": "Speaker1", "text": "...", "translation": "..." },\n    { "speaker": "Speaker2", "text": "...", "translation": "..." }\n  ]\n}`
-    : `{\n  "title": "...",\n  "lines": [\n    { "speaker": "Speaker1", "text": "..." },\n    { "speaker": "Speaker2", "text": "..." }\n  ]\n}`;
+    ? `{\n  "title": "...",\n  "voice1": "VoiceNameHere",\n  "voice2": "VoiceNameHere",\n  "lines": [\n    { "speaker": "Speaker1", "text": "...", "translation": "..." },\n    { "speaker": "Speaker2", "text": "...", "translation": "..." }\n  ]\n}`
+    : `{\n  "title": "...",\n  "voice1": "VoiceNameHere",\n  "voice2": "VoiceNameHere",\n  "lines": [\n    { "speaker": "Speaker1", "text": "..." },\n    { "speaker": "Speaker2", "text": "..." }\n  ]\n}`;
 
   const prompt = `
 You are a dialogue writer for conversational language learning.
@@ -106,6 +111,9 @@ Generate a natural, realistic spoken dialogue between exactly TWO people.
 - Do NOT include stage directions or any text outside the dialogue.${translationLine}
 - Also write a short, catchy title for this dialogue (max 8 words).
 
+Choose a voice for each speaker from the following list. Pick voices that suit each character's likely personality, age, and role in the scenario. Prefer different genders unless the scenario clearly involves two people of the same gender. Use the exact name as shown.
+Available voices: ${voiceList}
+
 Return ONLY valid JSON in this exact format, no markdown fences, no extra keys:
 ${jsonTemplate}
 `.trim();
@@ -116,7 +124,7 @@ ${jsonTemplate}
     const raw = res.text ?? '';
 
     const cleaned = raw.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '').trim();
-    let parsed: { title: string; lines: DialogueLine[] };
+    let parsed: { title: string; lines: DialogueLine[]; voice1?: string; voice2?: string };
     try {
       parsed = JSON.parse(cleaned);
     } catch {
@@ -124,7 +132,11 @@ ${jsonTemplate}
       if (!match) throw new Error('Could not parse response from AI.');
       parsed = JSON.parse(match[0]);
     }
-    return { success: true, title: parsed.title ?? languageLabel + ' Dialogue', lines: parsed.lines };
+
+    const voice1 = parsed.voice1 && VOICE_NAMES.has(parsed.voice1) ? parsed.voice1 : 'Kore';
+    const voice2 = parsed.voice2 && VOICE_NAMES.has(parsed.voice2) ? parsed.voice2 : 'Puck';
+
+    return { success: true, title: parsed.title ?? languageLabel + ' Dialogue', lines: parsed.lines, voice1, voice2 };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
