@@ -3,7 +3,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { VOICE_OPTIONS } from './constants';
 
-const VOICE_NAMES = new Set(VOICE_OPTIONS.map(v => v.name));
+const VOICE_NAMES: Set<string> = new Set(VOICE_OPTIONS.map(v => v.name));
 
 // ── Types ─────────────────────────────────────────────────────────
 export type DialogueLine = { speaker: 'Speaker1' | 'Speaker2'; text: string; translation?: string };
