@@ -430,7 +430,7 @@ export default function GeminiTestPage() {
         <section className="space-y-4">
           <div className="flex items-center gap-3">
             <StepBadge num={1} active={activeStep === 1} done={step1Done} />
-            <h2 className="text-lg font-semibold">Language &amp; Models</h2>
+            <h2 className="text-lg font-semibold">Languages</h2>
           </div>
           {!modelsLoading && modelsError && (
             <ErrorBanner message={`Could not load model list: ${modelsError}`} />

@@ -311,6 +311,8 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioError,   setAudioError]   = useState<string | null>(null);
 
+  const isGenerating = dialogueLoading || audioLoading;
+
   const prefsLoaded = useRef(false);
   const currentLang = LANGUAGE_OPTIONS.find(l => l.value === langValue) ?? LANGUAGE_OPTIONS[0];
 
@@ -378,13 +380,27 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
     } catch { /* ignore */ }
   }, [langValue, transLangValue, durationSecs, textModel, audioModel, theme]);
 
-  // Generate dialogue
+  const synthesizeAudio = useCallback(
+    (lines: DialogueLine[], v1: string, v2: string) =>
+      generateAudioAction({
+        apiKey,
+        lines,
+        accentInstruction: currentLang.accentInstruction,
+        audioModel,
+        voice1: v1,
+        voice2: v2,
+      }),
+    [apiKey, currentLang, audioModel],
+  );
+
   const handleGenerateDialogue = useCallback(async () => {
     setDialogueLoading(true);
     setDialogueError(null);
     setDialogueLines([]);
     setDialogueTitle('');
     setAudioBase64(null);
+    setAudioError(null);
+
     const res = await generateDialogueAction({
       apiKey,
       languageLabel: currentLang.label.replace(/^.+?\s/, ''),
@@ -394,24 +410,30 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
       targetDurationSecs: durationSecs,
       translationTargetLabel: transLangValue ? LANGUAGE_OPTIONS.find(l => l.value === transLangValue)?.label.replace(/^.+?\s/, '') : undefined,
     });
+
     setDialogueLoading(false);
-    if (res.success) {
-      setDialogueTitle(res.title);
-      setDialogueLines(res.lines);
-      setVoice1(res.voice1);
-      setVoice2(res.voice2);
-    } else setDialogueError(res.error);
+
+    if (!res.success) {
+      setDialogueError(res.error);
+      return;
+    }
+
+    setDialogueTitle(res.title);
+    setDialogueLines(res.lines);
+    setVoice1(res.voice1);
+    setVoice2(res.voice2);
   }, [apiKey, currentLang, transLangValue, selectedScenario, customText, textModel, durationSecs]);
 
-  // Generate audio
   const handleGenerateAudio = useCallback(async () => {
-    if (!step2Done) return;
-    setAudioLoading(true); setAudioError(null); setAudioBase64(null);
-    const res = await generateAudioAction({ apiKey, lines: dialogueLines, accentInstruction: currentLang.accentInstruction, audioModel, voice1, voice2 });
+    if (dialogueLines.length === 0 || !voice1 || !voice2) return;
+    setAudioLoading(true);
+    setAudioError(null);
+    setAudioBase64(null);
+    const audioRes = await synthesizeAudio(dialogueLines, voice1, voice2);
     setAudioLoading(false);
-    if (res.success) setAudioBase64(res.audioBase64);
-    else setAudioError(res.error);
-  }, [apiKey, dialogueLines, currentLang, audioModel, voice1, voice2, step2Done]);
+    if (audioRes.success) setAudioBase64(audioRes.audioBase64);
+    else setAudioError(audioRes.error);
+  }, [dialogueLines, voice1, voice2, synthesizeAudio]);
 
   const audioSrc = audioBase64 ? `data:audio/wav;base64,${audioBase64}` : null;
 
@@ -447,7 +469,7 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
         <section className="space-y-4">
           <div className="flex items-center gap-3">
             <StepBadge num={1} active={activeStep === 1} done={step1Done} />
-            <h2 className="text-lg font-semibold">Language &amp; Models</h2>
+            <h2 className="text-lg font-semibold">Languages</h2>
           </div>
           {!modelsLoading && modelsError && (
             <ErrorBanner message={`Could not load model list: ${modelsError}`} />
@@ -459,7 +481,8 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
               </label>
               <select
                 id="language-select" value={langValue} onChange={(e) => setLangValue(e.target.value)}
-                className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all"
+                disabled={isGenerating}
+                className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all disabled:opacity-50"
               >
                 {LANGUAGE_OPTIONS.map((l) => (
                   <option key={l.value} value={l.value}>{l.label}</option>
@@ -472,7 +495,8 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
               </label>
               <select
                 id="translation-select" value={transLangValue} onChange={(e) => setTransLangValue(e.target.value)}
-                className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all"
+                disabled={isGenerating}
+                className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all disabled:opacity-50"
               >
                 <option value="">None</option>
                 {LANGUAGE_OPTIONS.map((l) => (
@@ -500,7 +524,7 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
                   const isSelected = selectedScenario === s.text;
                   return (
                     <button
-                      key={s.text} type="button" disabled={!step1Done}
+                      key={s.text} type="button" disabled={!step1Done || isGenerating}
                       onClick={() => setSelectedScenario(isSelected ? '' : s.text)}
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm border text-left transition-all disabled:opacity-40 ${
                         isSelected
@@ -523,7 +547,8 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
                   value={customText}
                   onChange={(e) => setCustomText(e.target.value)}
                   placeholder="Describe your scenario…"
-                  className="mt-3 w-full bg-white dark:bg-black/30 border border-indigo-300 dark:border-indigo-500/60 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all resize-none shadow-sm"
+                  readOnly={isGenerating}
+                  className="mt-3 w-full bg-white dark:bg-black/30 border border-indigo-300 dark:border-indigo-500/60 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all resize-none shadow-sm read-only:opacity-60"
                 />
               )}
               {/* Preview */}
@@ -540,7 +565,7 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
               <div className="flex gap-2 flex-wrap">
                 {DURATION_OPTIONS.map((opt) => (
                   <button
-                    key={opt.value} type="button" disabled={!step1Done}
+                    key={opt.value} type="button" disabled={!step1Done || isGenerating}
                     onClick={() => setDurationSecs(opt.value)}
                     className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all disabled:opacity-40 ${
                       durationSecs === opt.value
@@ -556,7 +581,7 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
 
             <button
               id="generate-dialogue-btn" onClick={handleGenerateDialogue}
-              disabled={!step1Done || dialogueLoading}
+              disabled={!step1Done || isGenerating}
               className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
             >
               {dialogueLoading ? <SpinnerIcon /> : (
@@ -564,7 +589,7 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               )}
-              {dialogueLoading ? 'Generating…' : 'Generate Dialogue'}
+              {dialogueLoading ? 'Writing dialogue…' : 'Generate Dialogue'}
             </button>
 
             {dialogueError && <ErrorBanner message={dialogueError} />}
@@ -606,24 +631,43 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
         <section className="space-y-4">
           <div className="flex items-center gap-3">
             <StepBadge num={3} active={step2Done && !audioBase64} done={!!audioBase64} />
-            <h2 className="text-lg font-semibold">Generate Audio</h2>
+            <h2 className="text-lg font-semibold">Audio</h2>
           </div>
           <GlassCard className="space-y-5">
 
             {!audioSrc && (
-              <button
-                id="generate-audio-btn" onClick={handleGenerateAudio} disabled={!step2Done || audioLoading}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {audioLoading ? <SpinnerIcon /> : (
+              audioLoading ? (
+                <div className="flex items-center justify-center gap-3 py-6 text-violet-600 dark:text-violet-300 text-sm font-medium">
+                  <SpinnerIcon />
+                  <span>Creating audio…</span>
+                </div>
+              ) : audioError ? (
+                <div className="space-y-3">
+                  <ErrorBanner message={audioError} />
+                  <button
+                    type="button"
+                    onClick={handleGenerateAudio}
+                    disabled={!voice1 || !voice2}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : (
+                <button
+                  id="generate-audio-btn"
+                  type="button"
+                  onClick={handleGenerateAudio}
+                  disabled={!step2Done || !voice1 || !voice2}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+                >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 18.364C8.5 18.364 5 15.5 5 12s3.5-6.364 7-6.364M19.07 4.929a9 9 0 010 12.728" />
                   </svg>
-                )}
-                {audioLoading ? 'Generating…' : 'Generate Audio TTS'}
-              </button>
+                  Generate Audio TTS
+                </button>
+              )
             )}
-            {audioError && <ErrorBanner message={audioError} />}
             {audioSrc && (
               <div className="space-y-3 p-5 rounded-2xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 shadow-sm mt-4">
                 <p className="text-xs font-semibold uppercase tracking-widest text-violet-600 dark:text-violet-300">✓ Audio Ready</p>
