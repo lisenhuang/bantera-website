@@ -71,22 +71,16 @@ const LANGUAGES = ['🇺🇸 English', '🇨🇳 Mandarin', '🇯🇵 Japanese',
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans antialiased">
+    <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white font-sans antialiased transition-colors duration-300">
 
       {/* ── Nav ──────────────────────────────────────────────── */}
-      <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-black tracking-tight text-gray-900">Bantera</span>
-          <span className="ml-2 hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 text-orange-600 border border-orange-200">
+          <span className="text-xl font-black tracking-tight text-gray-900 dark:text-white">Bantera</span>
+          <span className="ml-2 hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30">
             Coming soon
           </span>
         </div>
-        <a
-          href="#early-access"
-          className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-gray-900 text-white hover:bg-gray-700 transition-colors"
-        >
-          Get early access
-        </a>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -131,18 +125,6 @@ export default function HomePage() {
             native speakers who are learning your language.
           </p>
 
-          <div id="early-access" className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Your email address"
-              className="flex-1 px-5 py-3.5 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500/60 transition-all text-sm"
-            />
-            <button className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-semibold text-sm shadow-lg shadow-orange-500/30 hover:-translate-y-0.5 transition-all whitespace-nowrap">
-              Notify me
-            </button>
-          </div>
-
-          <p className="text-xs text-gray-600">No spam. Just a ping when we launch.</p>
         </div>
       </section>
 
@@ -161,14 +143,14 @@ export default function HomePage() {
       </div>
 
       {/* ── Features grid ────────────────────────────────────── */}
-      <section className="py-24 px-6 bg-gray-50">
+      <section className="py-24 px-6 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <p className="text-sm font-semibold text-orange-500 tracking-widest uppercase">What you can do</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white">
               Everything built for speaking
             </h2>
-            <p className="max-w-xl mx-auto text-lg text-gray-500">
+            <p className="max-w-xl mx-auto text-lg text-gray-500 dark:text-gray-400">
               Every feature in Bantera exists so you spend more time listening, speaking, and connecting — not studying theory.
             </p>
           </div>
@@ -177,13 +159,13 @@ export default function HomePage() {
             {FEATURES.map((f) => (
               <div
                 key={f.title}
-                className="group bg-white rounded-3xl p-8 border border-gray-100 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/5 hover:-translate-y-1 transition-all duration-300"
+                className="group bg-white dark:bg-gray-800 rounded-3xl p-8 border border-gray-100 dark:border-white/10 hover:border-orange-200 dark:hover:border-orange-500/40 hover:shadow-xl hover:shadow-orange-500/5 hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-14 h-14 rounded-2xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform duration-300">
                   {f.icon}
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">{f.title}</h3>
-                <p className="text-gray-500 leading-relaxed text-sm">{f.body}</p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">{f.title}</h3>
+                <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-sm">{f.body}</p>
               </div>
             ))}
           </div>
@@ -191,11 +173,11 @@ export default function HomePage() {
       </section>
 
       {/* ── How it works ─────────────────────────────────────── */}
-      <section className="py-24 px-6 bg-white">
+      <section className="py-24 px-6 bg-white dark:bg-gray-950">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <p className="text-sm font-semibold text-orange-500 tracking-widest uppercase">The learning loop</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white">
               How Bantera works
             </h2>
           </div>
@@ -206,8 +188,8 @@ export default function HomePage() {
                 <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${step.accent} text-white text-xl font-black shadow-lg`}>
                   {step.step}
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">{step.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{step.body}</p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{step.title}</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{step.body}</p>
               </div>
             ))}
           </div>
@@ -275,17 +257,17 @@ export default function HomePage() {
       </section>
 
       {/* ── Audio social section ──────────────────────────────── */}
-      <section className="py-24 px-6 bg-gray-50">
+      <section className="py-24 px-6 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div className="space-y-6">
               <p className="text-sm font-semibold text-orange-500 tracking-widest uppercase">Community</p>
-              <h2 className="text-4xl font-black tracking-tight text-gray-900">
+              <h2 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white">
                 Talk.
                 <br />
                 Don&apos;t type.
               </h2>
-              <p className="text-gray-500 leading-relaxed">
+              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
                 In Bantera, messages are always voice. Private chats, group conversations, and comments on content — all audio. Because the whole point is to practise speaking, not typing.
               </p>
               <ul className="space-y-3">
@@ -296,7 +278,7 @@ export default function HomePage() {
                   '📄 Read transcripts without playing every clip',
                   '🌐 Translate any audio message instantly',
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-sm text-gray-600">
+                  <li key={item} className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400">
                     <span className="shrink-0 mt-0.5">{item.slice(0, 2)}</span>
                     <span>{item.slice(3)}</span>
                   </li>
@@ -306,11 +288,11 @@ export default function HomePage() {
 
             {/* Visual: chat bubbles */}
             <div className="relative">
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 space-y-4 max-w-xs mx-auto">
-                <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
-                  <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-sm">👩</div>
+              <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-white/10 shadow-xl p-6 space-y-4 max-w-xs mx-auto">
+                <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-white/10">
+                  <div className="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center text-sm">👩</div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-900">Lin</p>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white">Lin</p>
                     <p className="text-[10px] text-gray-400">Exchange partner · Mandarin</p>
                   </div>
                 </div>
@@ -323,13 +305,13 @@ export default function HomePage() {
                     <div className={`max-w-[80%] rounded-2xl px-3 py-2.5 space-y-1.5 ${
                       msg.from === 'me'
                         ? 'bg-orange-500 rounded-tr-sm'
-                        : 'bg-gray-100 rounded-tl-sm'
+                        : 'bg-gray-100 dark:bg-gray-700 rounded-tl-sm'
                     }`}>
-                      <div className={`flex items-center gap-2 ${msg.from === 'me' ? 'text-orange-100' : 'text-gray-400'}`}>
+                      <div className={`flex items-center gap-2 ${msg.from === 'me' ? 'text-orange-100' : 'text-gray-400 dark:text-gray-300'}`}>
                         <span className="text-[10px] tracking-widest">{msg.wave}</span>
                         <span className="text-[10px] shrink-0">{msg.time}</span>
                       </div>
-                      <p className={`text-[11px] ${msg.from === 'me' ? 'text-orange-50' : 'text-gray-500'}`}>
+                      <p className={`text-[11px] ${msg.from === 'me' ? 'text-orange-50' : 'text-gray-500 dark:text-gray-300'}`}>
                         &ldquo;{msg.transcript}&rdquo;
                       </p>
                     </div>
@@ -342,26 +324,16 @@ export default function HomePage() {
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────────── */}
-      <section className="py-28 px-6 bg-white text-center">
+      <section className="py-28 px-6 bg-white dark:bg-gray-950 text-center">
         <div className="max-w-2xl mx-auto space-y-8">
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900">
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white">
             Ready to actually
             <br />
             <span className="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">start speaking?</span>
           </h2>
-          <p className="text-gray-500 text-lg">
-            Bantera is launching soon. Join the waitlist and be the first to know.
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
+            Bantera is launching soon.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Your email address"
-              className="flex-1 px-5 py-3.5 rounded-2xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-400 transition-all text-sm shadow-sm"
-            />
-            <button className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-semibold text-sm shadow-lg shadow-orange-500/20 hover:-translate-y-0.5 transition-all whitespace-nowrap">
-              Join waitlist
-            </button>
-          </div>
         </div>
       </section>
 
