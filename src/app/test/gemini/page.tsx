@@ -32,6 +32,8 @@ const LANGUAGE_OPTIONS: LangOption[] = [
   { value: 'pt',    label: '🇧🇷 Portuguese',            accentInstruction: 'Write the dialogue entirely in Portuguese (Português). Keep it natural and conversational.' },
   { value: 'hi',    label: '🇮🇳 Hindi',                 accentInstruction: 'Write the dialogue entirely in Hindi (हिन्दी). Keep it natural and conversational.' },
   { value: 'ar',    label: '🇸🇦 Arabic',                accentInstruction: 'Write the dialogue entirely in Arabic (العربية). Keep it natural and conversational.' },
+  { value: 'it',    label: '🇮🇹 Italian',               accentInstruction: 'Write the dialogue entirely in Italian (Italiano). Keep it natural and conversational.' },
+  { value: 'si',    label: '🇱🇰 Sinhala (Sri Lanka)',   accentInstruction: 'Write the dialogue entirely in Sinhala (සිංහල). Keep it natural and conversational.' },
 ];
 
 // ─────────────────── Voice options with gender ───────────────────
