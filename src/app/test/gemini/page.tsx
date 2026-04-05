@@ -267,6 +267,7 @@ export default function GeminiTestPage() {
   // Step 4 – Image
   const [imageBase64,   setImageBase64]   = useState<string | null>(null);
   const [imageMime,     setImageMime]     = useState('image/png');
+  const [imagePrompt,   setImagePrompt]   = useState<string | null>(null);
   const [imageLoading,  setImageLoading]  = useState(false);
   const [imageError,    setImageError]    = useState<string | null>(null);
 
@@ -388,15 +389,20 @@ export default function GeminiTestPage() {
   // Step 4: generate image
   const handleGenerateImage = useCallback(async () => {
     if (!step2Done) return;
-    setImageLoading(true); setImageError(null); setImageBase64(null);
+    setImageLoading(true); setImageError(null); setImageBase64(null); setImagePrompt(null);
     const res = await generateImageAction({ title: dialogueTitle, lines: dialogueLines, languageLabel: currentLang.label.replace(/^.+?\s/, ''), imageModel: selectedImageModel });
     setImageLoading(false);
-    if (res.success) { setImageBase64(res.imageBase64); setImageMime(res.mimeType); }
+    if (res.success) { setImageBase64(res.imageBase64); setImageMime(res.mimeType); setImagePrompt(res.imagePrompt); }
     else setImageError(res.error);
   }, [dialogueTitle, dialogueLines, currentLang, selectedImageModel, step2Done]);
 
   const audioSrc = audioBase64 ? `data:audio/wav;base64,${audioBase64}` : null;
   const imageSrc = imageBase64 ? `data:${imageMime};base64,${imageBase64}` : null;
+
+  // Preview of what will be sent to the image model — computed client-side from dialogue state
+  const imagePromptPreview = step2Done
+    ? `Create a vivid, illustrative scene for a language learning dialogue called "${dialogueTitle}". The dialogue is in ${currentLang.label.replace(/^.+?\s/, '')}. The conversation is about: ${dialogueLines.slice(0, 4).map((l) => l.text).join(' ')}. Style: warm, editorial illustration, suitable for a language learning app. No text or speech bubbles.`
+    : null;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 dark:bg-none dark:bg-gray-950 text-gray-900 dark:text-white font-sans transition-colors duration-300">
@@ -661,11 +667,28 @@ export default function GeminiTestPage() {
                 {imageLoading ? 'Generating…' : 'Generate Scene Image'}
               </button>
               {imageError && <ErrorBanner message={imageError} />}
+              {/* Prompt preview — shown as soon as dialogue exists */}
+              {imagePromptPreview && !imageSrc && (
+                <div className="rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20 px-4 py-3 space-y-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Image prompt preview</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{imagePromptPreview}</p>
+                </div>
+              )}
               {imageSrc && (
                 <div className="space-y-3 p-4 rounded-2xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20">
                   <p className="text-xs font-semibold uppercase tracking-widest text-sky-600 dark:text-sky-300">✓ Image Ready</p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={imageSrc} alt={dialogueTitle || 'Generated scene'} className="w-full rounded-xl object-cover" />
+                  {/* After generation, collapse prompt into a toggle */}
+                  {imagePrompt && (
+                    <details className="group">
+                      <summary className="cursor-pointer text-xs text-sky-500 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-200 transition-colors select-none list-none flex items-center gap-1">
+                        <svg className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                        Image prompt used
+                      </summary>
+                      <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-sky-100/50 dark:bg-black/20 rounded-xl px-3 py-2.5 leading-relaxed border border-sky-200 dark:border-white/5">{imagePrompt}</p>
+                    </details>
+                  )}
                   <button
                     id="download-image-btn"
                     onClick={() => { const a = document.createElement('a'); a.href = imageSrc; a.download = 'scene.png'; a.click(); }}

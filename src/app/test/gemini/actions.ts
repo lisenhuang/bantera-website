@@ -19,7 +19,7 @@ export type GenerateAudioResult =
   | { success: false; error: string };
 
 export type GenerateImageResult =
-  | { success: true; imageBase64: string; mimeType: string }
+  | { success: true; imageBase64: string; mimeType: string; imagePrompt: string }
   | { success: false; error: string };
 
 export type ListModelsResult =
@@ -293,7 +293,7 @@ export async function generateImageAction(opts: {
       return { imageBase64: inlineData.data, mimeType: inlineData.mimeType ?? 'image/png' };
     });
 
-    return { success: true, ...result };
+    return { success: true, ...result, imagePrompt: prompt };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     // 429 means model quota exhausted — rotating keys won't help, give a clear suggestion
