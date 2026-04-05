@@ -27,3 +27,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Shared webapp utilities ── */
+.input-base {
+  @apply w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10
+         text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600
+         rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all;
+}
+
+.label-xs {
+  @apply block text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5;
+}
+
