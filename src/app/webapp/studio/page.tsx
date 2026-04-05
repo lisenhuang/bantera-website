@@ -610,17 +610,19 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
           </div>
           <GlassCard className="space-y-5">
 
-            <button
-              id="generate-audio-btn" onClick={handleGenerateAudio} disabled={!step2Done || audioLoading}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {audioLoading ? <SpinnerIcon /> : (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 18.364C8.5 18.364 5 15.5 5 12s3.5-6.364 7-6.364M19.07 4.929a9 9 0 010 12.728" />
-                </svg>
-              )}
-              {audioLoading ? 'Generating…' : 'Generate Audio TTS'}
-            </button>
+            {!audioSrc && (
+              <button
+                id="generate-audio-btn" onClick={handleGenerateAudio} disabled={!step2Done || audioLoading}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {audioLoading ? <SpinnerIcon /> : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 18.364C8.5 18.364 5 15.5 5 12s3.5-6.364 7-6.364M19.07 4.929a9 9 0 010 12.728" />
+                  </svg>
+                )}
+                {audioLoading ? 'Generating…' : 'Generate Audio TTS'}
+              </button>
+            )}
             {audioError && <ErrorBanner message={audioError} />}
             {audioSrc && (
               <div className="space-y-3 p-5 rounded-2xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 shadow-sm mt-4">
