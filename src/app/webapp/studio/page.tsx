@@ -590,7 +590,7 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
                           ? 'bg-white dark:bg-indigo-500/10 border border-gray-200 dark:border-indigo-500/20 text-gray-900 dark:text-gray-100 rounded-tl-sm'
                           : 'bg-indigo-50 dark:bg-violet-500/10 border border-indigo-100 dark:border-violet-500/20 text-gray-900 dark:text-gray-100 rounded-tr-sm'
                       }`}>
-                        <p>{line.text}</p>
+                        <p className="whitespace-pre-wrap break-words">{line.text}</p>
                         {line.translation && <p className="text-xs pt-2 mt-2 border-t border-gray-200/50 dark:border-white/10 text-gray-600 dark:text-gray-400 font-medium">{line.translation}</p>}
                       </div>
                     </div>

@@ -5,6 +5,16 @@ import { VOICE_OPTIONS } from './constants';
 
 const VOICE_NAMES: Set<string> = new Set(VOICE_OPTIONS.map(v => v.name));
 
+/** Strip emoji for TTS / plain translation (display text keeps emojis inline). */
+function stripEmojis(s: string): string {
+  return s
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/\uFE0F/g, '')
+    .replace(/\u200D/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 // ── Types ─────────────────────────────────────────────────────────
 export type DialogueLine = { speaker: 'Speaker1' | 'Speaker2'; text: string; translation?: string };
 
@@ -109,6 +119,8 @@ Generate a natural, realistic spoken dialogue between exactly TWO people.
 - Alternate turns naturally; each turn should be 1–3 sentences.
 - Keep sentences short and conversational — the way people actually talk.
 - Do NOT include stage directions or any text outside the dialogue.${translationLine}
+- Optional readability: you may place one or more emojis inside "text" only, immediately after the word or phrase they refer to (e.g. "Looks like rain again 🌧️" or "That really hurt 💔"). Use emojis sparingly — many lines should have none if they do not need one. Never put emojis at the start of a line as decoration; only inline where they clarify tone or meaning.
+${translationTargetLabel ? `- Translations must be plain text with NO emojis.` : ''}
 - Also write a short, catchy title for this dialogue (max 8 words).
 
 Choose a voice for each speaker from the following list. Pick voices that suit each character's likely personality, age, and role in the scenario. Prefer different genders unless the scenario clearly involves two people of the same gender. Use the exact name as shown.
@@ -136,7 +148,13 @@ ${jsonTemplate}
     const voice1 = parsed.voice1 && VOICE_NAMES.has(parsed.voice1) ? parsed.voice1 : 'Kore';
     const voice2 = parsed.voice2 && VOICE_NAMES.has(parsed.voice2) ? parsed.voice2 : 'Puck';
 
-    return { success: true, title: parsed.title ?? languageLabel + ' Dialogue', lines: parsed.lines, voice1, voice2 };
+    const lines: DialogueLine[] = (parsed.lines ?? []).map((line) => ({
+      speaker: line.speaker,
+      text: line.text,
+      translation: line.translation ? stripEmojis(line.translation) : undefined,
+    }));
+
+    return { success: true, title: parsed.title ?? languageLabel + ' Dialogue', lines, voice1, voice2 };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
@@ -174,7 +192,7 @@ export async function generateAudioAction(opts: {
 }): Promise<GenerateAudioResult> {
   const { apiKey, lines, accentInstruction, audioModel, voice1 = 'Kore', voice2 = 'Puck' } = opts;
 
-  const transcript = lines.map(l => `${l.speaker}: ${l.text}`).join('\n');
+  const transcript = lines.map(l => `${l.speaker}: ${stripEmojis(l.text)}`).join('\n');
   const prompt = `${accentInstruction}\n\nTTS the following conversation between Speaker1 and Speaker2:\n\n${transcript}`;
 
   try {
