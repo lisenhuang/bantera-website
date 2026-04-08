@@ -54,12 +54,40 @@ export const BANTERA_LANGUAGE_OPTIONS: readonly BanteraLanguageOption[] = [
 
 const DEFAULT_API_BASE_URL = "https://api.bantera.app";
 
-function getApiBaseUrl() {
+export function getApiBaseUrl() {
   return (
     process.env.NEXT_PUBLIC_BANTERA_API_BASE_URL?.trim() ||
     process.env.BANTERA_API_BASE_URL?.trim() ||
     DEFAULT_API_BASE_URL
   ).replace(/\/+$/, "");
+}
+
+function normalizeMediaUrl(url: string | null) {
+  if (!url) {
+    return null;
+  }
+
+  const apiBaseUrl = getApiBaseUrl();
+
+  try {
+    const parsed = new URL(url);
+    const apiBase = new URL(apiBaseUrl);
+    return new URL(`${parsed.pathname}${parsed.search}`, apiBase).toString();
+  } catch {
+    try {
+      return new URL(url, apiBaseUrl).toString();
+    } catch {
+      return url;
+    }
+  }
+}
+
+function normalizePublicAudio(item: BanteraPublicAudio): BanteraPublicAudio {
+  return {
+    ...item,
+    videoUrl: normalizeMediaUrl(item.videoUrl),
+    coverImageUrl: normalizeMediaUrl(item.coverImageUrl),
+  };
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
@@ -100,9 +128,9 @@ export async function listPublicAudios({
     `/api/videos/public?${params.toString()}`,
   );
 
-  return result.filter((item) =>
-    item.videoContentType.toLowerCase().startsWith("audio/"),
-  );
+  return result
+    .filter((item) => item.videoContentType.toLowerCase().startsWith("audio/"))
+    .map(normalizePublicAudio);
 }
 
 export async function getPublicAudio(
@@ -116,7 +144,7 @@ export async function getPublicAudio(
     if (!result.videoContentType.toLowerCase().startsWith("audio/")) {
       return null;
     }
-    return result;
+    return normalizePublicAudio(result);
   } catch {
     return null;
   }
