@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Bantera — Learn Languages Through Real Conversation',
@@ -338,10 +339,24 @@ export default function HomePage() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="py-10 px-6 bg-gray-950 border-t border-white/5 text-center">
+      <footer className="py-10 px-6 bg-gray-950 border-t border-white/5 text-center space-y-4">
         <p className="text-gray-600 text-sm">
           <span className="font-bold text-gray-400">Bantera</span> · Audio-first language learning · Coming soon
         </p>
+        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+          <Link
+            href="/privacy"
+            className="text-gray-500 hover:text-orange-400 transition-colors"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            href="/support"
+            className="text-gray-500 hover:text-orange-400 transition-colors"
+          >
+            Support
+          </Link>
+        </nav>
       </footer>
     </div>
   );
