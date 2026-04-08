@@ -74,7 +74,10 @@ export default function PrivacyPage() {
                 service, such as app version, device type, and diagnostic or
                 security-related logs. Some learning activity may be processed
                 on your device and stored locally (for example, practice
-                progress) as implemented in the app.
+                progress). For example, practice comparison recordings you make
+                in the app may be stored locally on your device for replay and
+                progress tracking and are not sent to Bantera&apos;s servers in
+                the current implementation.
               </li>
             </ul>
           </section>
