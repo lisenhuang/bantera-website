@@ -1,6 +1,6 @@
 # Time-based transcription cues (Gemini)
 
-This describes how the **Bantera website** dev tool turns **audio** into **time-aligned transcript segments** using the Gemini API. The UI lives at **`/dev/gemini`** (Step 5).
+This describes how the **Bantera website** dev tool turns **audio** into **time-aligned transcript segments** using the Gemini API. The UI lives at **`/dev/gemini`** (**Step 4** in the studio flow).
 
 ## What you get
 
@@ -18,17 +18,18 @@ Segments are ordered chronologically.
 ## Prerequisites
 
 1. **Environment:** `GEMINI_API_KEYS` in `.env.local` (comma-separated API keys), as used elsewhere on the site.
-2. **Audio source in this flow:** Step 3 produces a **WAV** (from Gemini TTS). Step 5 sends that same audio to a **transcription** model—not the TTS model.
+2. **Audio source in this flow:** Step 3 produces a **WAV** (from Gemini TTS). **Step 4** sends that same audio to a **transcription** model—not the TTS model.
 
 ## Using the UI (`/dev/gemini`)
 
-1. **Step 1** — Pick language, **text**, **TTS**, and **image** models as usual. Choose a **transcription model** appears in **Step 5** (same pool as “text” models: multimodal Gemini models, not TTS-only).
+1. **Step 1** — Pick language, **text**, **TTS**, and **image** models as usual. The **transcription model** dropdown is in **Step 4** (same pool as “text” models: multimodal Gemini models, not TTS-only).
 2. **Step 2** — Generate a dialogue (or use the script you care about).
-3. **Step 3** — **Generate Audio**. Wait until the player shows **Audio Ready** and optional download works. This is the file Step 5 will transcribe.
-4. **Step 5** — Select **Transcription model**, then click **Generate time-based cues**.
-5. Review the **table**, use **Copy JSON**, or expand **Raw JSON** for the full payload.
+3. **Step 3** — **Generate Audio**. Wait until the player shows **Audio Ready** and optional download works. This is the file Step 4 will transcribe.
+4. **Step 4** — Select **Transcription model**, then click **Generate time-based cues**.
+5. **Step 5** (optional) — **Generate Image** for a scene illustration; order is independent of transcription.
+6. Review the **table**: each row has **Play** to hear only that cue’s time range (Step 3 WAV); click again while that cue is playing to pause. Use **Copy JSON** or **Raw JSON** for the full payload.
 
-If Step 3 is missing, Step 5 explains that you need audio first.
+If Step 3 audio is missing, Step 4 explains that you need audio first.
 
 **Note:** Cues are cleared when you generate a **new dialogue** or **new audio**, so the transcript always matches the current clip.
 

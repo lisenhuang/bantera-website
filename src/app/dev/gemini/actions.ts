@@ -331,7 +331,7 @@ export async function generateImageAction(opts: {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Step 5 – Transcribe audio with time-based cues (JSON segments)
+// Step 4 (UI) – Transcribe audio with time-based cues (JSON segments)
 // ─────────────────────────────────────────────────────────────
 
 const TRANSCRIPTION_CUES_SCHEMA: Schema = {

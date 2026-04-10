@@ -434,6 +434,68 @@ export default function GeminiTestPage() {
     else setTranscriptionError(res.error);
   }, [audioBase64, selectedTranscriptionModel]);
 
+  /** Hidden element for segment playback (separate from Step 3 visible player). */
+  const cuePlaybackAudioRef = useRef<HTMLAudioElement | null>(null);
+  const cuePlaybackCleanupRef = useRef<(() => void) | null>(null);
+  const [playingCueIndex, setPlayingCueIndex] = useState<number | null>(null);
+
+  const stopCuePlayback = useCallback(() => {
+    cuePlaybackCleanupRef.current?.();
+    cuePlaybackCleanupRef.current = null;
+    const el = cuePlaybackAudioRef.current;
+    if (el) el.pause();
+    setPlayingCueIndex(null);
+  }, []);
+
+  const playCueSegment = useCallback(
+    (index: number, startSec: unknown, endSec: unknown) => {
+      const el = cuePlaybackAudioRef.current;
+      if (!el || !audioBase64) return;
+
+      const start = typeof startSec === 'number' ? startSec : parseFloat(String(startSec));
+      const end = typeof endSec === 'number' ? endSec : parseFloat(String(endSec));
+      if (!Number.isFinite(start) || !Number.isFinite(end)) return;
+      const t0 = Math.max(0, start);
+      const t1 = Math.max(t0, end);
+
+      if (playingCueIndex === index && !el.paused) {
+        stopCuePlayback();
+        return;
+      }
+
+      stopCuePlayback();
+
+      const onTimeUpdate = () => {
+        if (el.currentTime >= t1 - 0.03) {
+          el.pause();
+          stopCuePlayback();
+        }
+      };
+
+      cuePlaybackCleanupRef.current = () => {
+        el.removeEventListener('timeupdate', onTimeUpdate);
+      };
+
+      el.addEventListener('timeupdate', onTimeUpdate);
+      setPlayingCueIndex(index);
+      el.currentTime = t0;
+      void el.play().catch(() => {
+        stopCuePlayback();
+      });
+    },
+    [audioBase64, playingCueIndex, stopCuePlayback],
+  );
+
+  useEffect(() => {
+    if (!audioBase64) stopCuePlayback();
+  }, [audioBase64, stopCuePlayback]);
+
+  useEffect(() => {
+    return () => {
+      cuePlaybackCleanupRef.current?.();
+    };
+  }, []);
+
   const audioSrc = audioBase64 ? `data:audio/wav;base64,${audioBase64}` : null;
   const imageSrc = imageBase64 ? `data:${imageMime};base64,${imageBase64}` : null;
 
@@ -456,7 +518,7 @@ export default function GeminiTestPage() {
               Gemini Dialogue Studio
             </h1>
             <p className="text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-              Generate multi-speaker dialogues, audio, scene images, and time-based transcription cues — powered by Gemini.
+              Generate multi-speaker dialogues, audio, time-based transcription cues, and scene images — powered by Gemini.
             </p>
           </div>
           <div className="shrink-0 pt-1">
@@ -638,16 +700,16 @@ export default function GeminiTestPage() {
           </GlassCard>
         </section>
 
-        {/* ─── STEP 3 + 4 side by side ─── */}
-        <div className="grid md:grid-cols-2 gap-6">
+        {/* ─── STEP 3 + 4 side by side (align top so the next row is never covered) ─── */}
+        <div className="grid md:grid-cols-2 gap-6 items-start">
 
           {/* STEP 3 – Audio */}
-          <section className="space-y-4">
+          <section className="space-y-4 min-w-0">
             <div className="flex items-center gap-3">
               <StepBadge num={3} active={step2Done && !audioBase64} done={!!audioBase64} />
               <h2 className="text-lg font-semibold">Generate Audio</h2>
             </div>
-            <GlassCard className="space-y-4 h-full">
+            <GlassCard className="space-y-4">
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Model: <span className="font-mono text-fuchsia-600 dark:text-fuchsia-300">{selectedAudioModel ? selectedAudioModel.replace('models/', '') : '—'}</span>
               </p>
@@ -683,60 +745,127 @@ export default function GeminiTestPage() {
             </GlassCard>
           </section>
 
-          {/* STEP 4 – Image */}
-          <section className="space-y-4">
+          {/* STEP 4 – Time-based transcription cues */}
+          <section className="space-y-4 min-w-0">
             <div className="flex items-center gap-3">
-              <StepBadge num={4} active={step2Done && !imageSrc} done={!!imageSrc} />
-              <h2 className="text-lg font-semibold">Generate Image</h2>
+              <StepBadge
+                num={4}
+                active={!!audioBase64 && !cueSegments?.length && !transcriptionLoading}
+                done={!!cueSegments && cueSegments.length > 0}
+              />
+              <h2 className="text-lg font-semibold">Time-based transcription cues</h2>
             </div>
-            <GlassCard className="space-y-4 h-full">
+            <GlassCard className="space-y-4">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Model: <span className="font-mono text-sky-600 dark:text-sky-300">{selectedImageModel ? selectedImageModel.replace('models/', '') : '—'}</span>
+                Sends the Step 3 audio to Gemini for transcription with <span className="font-medium text-gray-700 dark:text-gray-300">start/end times</span> per line (JSON).
               </p>
+              <ModelSelect
+                id="transcription-model-select"
+                label="Transcription model"
+                value={selectedTranscriptionModel}
+                onChange={setSelectedTranscriptionModel}
+                models={transcriptionModels}
+                loading={modelsLoading}
+                error={modelsError ?? undefined}
+                accentColor="emerald"
+              />
               <button
-                id="generate-image-btn" onClick={handleGenerateImage} disabled={!step2Done || imageLoading}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-sky-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+                id="generate-transcription-cues-btn"
+                type="button"
+                onClick={handleTranscribeCues}
+                disabled={!audioBase64 || !selectedTranscriptionModel || transcriptionLoading}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {imageLoading ? <SpinnerIcon /> : (
+                {transcriptionLoading ? <SpinnerIcon /> : (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 )}
-                {imageLoading ? 'Generating…' : 'Generate Scene Image'}
+                {transcriptionLoading ? 'Transcribing…' : 'Generate time-based cues'}
               </button>
-              {imageError && <ErrorBanner message={imageError} />}
-              {/* Prompt preview — shown as soon as dialogue exists */}
-              {imagePromptPreview && !imageSrc && (
-                <div className="rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20 px-4 py-3 space-y-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Image prompt preview</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{imagePromptPreview}</p>
-                </div>
+              {!audioBase64 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400/90">Generate audio in Step 3 first.</p>
               )}
-              {imageSrc && (
-                <div className="space-y-3 p-4 rounded-2xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-sky-600 dark:text-sky-300">✓ Image Ready</p>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imageSrc} alt={dialogueTitle || 'Generated scene'} className="w-full rounded-xl object-cover" />
-                  {/* After generation, collapse prompt into a toggle */}
-                  {imagePrompt && (
-                    <details className="group">
-                      <summary className="cursor-pointer text-xs text-sky-500 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-200 transition-colors select-none list-none flex items-center gap-1">
-                        <svg className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                        Image prompt used
-                      </summary>
-                      <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-sky-100/50 dark:bg-black/20 rounded-xl px-3 py-2.5 leading-relaxed border border-sky-200 dark:border-white/5">{imagePrompt}</p>
-                    </details>
-                  )}
-                  <button
-                    id="download-image-btn"
-                    onClick={() => { const a = document.createElement('a'); a.href = imageSrc; a.download = 'scene.png'; a.click(); }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-sky-300 dark:border-sky-500/40 text-sky-600 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-500/20 text-sm transition-all"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download image
-                  </button>
+              {transcriptionError && <ErrorBanner message={transcriptionError} />}
+              {audioSrc && (
+                <audio
+                  ref={cuePlaybackAudioRef}
+                  src={audioSrc}
+                  preload="auto"
+                  className="hidden"
+                  aria-hidden="true"
+                />
+              )}
+              {cueSegments && cueSegments.length > 0 && (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 overflow-x-auto">
+                    <table className="w-full text-sm min-w-[28rem]">
+                      <thead>
+                        <tr className="bg-emerald-50 dark:bg-emerald-500/10 text-left text-xs uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                          <th className="px-2 py-2 font-semibold w-14 shrink-0">Play</th>
+                          <th className="px-3 py-2 font-semibold">Start (s)</th>
+                          <th className="px-3 py-2 font-semibold">End (s)</th>
+                          <th className="px-3 py-2 font-semibold">Speaker</th>
+                          <th className="px-3 py-2 font-semibold">Text</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cueSegments.map((row, i) => (
+                          <tr key={i} className="border-t border-emerald-100 dark:border-emerald-500/20 text-gray-800 dark:text-gray-200">
+                            <td className="px-2 py-2 align-top">
+                              <button
+                                type="button"
+                                onClick={() => playCueSegment(i, row.startSec, row.endSec)}
+                                title={playingCueIndex === i ? 'Pause' : 'Play this cue only'}
+                                aria-label={playingCueIndex === i ? `Pause cue ${i + 1}` : `Play cue ${i + 1} only`}
+                                className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border text-xs transition-all ${
+                                  playingCueIndex === i
+                                    ? 'border-emerald-500 bg-emerald-500/20 text-emerald-800 dark:text-emerald-100'
+                                    : 'border-emerald-300 dark:border-emerald-500/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/15'
+                                }`}
+                              >
+                                {playingCueIndex === i ? (
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                )}
+                              </button>
+                            </td>
+                            <td className="px-3 py-2 font-mono text-xs align-top">{typeof row.startSec === 'number' ? row.startSec.toFixed(2) : row.startSec}</td>
+                            <td className="px-3 py-2 font-mono text-xs align-top">{typeof row.endSec === 'number' ? row.endSec.toFixed(2) : row.endSec}</td>
+                            <td className="px-3 py-2 align-top whitespace-nowrap">{row.speaker}</td>
+                            <td className="px-3 py-2 align-top">{row.text}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(JSON.stringify({ segments: cueSegments }, null, 2));
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/15 text-sm transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Copy JSON
+                    </button>
+                  </div>
+                  <details className="group">
+                    <summary className="cursor-pointer text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 transition-colors select-none">
+                      Raw JSON
+                    </summary>
+                    <pre className="mt-2 p-4 rounded-xl bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto max-h-80 overflow-y-auto">
+                      {JSON.stringify({ segments: cueSegments }, null, 2)}
+                    </pre>
+                  </details>
                 </div>
               )}
             </GlassCard>
@@ -744,94 +873,61 @@ export default function GeminiTestPage() {
 
         </div>
 
-        {/* ─── STEP 5 ─── */}
-        <section className="space-y-4">
+        {/* ─── STEP 5 – Image (full width) ─── */}
+        <section className="space-y-4 relative z-10">
           <div className="flex items-center gap-3">
-            <StepBadge
-              num={5}
-              active={!!audioBase64 && !cueSegments?.length && !transcriptionLoading}
-              done={!!cueSegments && cueSegments.length > 0}
-            />
-            <h2 className="text-lg font-semibold">Time-based transcription cues</h2>
+            <StepBadge num={5} active={step2Done && !imageSrc} done={!!imageSrc} />
+            <h2 className="text-lg font-semibold">Generate Image</h2>
           </div>
           <GlassCard className="space-y-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Sends the Step 3 audio to Gemini for transcription with <span className="font-medium text-gray-700 dark:text-gray-300">start/end times</span> per line (JSON).
+              Model: <span className="font-mono text-sky-600 dark:text-sky-300">{selectedImageModel ? selectedImageModel.replace('models/', '') : '—'}</span>
             </p>
-            <ModelSelect
-              id="transcription-model-select"
-              label="Transcription model"
-              value={selectedTranscriptionModel}
-              onChange={setSelectedTranscriptionModel}
-              models={transcriptionModels}
-              loading={modelsLoading}
-              error={modelsError ?? undefined}
-              accentColor="emerald"
-            />
             <button
-              id="generate-transcription-cues-btn"
-              type="button"
-              onClick={handleTranscribeCues}
-              disabled={!audioBase64 || !selectedTranscriptionModel || transcriptionLoading}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+              id="generate-image-btn"
+              onClick={handleGenerateImage}
+              disabled={!step2Done || imageLoading}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-sky-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {transcriptionLoading ? <SpinnerIcon /> : (
+              {imageLoading ? <SpinnerIcon /> : (
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               )}
-              {transcriptionLoading ? 'Transcribing…' : 'Generate time-based cues'}
+              {imageLoading ? 'Generating…' : 'Generate Scene Image'}
             </button>
-            {!audioBase64 && (
-              <p className="text-xs text-amber-600 dark:text-amber-400/90">Generate audio in Step 3 first.</p>
+            {imageError && <ErrorBanner message={imageError} />}
+            {imagePromptPreview && !imageSrc && (
+              <div className="rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20 px-4 py-3 space-y-1">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Image prompt preview</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{imagePromptPreview}</p>
+              </div>
             )}
-            {transcriptionError && <ErrorBanner message={transcriptionError} />}
-            {cueSegments && cueSegments.length > 0 && (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-emerald-50 dark:bg-emerald-500/10 text-left text-xs uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                        <th className="px-3 py-2 font-semibold">Start (s)</th>
-                        <th className="px-3 py-2 font-semibold">End (s)</th>
-                        <th className="px-3 py-2 font-semibold">Speaker</th>
-                        <th className="px-3 py-2 font-semibold">Text</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cueSegments.map((row, i) => (
-                        <tr key={i} className="border-t border-emerald-100 dark:border-emerald-500/20 text-gray-800 dark:text-gray-200">
-                          <td className="px-3 py-2 font-mono text-xs align-top">{typeof row.startSec === 'number' ? row.startSec.toFixed(2) : row.startSec}</td>
-                          <td className="px-3 py-2 font-mono text-xs align-top">{typeof row.endSec === 'number' ? row.endSec.toFixed(2) : row.endSec}</td>
-                          <td className="px-3 py-2 align-top whitespace-nowrap">{row.speaker}</td>
-                          <td className="px-3 py-2 align-top">{row.text}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="flex flex-wrap gap-2 items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void navigator.clipboard.writeText(JSON.stringify({ segments: cueSegments }, null, 2));
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/15 text-sm transition-all"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    Copy JSON
-                  </button>
-                </div>
-                <details className="group">
-                  <summary className="cursor-pointer text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 transition-colors select-none">
-                    Raw JSON
-                  </summary>
-                  <pre className="mt-2 p-4 rounded-xl bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto max-h-80 overflow-y-auto">
-                    {JSON.stringify({ segments: cueSegments }, null, 2)}
-                  </pre>
-                </details>
+            {imageSrc && (
+              <div className="space-y-3 p-4 rounded-2xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20">
+                <p className="text-xs font-semibold uppercase tracking-widest text-sky-600 dark:text-sky-300">✓ Image Ready</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageSrc} alt={dialogueTitle || 'Generated scene'} className="w-full rounded-xl object-cover" />
+                {imagePrompt && (
+                  <details className="group">
+                    <summary className="cursor-pointer text-xs text-sky-500 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-200 transition-colors select-none list-none flex items-center gap-1">
+                      <svg className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      Image prompt used
+                    </summary>
+                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-sky-100/50 dark:bg-black/20 rounded-xl px-3 py-2.5 leading-relaxed border border-sky-200 dark:border-white/5">{imagePrompt}</p>
+                  </details>
+                )}
+                <button
+                  id="download-image-btn"
+                  type="button"
+                  onClick={() => { const a = document.createElement('a'); a.href = imageSrc; a.download = 'scene.png'; a.click(); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-sky-300 dark:border-sky-500/40 text-sky-600 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-500/20 text-sm transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download image
+                </button>
               </div>
             )}
           </GlassCard>
