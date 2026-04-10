@@ -1,5 +1,6 @@
 'use server';
 
+import { Type, type Schema } from '@google/genai';
 import { withGeminiKey, getShuffledKeys } from '@/lib/gemini-key';
 
 // ─────────────────────────────────────────────────────────────
@@ -23,7 +24,26 @@ export type GenerateImageResult =
   | { success: false; error: string };
 
 export type ListModelsResult =
-  | { success: true; textModels: string[]; audioModels: string[]; imageModels: string[] }
+  | {
+      success: true;
+      textModels: string[];
+      audioModels: string[];
+      imageModels: string[];
+      /** Same heuristic as text models — multimodal models used for audio-in transcription */
+      transcriptionModels: string[];
+    }
+  | { success: false; error: string };
+
+/** One timed cue segment from Step 5 transcription */
+export type TranscriptionCueSegment = {
+  startSec: number;
+  endSec: number;
+  speaker: string;
+  text: string;
+};
+
+export type TranscribeAudioCuesResult =
+  | { success: true; cues: { segments: TranscriptionCueSegment[] } }
   | { success: false; error: string };
 
 // ─────────────────────────────────────────────────────────────
@@ -83,7 +103,9 @@ export async function listModelsAction(): Promise<ListModelsResult> {
         })
         .map((m) => m.name);
 
-      return { success: true, textModels, audioModels, imageModels };
+      const transcriptionModels = textModels;
+
+      return { success: true, textModels, audioModels, imageModels, transcriptionModels };
     } catch (err: unknown) {
       lastError = err instanceof Error ? err.message : String(err);
     }
@@ -302,6 +324,106 @@ export async function generateImageAction(opts: {
       return {
         success: false,
         error: `Quota exhausted for "${modelShort}" (free tier limit reached). Please select a different image model — try "gemini-2.5-flash-image" from the dropdown.`,
+      };
+    }
+    return { success: false, error: msg };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Step 5 – Transcribe audio with time-based cues (JSON segments)
+// ─────────────────────────────────────────────────────────────
+
+const TRANSCRIPTION_CUES_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  description: 'Transcript of a two-speaker dialogue with per-segment timing.',
+  properties: {
+    segments: {
+      type: Type.ARRAY,
+      description: 'Ordered segments with start/end times in seconds from the start of the audio.',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          startSec: {
+            type: Type.NUMBER,
+            description: 'Start time in seconds (may be fractional).',
+          },
+          endSec: {
+            type: Type.NUMBER,
+            description: 'End time in seconds (may be fractional).',
+          },
+          speaker: {
+            type: Type.STRING,
+            description: 'Speaker1 or Speaker2.',
+          },
+          text: {
+            type: Type.STRING,
+            description: 'Spoken words for this segment.',
+          },
+        },
+        required: ['startSec', 'endSec', 'speaker', 'text'],
+      },
+    },
+  },
+  required: ['segments'],
+};
+
+export async function transcribeAudioCuesAction(opts: {
+  audioBase64: string;
+  mimeType?: string;
+  transcriptionModel: string;
+}): Promise<TranscribeAudioCuesResult> {
+  const { audioBase64, mimeType = 'audio/wav', transcriptionModel } = opts;
+
+  const textPrompt = `You are transcribing a two-speaker dialogue recording.
+Listen to the audio and produce a transcript split into time-aligned segments.
+Use speaker labels "Speaker1" and "Speaker2" to match the two voices.
+Each segment must have accurate startSec and endSec in seconds (decimals allowed) from the beginning of the file.
+Order segments chronologically and cover all spoken content.`;
+
+  try {
+    const raw = await withGeminiKey(async (ai) => {
+      const res = await ai.models.generateContent({
+        model: transcriptionModel,
+        contents: [
+          {
+            parts: [
+              { text: textPrompt },
+              { inlineData: { mimeType, data: audioBase64 } },
+            ],
+          },
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: TRANSCRIPTION_CUES_SCHEMA,
+        },
+      });
+      return res.text ?? '';
+    });
+
+    const cleaned = raw.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '').trim();
+
+    let parsed: { segments: TranscriptionCueSegment[] };
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('Could not parse JSON from transcription response.');
+      parsed = JSON.parse(match[0]);
+    }
+
+    if (!parsed.segments || !Array.isArray(parsed.segments)) {
+      return { success: false, error: 'Transcription response missing a valid "segments" array.' };
+    }
+
+    return { success: true, cues: { segments: parsed.segments } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {
+      const modelShort = transcriptionModel.replace('models/', '');
+      return {
+        success: false,
+        error: `Quota exhausted for "${modelShort}" (free tier limit reached). Try another transcription model from the dropdown.`,
       };
     }
     return { success: false, error: msg };

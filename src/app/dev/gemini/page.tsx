@@ -6,7 +6,9 @@ import {
   generateDialogueAction,
   generateAudioAction,
   generateImageAction,
+  transcribeAudioCuesAction,
   type DialogueLine,
+  type TranscriptionCueSegment,
 } from './actions';
 
 // ─────────────────── Language options (unified) ───────────────────
@@ -147,9 +149,14 @@ function ModelSelect({
   id, label, value, onChange, models, loading, error, accentColor = 'violet',
 }: {
   id: string; label: string; value: string; onChange: (v: string) => void;
-  models: string[]; loading: boolean; error?: string; accentColor?: 'violet' | 'fuchsia' | 'sky';
+  models: string[]; loading: boolean; error?: string;   accentColor?: 'violet' | 'fuchsia' | 'sky' | 'emerald';
 }) {
-  const ringMap = { violet: 'focus:ring-violet-500/60', fuchsia: 'focus:ring-fuchsia-500/60', sky: 'focus:ring-sky-500/60' };
+  const ringMap = {
+    violet: 'focus:ring-violet-500/60',
+    fuchsia: 'focus:ring-fuchsia-500/60',
+    sky: 'focus:ring-sky-500/60',
+    emerald: 'focus:ring-emerald-500/60',
+  };
   const errorBorder = error ? 'border-red-500/50' : 'border-gray-200 dark:border-white/10';
 
   return (
@@ -236,6 +243,7 @@ export default function GeminiTestPage() {
   const [textModels, setTextModels]   = useState<string[]>([]);
   const [audioModels, setAudioModels] = useState<string[]>([]);
   const [imageModels, setImageModels] = useState<string[]>([]);
+  const [transcriptionModels, setTranscriptionModels] = useState<string[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
   const [modelsError,   setModelsError]   = useState<string | null>(null);
 
@@ -244,6 +252,7 @@ export default function GeminiTestPage() {
   const [selectedTextModel,  setSelectedTextModel]  = useState('');
   const [selectedAudioModel, setSelectedAudioModel] = useState('');
   const [selectedImageModel, setSelectedImageModel] = useState('');
+  const [selectedTranscriptionModel, setSelectedTranscriptionModel] = useState('');
   const [voice1, setVoice1] = useState('Kore');
   const [voice2, setVoice2] = useState('Puck');
   const [durationSecs, setDurationSecs] = useState(60);
@@ -270,6 +279,11 @@ export default function GeminiTestPage() {
   const [imagePrompt,   setImagePrompt]   = useState<string | null>(null);
   const [imageLoading,  setImageLoading]  = useState(false);
   const [imageError,    setImageError]    = useState<string | null>(null);
+
+  // Step 5 – Time-based transcription cues
+  const [cueSegments, setCueSegments] = useState<TranscriptionCueSegment[] | null>(null);
+  const [transcriptionLoading, setTranscriptionLoading] = useState(false);
+  const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
 
   const step1Done = !!(selectedTextModel && selectedAudioModel && selectedImageModel);
   const step2Done = dialogueLines.length > 0;
@@ -323,10 +337,10 @@ export default function GeminiTestPage() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         langValue, voice1, voice2, durationSecs, theme,
-        selectedTextModel, selectedAudioModel, selectedImageModel,
+        selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel,
       }));
     } catch { /* quota exceeded etc */ }
-  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel]);
+  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel]);
 
   // 3. Fetch models; restore saved model selections
   useEffect(() => {
@@ -339,16 +353,23 @@ export default function GeminiTestPage() {
       setTextModels(res.textModels);
       setAudioModels(res.audioModels);
       setImageModels(res.imageModels);
+      setTranscriptionModels(res.transcriptionModels);
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         const saved = raw ? JSON.parse(raw) as Record<string, string> : {};
         setSelectedTextModel((saved.selectedTextModel && res.textModels.includes(saved.selectedTextModel)) ? saved.selectedTextModel : res.textModels[0] ?? '');
         setSelectedAudioModel((saved.selectedAudioModel && res.audioModels.includes(saved.selectedAudioModel)) ? saved.selectedAudioModel : res.audioModels[0] ?? '');
         setSelectedImageModel((saved.selectedImageModel && res.imageModels.includes(saved.selectedImageModel)) ? saved.selectedImageModel : res.imageModels[0] ?? '');
+        setSelectedTranscriptionModel(
+          (saved.selectedTranscriptionModel && res.transcriptionModels.includes(saved.selectedTranscriptionModel))
+            ? saved.selectedTranscriptionModel
+            : res.transcriptionModels[0] ?? '',
+        );
       } catch {
         if (res.textModels[0])  setSelectedTextModel(res.textModels[0]);
         if (res.audioModels[0]) setSelectedAudioModel(res.audioModels[0]);
         if (res.imageModels[0]) setSelectedImageModel(res.imageModels[0]);
+        if (res.transcriptionModels[0]) setSelectedTranscriptionModel(res.transcriptionModels[0]);
       }
       prefsLoaded.current = true;
     })();
@@ -363,6 +384,8 @@ export default function GeminiTestPage() {
     setDialogueTitle('');
     setAudioBase64(null);
     setImageBase64(null);
+    setCueSegments(null);
+    setTranscriptionError(null);
     const res = await generateDialogueAction({
       languageLabel: currentLang.label.replace(/^.+?\s/, ''),
       accentInstruction: currentLang.accentInstruction,
@@ -380,6 +403,7 @@ export default function GeminiTestPage() {
   const handleGenerateAudio = useCallback(async () => {
     if (!step2Done) return;
     setAudioLoading(true); setAudioError(null); setAudioBase64(null);
+    setCueSegments(null); setTranscriptionError(null);
     const res = await generateAudioAction({ lines: dialogueLines, accentInstruction: currentLang.accentInstruction, audioModel: selectedAudioModel, voice1, voice2 });
     setAudioLoading(false);
     if (res.success) setAudioBase64(res.audioBase64);
@@ -395,6 +419,20 @@ export default function GeminiTestPage() {
     if (res.success) { setImageBase64(res.imageBase64); setImageMime(res.mimeType); setImagePrompt(res.imagePrompt); }
     else setImageError(res.error);
   }, [dialogueTitle, dialogueLines, currentLang, selectedImageModel, step2Done]);
+
+  const handleTranscribeCues = useCallback(async () => {
+    if (!audioBase64 || !selectedTranscriptionModel) return;
+    setTranscriptionLoading(true);
+    setTranscriptionError(null);
+    const res = await transcribeAudioCuesAction({
+      audioBase64,
+      mimeType: 'audio/wav',
+      transcriptionModel: selectedTranscriptionModel,
+    });
+    setTranscriptionLoading(false);
+    if (res.success) setCueSegments(res.cues.segments);
+    else setTranscriptionError(res.error);
+  }, [audioBase64, selectedTranscriptionModel]);
 
   const audioSrc = audioBase64 ? `data:audio/wav;base64,${audioBase64}` : null;
   const imageSrc = imageBase64 ? `data:${imageMime};base64,${imageBase64}` : null;
@@ -418,7 +456,7 @@ export default function GeminiTestPage() {
               Gemini Dialogue Studio
             </h1>
             <p className="text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-              Generate multi-speaker conversational dialogues, audio, and illustration scenes — powered by Gemini.
+              Generate multi-speaker dialogues, audio, scene images, and time-based transcription cues — powered by Gemini.
             </p>
           </div>
           <div className="shrink-0 pt-1">
@@ -705,6 +743,100 @@ export default function GeminiTestPage() {
           </section>
 
         </div>
+
+        {/* ─── STEP 5 ─── */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-3">
+            <StepBadge
+              num={5}
+              active={!!audioBase64 && !cueSegments?.length && !transcriptionLoading}
+              done={!!cueSegments && cueSegments.length > 0}
+            />
+            <h2 className="text-lg font-semibold">Time-based transcription cues</h2>
+          </div>
+          <GlassCard className="space-y-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Sends the Step 3 audio to Gemini for transcription with <span className="font-medium text-gray-700 dark:text-gray-300">start/end times</span> per line (JSON).
+            </p>
+            <ModelSelect
+              id="transcription-model-select"
+              label="Transcription model"
+              value={selectedTranscriptionModel}
+              onChange={setSelectedTranscriptionModel}
+              models={transcriptionModels}
+              loading={modelsLoading}
+              error={modelsError ?? undefined}
+              accentColor="emerald"
+            />
+            <button
+              id="generate-transcription-cues-btn"
+              type="button"
+              onClick={handleTranscribeCues}
+              disabled={!audioBase64 || !selectedTranscriptionModel || transcriptionLoading}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {transcriptionLoading ? <SpinnerIcon /> : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              {transcriptionLoading ? 'Transcribing…' : 'Generate time-based cues'}
+            </button>
+            {!audioBase64 && (
+              <p className="text-xs text-amber-600 dark:text-amber-400/90">Generate audio in Step 3 first.</p>
+            )}
+            {transcriptionError && <ErrorBanner message={transcriptionError} />}
+            {cueSegments && cueSegments.length > 0 && (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-emerald-50 dark:bg-emerald-500/10 text-left text-xs uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                        <th className="px-3 py-2 font-semibold">Start (s)</th>
+                        <th className="px-3 py-2 font-semibold">End (s)</th>
+                        <th className="px-3 py-2 font-semibold">Speaker</th>
+                        <th className="px-3 py-2 font-semibold">Text</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cueSegments.map((row, i) => (
+                        <tr key={i} className="border-t border-emerald-100 dark:border-emerald-500/20 text-gray-800 dark:text-gray-200">
+                          <td className="px-3 py-2 font-mono text-xs align-top">{typeof row.startSec === 'number' ? row.startSec.toFixed(2) : row.startSec}</td>
+                          <td className="px-3 py-2 font-mono text-xs align-top">{typeof row.endSec === 'number' ? row.endSec.toFixed(2) : row.endSec}</td>
+                          <td className="px-3 py-2 align-top whitespace-nowrap">{row.speaker}</td>
+                          <td className="px-3 py-2 align-top">{row.text}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(JSON.stringify({ segments: cueSegments }, null, 2));
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/15 text-sm transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copy JSON
+                  </button>
+                </div>
+                <details className="group">
+                  <summary className="cursor-pointer text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 transition-colors select-none">
+                    Raw JSON
+                  </summary>
+                  <pre className="mt-2 p-4 rounded-xl bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto max-h-80 overflow-y-auto">
+                    {JSON.stringify({ segments: cueSegments }, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            )}
+          </GlassCard>
+        </section>
+
       </div>
     </main>
   );
