@@ -1,6 +1,7 @@
 'use server';
 
 import { Type, type Schema } from '@google/genai';
+import { assertDevActionEnabled } from '@/app/dev/_lib/dev-only';
 import { withGeminiKey, getShuffledKeys } from '@/lib/gemini-key';
 
 // ─────────────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ type RawModel = {
 };
 
 export async function listModelsAction(): Promise<ListModelsResult> {
+  assertDevActionEnabled();
   const keys = getShuffledKeys();
   let lastError = 'No API keys configured';
 
@@ -124,6 +126,7 @@ export async function generateDialogueAction(opts: {
   textModel: string;
   targetDurationSecs?: number; // default 60
 }): Promise<GenerateDialogueResult> {
+  assertDevActionEnabled();
   const { languageLabel, accentInstruction, scenario, textModel, targetDurationSecs = 60 } = opts;
 
   // ~130 words per minute at natural conversational pace
@@ -233,6 +236,7 @@ export async function generateAudioAction(opts: {
   voice1?: string;
   voice2?: string;
 }): Promise<GenerateAudioResult> {
+  assertDevActionEnabled();
   const { lines, accentInstruction, audioModel, voice1 = 'Kore', voice2 = 'Puck' } = opts;
 
   const transcript = lines.map((l) => `${l.speaker}: ${l.text}`).join('\n');
@@ -290,6 +294,7 @@ export async function generateImageAction(opts: {
   languageLabel: string;
   imageModel: string;
 }): Promise<GenerateImageResult> {
+  assertDevActionEnabled();
   const { title, lines, languageLabel, imageModel } = opts;
 
   const summary = lines.slice(0, 4).map((l) => l.text).join(' ');
@@ -372,10 +377,39 @@ export async function transcribeAudioCuesAction(opts: {
   audioBase64: string;
   mimeType?: string;
   transcriptionModel: string;
+  originalLines?: DialogueLine[];
 }): Promise<TranscribeAudioCuesResult> {
-  const { audioBase64, mimeType = 'audio/wav', transcriptionModel } = opts;
+  assertDevActionEnabled();
+  const {
+    audioBase64,
+    mimeType = 'audio/wav',
+    transcriptionModel,
+    originalLines,
+  } = opts;
 
-  const textPrompt = `You are transcribing a two-speaker dialogue recording.
+  const hasOriginalLines = Array.isArray(originalLines) && originalLines.length > 0;
+  const originalLinesJson = hasOriginalLines
+    ? JSON.stringify(originalLines, null, 2)
+    : null;
+
+  const textPrompt = hasOriginalLines
+    ? `You are aligning a known two-speaker dialogue script to an audio recording.
+
+Use the provided script as ground truth.
+Do not paraphrase, correct, merge, split, reorder, or omit lines.
+Return exactly one segment for each script line, in the same order as the script.
+Copy each speaker label and text exactly from the script.
+
+Timing rules:
+- startSec and endSec must be in seconds from the beginning of the audio
+- decimals are allowed
+- make timings tight, but do not cut off the final spoken word of a line
+- segments must stay chronological
+- if uncertain, it is better to end a cue slightly late than slightly early
+
+Provided script:
+${originalLinesJson}`
+    : `You are transcribing a two-speaker dialogue recording.
 Listen to the audio and produce a transcript split into time-aligned segments.
 Use speaker labels "Speaker1" and "Speaker2" to match the two voices.
 Each segment must have accurate startSec and endSec in seconds (decimals allowed) from the beginning of the file.
@@ -416,7 +450,24 @@ Order segments chronologically and cover all spoken content.`;
       return { success: false, error: 'Transcription response missing a valid "segments" array.' };
     }
 
-    return { success: true, cues: { segments: parsed.segments } };
+    const normalizedSegments = parsed.segments.map((segment) => ({
+      startSec: typeof segment.startSec === 'number' ? segment.startSec : Number(segment.startSec),
+      endSec: typeof segment.endSec === 'number' ? segment.endSec : Number(segment.endSec),
+      speaker: String(segment.speaker ?? ''),
+      text: String(segment.text ?? ''),
+    }));
+
+    const cues =
+      hasOriginalLines && normalizedSegments.length === originalLines!.length
+        ? normalizedSegments.map((segment, index) => ({
+            startSec: segment.startSec,
+            endSec: segment.endSec,
+            speaker: originalLines![index].speaker,
+            text: originalLines![index].text,
+          }))
+        : normalizedSegments;
+
+    return { success: true, cues: { segments: cues } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {

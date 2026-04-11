@@ -428,11 +428,12 @@ export default function GeminiTestPage() {
       audioBase64,
       mimeType: 'audio/wav',
       transcriptionModel: selectedTranscriptionModel,
+      originalLines: dialogueLines,
     });
     setTranscriptionLoading(false);
     if (res.success) setCueSegments(res.cues.segments);
     else setTranscriptionError(res.error);
-  }, [audioBase64, selectedTranscriptionModel]);
+  }, [audioBase64, dialogueLines, selectedTranscriptionModel]);
 
   /** Hidden element for segment playback (separate from Step 3 visible player). */
   const cuePlaybackAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -448,15 +449,25 @@ export default function GeminiTestPage() {
   }, []);
 
   const playCueSegment = useCallback(
-    (index: number, startSec: unknown, endSec: unknown) => {
+    (index: number) => {
       const el = cuePlaybackAudioRef.current;
-      if (!el || !audioBase64) return;
+      const row = cueSegments?.[index];
+      if (!el || !audioBase64 || !row) return;
 
-      const start = typeof startSec === 'number' ? startSec : parseFloat(String(startSec));
-      const end = typeof endSec === 'number' ? endSec : parseFloat(String(endSec));
+      const start = typeof row.startSec === 'number' ? row.startSec : parseFloat(String(row.startSec));
+      const end = typeof row.endSec === 'number' ? row.endSec : parseFloat(String(row.endSec));
       if (!Number.isFinite(start) || !Number.isFinite(end)) return;
       const t0 = Math.max(0, start);
-      const t1 = Math.max(t0, end);
+      const nextRow = cueSegments?.[index + 1];
+      const nextStart = nextRow
+        ? (typeof nextRow.startSec === 'number'
+            ? nextRow.startSec
+            : parseFloat(String(nextRow.startSec)))
+        : Number.NaN;
+      const fallbackTailPaddingSec = 0.18;
+      const stopAtSec = Number.isFinite(nextStart)
+        ? Math.max(t0, nextStart)
+        : Math.max(t0, end + fallbackTailPaddingSec);
 
       if (playingCueIndex === index && !el.paused) {
         stopCuePlayback();
@@ -465,25 +476,33 @@ export default function GeminiTestPage() {
 
       stopCuePlayback();
 
-      const onTimeUpdate = () => {
-        if (el.currentTime >= t1 - 0.03) {
+      let frameId = 0;
+      const onAnimationFrame = () => {
+        if (el.ended || (el.paused && el.currentTime > t0 + 0.01) || el.currentTime >= stopAtSec - 0.005) {
           el.pause();
           stopCuePlayback();
+          return;
         }
+        frameId = window.requestAnimationFrame(onAnimationFrame);
       };
 
       cuePlaybackCleanupRef.current = () => {
-        el.removeEventListener('timeupdate', onTimeUpdate);
+        if (frameId) {
+          window.cancelAnimationFrame(frameId);
+        }
       };
 
-      el.addEventListener('timeupdate', onTimeUpdate);
       setPlayingCueIndex(index);
       el.currentTime = t0;
-      void el.play().catch(() => {
-        stopCuePlayback();
-      });
+      void el.play()
+        .then(() => {
+          frameId = window.requestAnimationFrame(onAnimationFrame);
+        })
+        .catch(() => {
+          stopCuePlayback();
+        });
     },
-    [audioBase64, playingCueIndex, stopCuePlayback],
+    [audioBase64, cueSegments, playingCueIndex, stopCuePlayback],
   );
 
   useEffect(() => {
@@ -815,7 +834,7 @@ export default function GeminiTestPage() {
                             <td className="px-2 py-2 align-top">
                               <button
                                 type="button"
-                                onClick={() => playCueSegment(i, row.startSec, row.endSec)}
+                                onClick={() => playCueSegment(i)}
                                 title={playingCueIndex === i ? 'Pause' : 'Play this cue only'}
                                 aria-label={playingCueIndex === i ? `Pause cue ${i + 1}` : `Play cue ${i + 1} only`}
                                 className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border text-xs transition-all ${

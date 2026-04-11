@@ -37,12 +37,13 @@ If Step 3 audio is missing, Step 4 explains that you need audio first.
 
 - **Server action:** `transcribeAudioCuesAction` in `src/app/dev/gemini/actions.ts`.
 - The WAV is sent as **`inlineData`** (base64) with MIME type `audio/wav` (default).
+- When Step 2 dialogue lines are available, the action also sends the original script as ground truth and asks Gemini to align those exact lines to the audio instead of freely retranscribing.
 - The request uses **`generateContent`** with:
   - `responseMimeType: application/json`
   - A **response schema** requiring `{ "segments": [ … ] }` with the fields above.
 - Keys are rotated via `withGeminiKey` like other Gemini calls on this page.
 
-This follows Google’s **audio-in → structured JSON-out** pattern (see [Audio understanding](https://ai.google.dev/gemini-api/docs/audio)). We do **not** depend on Vertex-only flags for timestamp injection; timing comes from the model plus the schema and prompt.
+This follows Google’s **audio-in → structured JSON-out** pattern (see [Audio understanding](https://ai.google.dev/gemini-api/docs/audio)). We do **not** depend on Vertex-only flags for timestamp injection; timing still comes from the model plus the schema and prompt. Sending the original dialogue usually improves cue boundary quality, but the timings should still be treated as approximate rather than frame-accurate.
 
 ## Payload limits
 
@@ -56,7 +57,7 @@ If the API returns quota or rate errors, the UI surfaces a short message suggest
 
 To reuse the same behavior outside this page:
 
-1. Call `transcribeAudioCuesAction` with `{ audioBase64, mimeType?, transcriptionModel }`.
+1. Call `transcribeAudioCuesAction` with `{ audioBase64, mimeType?, transcriptionModel, originalLines? }`.
 2. Ensure the model ID is a **multimodal** Gemini model that supports **audio input** and `generateContent` (the dev page lists these under “Transcription model”).
 
-For arbitrary files, convert to a supported MIME (e.g. WAV/MP3 per Gemini docs) and pass matching `mimeType` if not WAV.
+If you already know the script, pass `originalLines` so Gemini aligns the known dialogue instead of freely retranscribing it. For arbitrary files, convert to a supported MIME (e.g. WAV/MP3 per Gemini docs) and pass matching `mimeType` if not WAV.

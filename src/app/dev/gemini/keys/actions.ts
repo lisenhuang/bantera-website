@@ -1,5 +1,6 @@
 'use server';
 
+import { assertDevActionEnabled } from '@/app/dev/_lib/dev-only';
 import { parseKeys } from '@/lib/gemini-key';
 
 export type KeyTestResult = {
@@ -15,6 +16,7 @@ export type TestAllKeysResult =
   | { success: false; error: string };
 
 export async function testAllKeysAction(): Promise<TestAllKeysResult> {
+  assertDevActionEnabled();
   const keys = parseKeys();
 
   if (keys.length === 0) {

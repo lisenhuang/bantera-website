@@ -1,5 +1,7 @@
 'use server';
 
+import { assertDevActionEnabled } from '@/app/dev/_lib/dev-only';
+
 // ── Types ─────────────────────────────────────────────────────────
 export type CfModel = {
   id: string;        // e.g. "@cf/black-forest-labs/flux-1-schnell"
@@ -27,6 +29,7 @@ function getCreds(): { accountId: string; apiToken: string } | null {
 
 // ── List available text-to-image models ───────────────────────────
 export async function listModelsAction(): Promise<ListModelsResult> {
+  assertDevActionEnabled();
   const creds = getCreds();
   if (!creds) {
     return { success: false, error: 'Missing CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN in .env.local' };
@@ -71,6 +74,7 @@ export async function generateImageAction(opts: {
   width?: number;
   height?: number;
 }): Promise<GenerateResult> {
+  assertDevActionEnabled();
   const { prompt, negativePrompt, model, steps = 20, width = 1024, height = 1024 } = opts;
 
   const creds = getCreds();
