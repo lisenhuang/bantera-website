@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { Suspense, useEffect, useState, useTransition } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { BANTERA_LANGUAGE_OPTIONS } from '@/lib/bantera-api';
@@ -104,7 +104,7 @@ function SortHeader({ colKey, label, currentSort, currentDir }: {
   );
 }
 
-export default function VideosPage() {
+function VideosContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -306,5 +306,13 @@ export default function VideosPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function VideosPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-gray-400">Loading…</div>}>
+      <VideosContent />
+    </Suspense>
   );
 }

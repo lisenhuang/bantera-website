@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { Suspense, useEffect, useState, useTransition } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import type { AdminUserListItem, AdminPagedResult } from '@/lib/dashboard-api';
@@ -84,7 +84,7 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export default function UsersPage() {
+function UsersContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -265,5 +265,13 @@ export default function UsersPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function UsersPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-gray-400">Loading…</div>}>
+      <UsersContent />
+    </Suspense>
   );
 }
