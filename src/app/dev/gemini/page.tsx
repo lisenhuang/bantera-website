@@ -11,6 +11,18 @@ import {
   type TranscriptionCueSegment,
 } from './actions';
 
+const OPENAI_TRANSCRIPTION_MODELS = [
+  'gpt-4o-transcribe',
+  'gpt-4o-mini-transcribe',
+  'whisper-1',
+] as const;
+
+type CueResult = {
+  model: string;
+  provider: 'gemini' | 'openai';
+  segments: TranscriptionCueSegment[];
+};
+
 // ─────────────────── Language options (unified) ───────────────────
 type LangOption = {
   value: string;
@@ -280,10 +292,14 @@ export default function GeminiTestPage() {
   const [imageLoading,  setImageLoading]  = useState(false);
   const [imageError,    setImageError]    = useState<string | null>(null);
 
-  // Step 5 – Time-based transcription cues
-  const [cueSegments, setCueSegments] = useState<TranscriptionCueSegment[] | null>(null);
+  // Step 4 – Time-based transcription cues (accumulated; newest first)
+  const [cueResults, setCueResults] = useState<CueResult[]>([]);
   const [transcriptionLoading, setTranscriptionLoading] = useState(false);
   const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
+  const [transcriptionProvider, setTranscriptionProvider] = useState<'gemini' | 'openai'>('gemini');
+  const [selectedOpenAITranscriptionModel, setSelectedOpenAITranscriptionModel] = useState<string>(OPENAI_TRANSCRIPTION_MODELS[0]);
+  /** Which (resultIndex, segIndex) is currently playing. */
+  const [playingCue, setPlayingCue] = useState<{ resultIndex: number; segIndex: number } | null>(null);
 
   const step1Done = !!(selectedTextModel && selectedAudioModel && selectedImageModel);
   const step2Done = dialogueLines.length > 0;
@@ -338,16 +354,24 @@ export default function GeminiTestPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         langValue, voice1, voice2, durationSecs, theme,
         selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel,
+        transcriptionProvider, selectedOpenAITranscriptionModel,
       }));
     } catch { /* quota exceeded etc */ }
-  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel]);
+  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel, transcriptionProvider, selectedOpenAITranscriptionModel]);
 
   // 3. Fetch models; restore saved model selections
   useEffect(() => {
     (async () => {
       setModelsLoading(true);
       setModelsError(null);
-      const res = await listModelsAction();
+      let res: Awaited<ReturnType<typeof listModelsAction>>;
+      try {
+        res = await listModelsAction();
+      } catch (err: unknown) {
+        setModelsLoading(false);
+        setModelsError(err instanceof Error ? err.message : String(err));
+        return;
+      }
       setModelsLoading(false);
       if (!res.success) { setModelsError(res.error); return; }
       setTextModels(res.textModels);
@@ -365,6 +389,12 @@ export default function GeminiTestPage() {
             ? saved.selectedTranscriptionModel
             : res.transcriptionModels[0] ?? '',
         );
+        if (saved.transcriptionProvider === 'openai' || saved.transcriptionProvider === 'gemini') {
+          setTranscriptionProvider(saved.transcriptionProvider);
+        }
+        if (saved.selectedOpenAITranscriptionModel && (OPENAI_TRANSCRIPTION_MODELS as readonly string[]).includes(saved.selectedOpenAITranscriptionModel)) {
+          setSelectedOpenAITranscriptionModel(saved.selectedOpenAITranscriptionModel);
+        }
       } catch {
         if (res.textModels[0])  setSelectedTextModel(res.textModels[0]);
         if (res.audioModels[0]) setSelectedAudioModel(res.audioModels[0]);
@@ -384,7 +414,7 @@ export default function GeminiTestPage() {
     setDialogueTitle('');
     setAudioBase64(null);
     setImageBase64(null);
-    setCueSegments(null);
+    setCueResults([]);
     setTranscriptionError(null);
     const res = await generateDialogueAction({
       languageLabel: currentLang.label.replace(/^.+?\s/, ''),
@@ -403,7 +433,7 @@ export default function GeminiTestPage() {
   const handleGenerateAudio = useCallback(async () => {
     if (!step2Done) return;
     setAudioLoading(true); setAudioError(null); setAudioBase64(null);
-    setCueSegments(null); setTranscriptionError(null);
+    setCueResults([]); setTranscriptionError(null);
     const res = await generateAudioAction({ lines: dialogueLines, accentInstruction: currentLang.accentInstruction, audioModel: selectedAudioModel, voice1, voice2 });
     setAudioLoading(false);
     if (res.success) setAudioBase64(res.audioBase64);
@@ -421,92 +451,81 @@ export default function GeminiTestPage() {
   }, [dialogueTitle, dialogueLines, currentLang, selectedImageModel, step2Done]);
 
   const handleTranscribeCues = useCallback(async () => {
-    if (!audioBase64 || !selectedTranscriptionModel) return;
+    const model = transcriptionProvider === 'openai' ? selectedOpenAITranscriptionModel : selectedTranscriptionModel;
+    if (!audioBase64 || !model) return;
     setTranscriptionLoading(true);
     setTranscriptionError(null);
     const res = await transcribeAudioCuesAction({
       audioBase64,
       mimeType: 'audio/wav',
-      transcriptionModel: selectedTranscriptionModel,
+      transcriptionModel: model,
       originalLines: dialogueLines,
+      provider: transcriptionProvider,
     });
     setTranscriptionLoading(false);
-    if (res.success) setCueSegments(res.cues.segments);
-    else setTranscriptionError(res.error);
-  }, [audioBase64, dialogueLines, selectedTranscriptionModel]);
+    if (res.success) {
+      setCueResults((prev) => [{ model, provider: transcriptionProvider, segments: res.cues.segments }, ...prev]);
+    } else {
+      setTranscriptionError(res.error);
+    }
+  }, [audioBase64, dialogueLines, transcriptionProvider, selectedTranscriptionModel, selectedOpenAITranscriptionModel]);
 
   /** Hidden element for segment playback (separate from Step 3 visible player). */
   const cuePlaybackAudioRef = useRef<HTMLAudioElement | null>(null);
   const cuePlaybackCleanupRef = useRef<(() => void) | null>(null);
-  const [playingCueIndex, setPlayingCueIndex] = useState<number | null>(null);
 
   const stopCuePlayback = useCallback(() => {
     cuePlaybackCleanupRef.current?.();
     cuePlaybackCleanupRef.current = null;
     const el = cuePlaybackAudioRef.current;
     if (el) el.pause();
-    setPlayingCueIndex(null);
+    setPlayingCue(null);
   }, []);
 
   const playCueSegment = useCallback(
-    (index: number) => {
+    (resultIndex: number, segIndex: number) => {
       const el = cuePlaybackAudioRef.current;
-      const row = cueSegments?.[index];
+      const segments = cueResults[resultIndex]?.segments;
+      const row = segments?.[segIndex];
       if (!el || !audioBase64 || !row) return;
 
       const start = typeof row.startSec === 'number' ? row.startSec : parseFloat(String(row.startSec));
-      const end = typeof row.endSec === 'number' ? row.endSec : parseFloat(String(row.endSec));
+      const end   = typeof row.endSec   === 'number' ? row.endSec   : parseFloat(String(row.endSec));
       if (!Number.isFinite(start) || !Number.isFinite(end)) return;
       const t0 = Math.max(0, start);
-      const nextRow = cueSegments?.[index + 1];
+      const nextRow = segments?.[segIndex + 1];
       const nextStart = nextRow
-        ? (typeof nextRow.startSec === 'number'
-            ? nextRow.startSec
-            : parseFloat(String(nextRow.startSec)))
+        ? (typeof nextRow.startSec === 'number' ? nextRow.startSec : parseFloat(String(nextRow.startSec)))
         : Number.NaN;
-      const fallbackTailPaddingSec = 0.18;
       const stopAtSec = Number.isFinite(nextStart)
         ? Math.max(t0, nextStart)
-        : Math.max(t0, end + fallbackTailPaddingSec);
+        : Math.max(t0, end + 0.18);
 
-      if (playingCueIndex === index && !el.paused) {
-        stopCuePlayback();
-        return;
-      }
+      const isPlaying = playingCue?.resultIndex === resultIndex && playingCue?.segIndex === segIndex && !el.paused;
+      if (isPlaying) { stopCuePlayback(); return; }
 
       stopCuePlayback();
 
       let frameId = 0;
       const onAnimationFrame = () => {
         if (el.ended || (el.paused && el.currentTime > t0 + 0.01) || el.currentTime >= stopAtSec - 0.005) {
-          el.pause();
-          stopCuePlayback();
-          return;
+          el.pause(); stopCuePlayback(); return;
         }
         frameId = window.requestAnimationFrame(onAnimationFrame);
       };
+      cuePlaybackCleanupRef.current = () => { if (frameId) window.cancelAnimationFrame(frameId); };
 
-      cuePlaybackCleanupRef.current = () => {
-        if (frameId) {
-          window.cancelAnimationFrame(frameId);
-        }
-      };
-
-      setPlayingCueIndex(index);
+      setPlayingCue({ resultIndex, segIndex });
       el.currentTime = t0;
       void el.play()
-        .then(() => {
-          frameId = window.requestAnimationFrame(onAnimationFrame);
-        })
-        .catch(() => {
-          stopCuePlayback();
-        });
+        .then(() => { frameId = window.requestAnimationFrame(onAnimationFrame); })
+        .catch(() => { stopCuePlayback(); });
     },
-    [audioBase64, cueSegments, playingCueIndex, stopCuePlayback],
+    [audioBase64, cueResults, playingCue, stopCuePlayback],
   );
 
   useEffect(() => {
-    if (!audioBase64) stopCuePlayback();
+    if (!audioBase64) { stopCuePlayback(); setCueResults([]); }
   }, [audioBase64, stopCuePlayback]);
 
   useEffect(() => {
@@ -769,30 +788,75 @@ export default function GeminiTestPage() {
             <div className="flex items-center gap-3">
               <StepBadge
                 num={4}
-                active={!!audioBase64 && !cueSegments?.length && !transcriptionLoading}
-                done={!!cueSegments && cueSegments.length > 0}
+                active={!!audioBase64 && cueResults.length === 0 && !transcriptionLoading}
+                done={cueResults.length > 0}
               />
               <h2 className="text-lg font-semibold">Time-based transcription cues</h2>
             </div>
             <GlassCard className="space-y-4">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Sends the Step 3 audio to Gemini for transcription with <span className="font-medium text-gray-700 dark:text-gray-300">start/end times</span> per line (JSON).
+                Sends the Step 3 audio for transcription with <span className="font-medium text-gray-700 dark:text-gray-300">start/end times</span> per line (JSON). Each run is added above the previous.
               </p>
-              <ModelSelect
-                id="transcription-model-select"
-                label="Transcription model"
-                value={selectedTranscriptionModel}
-                onChange={setSelectedTranscriptionModel}
-                models={transcriptionModels}
-                loading={modelsLoading}
-                error={modelsError ?? undefined}
-                accentColor="emerald"
-              />
+
+              {/* Provider toggle */}
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Transcription provider</p>
+                <div className="flex gap-2">
+                  {(['gemini', 'openai'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setTranscriptionProvider(p)}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                        transcriptionProvider === p
+                          ? 'bg-emerald-600/20 dark:bg-emerald-600/30 border-emerald-500/60 text-emerald-700 dark:text-emerald-200 shadow-sm'
+                          : 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-emerald-400 dark:hover:border-emerald-500/50'
+                      }`}
+                    >
+                      {p === 'gemini' ? '✦ Gemini' : '⬡ OpenAI'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Model selector — changes based on provider */}
+              {transcriptionProvider === 'gemini' ? (
+                <ModelSelect
+                  id="transcription-model-select"
+                  label="Gemini transcription model"
+                  value={selectedTranscriptionModel}
+                  onChange={setSelectedTranscriptionModel}
+                  models={transcriptionModels}
+                  loading={modelsLoading}
+                  error={modelsError ?? undefined}
+                  accentColor="emerald"
+                />
+              ) : (
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" htmlFor="openai-transcription-model-select">
+                    OpenAI transcription model
+                  </label>
+                  <select
+                    id="openai-transcription-model-select"
+                    value={selectedOpenAITranscriptionModel}
+                    onChange={(e) => setSelectedOpenAITranscriptionModel(e.target.value)}
+                    className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 transition-all"
+                  >
+                    {OPENAI_TRANSCRIPTION_MODELS.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                    Uses OpenAI Whisper — timestamps aligned to original script lines.
+                  </p>
+                </div>
+              )}
+
               <button
                 id="generate-transcription-cues-btn"
                 type="button"
                 onClick={handleTranscribeCues}
-                disabled={!audioBase64 || !selectedTranscriptionModel || transcriptionLoading}
+                disabled={!audioBase64 || (transcriptionProvider === 'gemini' ? !selectedTranscriptionModel : !selectedOpenAITranscriptionModel) || transcriptionLoading}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {transcriptionLoading ? <SpinnerIcon /> : (
@@ -815,59 +879,86 @@ export default function GeminiTestPage() {
                   aria-hidden="true"
                 />
               )}
-              {cueSegments && cueSegments.length > 0 && (
-                <div className="space-y-4">
+
+              {/* Accumulated cue result tables — newest first */}
+              {cueResults.map((result, rIdx) => (
+                <div key={rIdx} className="space-y-3 pt-2 border-t border-gray-100 dark:border-white/10">
+                  {/* Model label */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                      result.provider === 'openai'
+                        ? 'bg-green-50 dark:bg-green-500/10 border-green-300 dark:border-green-500/30 text-green-700 dark:text-green-300'
+                        : 'bg-violet-50 dark:bg-violet-500/10 border-violet-300 dark:border-violet-500/30 text-violet-700 dark:text-violet-300'
+                    }`}>
+                      {result.provider === 'openai' ? '⬡' : '✦'} {result.model.replace('models/', '')}
+                    </span>
+                    {rIdx === 0 && (
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Latest</span>
+                    )}
+                  </div>
+
                   <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 overflow-x-auto">
                     <table className="w-full text-sm min-w-[28rem]">
                       <thead>
                         <tr className="bg-emerald-50 dark:bg-emerald-500/10 text-left text-xs uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
                           <th className="px-2 py-2 font-semibold w-14 shrink-0">Play</th>
-                          <th className="px-3 py-2 font-semibold">Start (s)</th>
-                          <th className="px-3 py-2 font-semibold">End (s)</th>
+                          <th className="px-3 py-2 font-semibold">Start (ms)</th>
+                          <th className="px-3 py-2 font-semibold">End (ms)</th>
                           <th className="px-3 py-2 font-semibold">Speaker</th>
                           <th className="px-3 py-2 font-semibold">Text</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {cueSegments.map((row, i) => (
-                          <tr key={i} className="border-t border-emerald-100 dark:border-emerald-500/20 text-gray-800 dark:text-gray-200">
-                            <td className="px-2 py-2 align-top">
-                              <button
-                                type="button"
-                                onClick={() => playCueSegment(i)}
-                                title={playingCueIndex === i ? 'Pause' : 'Play this cue only'}
-                                aria-label={playingCueIndex === i ? `Pause cue ${i + 1}` : `Play cue ${i + 1} only`}
-                                className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border text-xs transition-all ${
-                                  playingCueIndex === i
-                                    ? 'border-emerald-500 bg-emerald-500/20 text-emerald-800 dark:text-emerald-100'
-                                    : 'border-emerald-300 dark:border-emerald-500/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/15'
-                                }`}
-                              >
-                                {playingCueIndex === i ? (
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                    <path d="M8 5v14l11-7z" />
-                                  </svg>
-                                )}
-                              </button>
-                            </td>
-                            <td className="px-3 py-2 font-mono text-xs align-top">{typeof row.startSec === 'number' ? row.startSec.toFixed(2) : row.startSec}</td>
-                            <td className="px-3 py-2 font-mono text-xs align-top">{typeof row.endSec === 'number' ? row.endSec.toFixed(2) : row.endSec}</td>
-                            <td className="px-3 py-2 align-top whitespace-nowrap">{row.speaker}</td>
-                            <td className="px-3 py-2 align-top">{row.text}</td>
-                          </tr>
-                        ))}
+                        {result.segments.map((row, sIdx) => {
+                          const isPlaying = playingCue?.resultIndex === rIdx && playingCue?.segIndex === sIdx;
+                          return (
+                            <tr key={sIdx} className="border-t border-emerald-100 dark:border-emerald-500/20 text-gray-800 dark:text-gray-200">
+                              <td className="px-2 py-2 align-top">
+                                <button
+                                  type="button"
+                                  onClick={() => playCueSegment(rIdx, sIdx)}
+                                  title={isPlaying ? 'Pause' : 'Play this cue only'}
+                                  aria-label={isPlaying ? `Pause cue ${sIdx + 1}` : `Play cue ${sIdx + 1} only`}
+                                  className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border text-xs transition-all ${
+                                    isPlaying
+                                      ? 'border-emerald-500 bg-emerald-500/20 text-emerald-800 dark:text-emerald-100'
+                                      : 'border-emerald-300 dark:border-emerald-500/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/15'
+                                  }`}
+                                >
+                                  {isPlaying ? (
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                      <path d="M8 5v14l11-7z" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </td>
+                              <td className="px-3 py-2 font-mono text-xs align-top">{Math.round((typeof row.startSec === 'number' ? row.startSec : parseFloat(String(row.startSec))) * 1000)}</td>
+                              <td className="px-3 py-2 font-mono text-xs align-top">{Math.round((typeof row.endSec === 'number' ? row.endSec : parseFloat(String(row.endSec))) * 1000)}</td>
+                              <td className="px-3 py-2 align-top whitespace-nowrap">{row.speaker}</td>
+                              <td className="px-3 py-2 align-top">{row.text}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
+
                   <div className="flex flex-wrap gap-2 items-center">
                     <button
                       type="button"
                       onClick={() => {
-                        void navigator.clipboard.writeText(JSON.stringify({ segments: cueSegments }, null, 2));
+                        void navigator.clipboard.writeText(JSON.stringify({
+                          segments: result.segments.map((s) => ({
+                            startMs: Math.round(s.startSec * 1000),
+                            endMs: Math.round(s.endSec * 1000),
+                            speaker: s.speaker,
+                            text: s.text,
+                          })),
+                        }, null, 2));
                       }}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/15 text-sm transition-all"
                     >
@@ -877,16 +968,24 @@ export default function GeminiTestPage() {
                       Copy JSON
                     </button>
                   </div>
+
                   <details className="group">
                     <summary className="cursor-pointer text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 transition-colors select-none">
                       Raw JSON
                     </summary>
                     <pre className="mt-2 p-4 rounded-xl bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto max-h-80 overflow-y-auto">
-                      {JSON.stringify({ segments: cueSegments }, null, 2)}
+                      {JSON.stringify({
+                        segments: result.segments.map((s) => ({
+                          startMs: Math.round(s.startSec * 1000),
+                          endMs: Math.round(s.endSec * 1000),
+                          speaker: s.speaker,
+                          text: s.text,
+                        })),
+                      }, null, 2)}
                     </pre>
                   </details>
                 </div>
-              )}
+              ))}
             </GlassCard>
           </section>
 

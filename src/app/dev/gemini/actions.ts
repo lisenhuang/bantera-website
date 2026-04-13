@@ -4,6 +4,7 @@ import { Type, type Schema } from '@google/genai';
 import { assertDevActionEnabled } from '@/app/dev/_lib/dev-only';
 import { withGeminiKey, getShuffledKeys } from '@/lib/gemini-key';
 
+
 // ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
@@ -373,11 +374,127 @@ const TRANSCRIPTION_CUES_SCHEMA: Schema = {
   required: ['segments'],
 };
 
+// ─────────────────────────────────────────────────────────────
+// OpenAI transcription helper
+// ─────────────────────────────────────────────────────────────
+
+/** Parse duration from a WAV base64 string using the PCM header. */
+function getWavDurationSec(base64: string): number {
+  try {
+    const buf = Buffer.from(base64, 'base64');
+    if (buf.length < 44) return 0;
+    const sampleRate    = buf.readUInt32LE(24);
+    const channels      = buf.readUInt16LE(22);
+    const bitsPerSample = buf.readUInt16LE(34);
+    const dataSize      = buf.readUInt32LE(40);
+    const bytesPerSec   = sampleRate * channels * (bitsPerSample / 8);
+    return bytesPerSec > 0 ? dataSize / bytesPerSec : 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function transcribeWithOpenAI(opts: {
+  audioBase64: string;
+  mimeType: string;
+  model: string;
+  originalLines?: DialogueLine[];
+}): Promise<TranscribeAudioCuesResult> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return { success: false, error: 'OPENAI_API_KEY is not configured on the server.' };
+
+  const buffer = Buffer.from(opts.audioBase64, 'base64');
+  const blob = new Blob([buffer], { type: opts.mimeType });
+
+  // Only whisper-1 supports verbose_json + timestamp_granularities.
+  // gpt-4o-transcribe / gpt-4o-mini-transcribe only accept 'json' or 'text'.
+  const isWhisper = opts.model === 'whisper-1';
+
+  const form = new FormData();
+  form.append('file', blob, 'audio.wav');
+  form.append('model', opts.model);
+  if (isWhisper) {
+    form.append('response_format', 'verbose_json');
+    form.append('timestamp_granularities[]', 'segment');
+  } else {
+    form.append('response_format', 'json');
+  }
+
+  let res: Response;
+  try {
+    res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+  } catch (err: unknown) {
+    return { success: false, error: `Network error calling OpenAI: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '(no body)');
+    return { success: false, error: `OpenAI API error ${res.status}: ${body}` };
+  }
+
+  const hasOriginalLines = Array.isArray(opts.originalLines) && opts.originalLines.length > 0;
+  let cues: TranscriptionCueSegment[];
+
+  if (isWhisper) {
+    // verbose_json → actual segment timestamps
+    const data = (await res.json()) as {
+      segments?: Array<{ start: number; end: number; text: string }>;
+    };
+    const rawSegments = data.segments ?? [];
+    if (rawSegments.length === 0) {
+      return { success: false, error: 'OpenAI Whisper returned no segments. The audio may be too short or silent.' };
+    }
+
+    if (hasOriginalLines && opts.originalLines) {
+      const M = rawSegments.length;
+      const N = opts.originalLines.length;
+      cues = opts.originalLines.map((line, i) => {
+        const startIdx = Math.floor((i * M) / N);
+        const endIdx   = Math.max(startIdx, Math.min(Math.floor(((i + 1) * M) / N) - 1, M - 1));
+        return { startSec: rawSegments[startIdx].start, endSec: rawSegments[endIdx].end, speaker: line.speaker, text: line.text };
+      });
+    } else {
+      cues = rawSegments.map((seg, i) => ({
+        startSec: seg.start, endSec: seg.end,
+        speaker: i % 2 === 0 ? 'Speaker1' : 'Speaker2',
+        text: seg.text.trim(),
+      }));
+    }
+  } else {
+    // gpt-4o-transcribe / gpt-4o-mini-transcribe: json only, no segment timestamps.
+    // Estimate timing proportionally from WAV duration + word counts.
+    const data = (await res.json()) as { text?: string };
+    const totalDuration = getWavDurationSec(opts.audioBase64);
+
+    if (hasOriginalLines && opts.originalLines && totalDuration > 0) {
+      const allWords = opts.originalLines.reduce((acc, l) => acc + l.text.split(/\s+/).length, 0);
+      let cumWords = 0;
+      cues = opts.originalLines.map((line) => {
+        const lineWords = line.text.split(/\s+/).length;
+        const startSec  = (cumWords / allWords) * totalDuration;
+        cumWords += lineWords;
+        const endSec = (cumWords / allWords) * totalDuration;
+        return { startSec: +startSec.toFixed(2), endSec: +endSec.toFixed(2), speaker: line.speaker, text: line.text };
+      });
+    } else {
+      cues = [{ startSec: 0, endSec: totalDuration || 0, speaker: 'Speaker1', text: data.text?.trim() ?? '' }];
+    }
+  }
+
+  return { success: true, cues: { segments: cues } };
+}
+
 export async function transcribeAudioCuesAction(opts: {
   audioBase64: string;
   mimeType?: string;
   transcriptionModel: string;
   originalLines?: DialogueLine[];
+  /** 'gemini' (default) or 'openai' */
+  provider?: 'gemini' | 'openai';
 }): Promise<TranscribeAudioCuesResult> {
   assertDevActionEnabled();
   const {
@@ -385,7 +502,13 @@ export async function transcribeAudioCuesAction(opts: {
     mimeType = 'audio/wav',
     transcriptionModel,
     originalLines,
+    provider = 'gemini',
   } = opts;
+
+  // ── OpenAI branch ──
+  if (provider === 'openai') {
+    return transcribeWithOpenAI({ audioBase64, mimeType, model: transcriptionModel, originalLines });
+  }
 
   const hasOriginalLines = Array.isArray(originalLines) && originalLines.length > 0;
   const originalLinesJson = hasOriginalLines
