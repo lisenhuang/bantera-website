@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { QRCodeSVG } from 'qrcode.react';
 
 export const metadata: Metadata = {
   title: 'Bantera — Learn Languages Through Real Conversation',
@@ -78,8 +79,8 @@ export default function HomePage() {
       <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-xl font-black tracking-tight text-gray-900 dark:text-white">Bantera</span>
-          <span className="ml-2 hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30">
-            Coming soon
+          <span className="ml-2 hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30">
+            Available on iOS
           </span>
         </div>
       </nav>
@@ -125,6 +126,34 @@ export default function HomePage() {
             not flashcards or grammar drills. Listen, repeat, record, and exchange with
             native speakers who are learning your language.
           </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4">
+            <Link
+              href="https://apps.apple.com/app/id6761799720"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-white text-gray-900 font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_rgba(255,255,255,0.3)]"
+            >
+              <svg viewBox="0 0 384 512" className="w-6 h-6 fill-current"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+              Download on the App Store
+            </Link>
+            
+            <div className="hidden sm:flex flex-col items-center p-2 bg-white rounded-2xl shadow-lg border border-white/20">
+              <QRCodeSVG 
+                value="https://apps.apple.com/app/id6761799720" 
+                size={90} 
+                className="rounded-lg"
+                imageSettings={{
+                  src: "/icon.png",
+                  x: undefined,
+                  y: undefined,
+                  height: 24,
+                  width: 24,
+                  excavate: true,
+                }}
+              />
+            </div>
+          </div>
 
         </div>
       </section>
@@ -325,23 +354,50 @@ export default function HomePage() {
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────────── */}
-      <section className="py-28 px-6 bg-white dark:bg-gray-950 text-center">
-        <div className="max-w-2xl mx-auto space-y-8">
+      <section className="py-28 px-6 bg-white dark:bg-gray-950 text-center flex flex-col items-center">
+        <div className="max-w-2xl mx-auto space-y-8 mb-8">
           <h2 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white">
             Ready to actually
             <br />
             <span className="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">start speaking?</span>
           </h2>
           <p className="text-gray-500 dark:text-gray-400 text-lg">
-            Bantera is launching soon.
+            Download Bantera today.
           </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-4">
+          <Link
+            href="https://apps.apple.com/app/id6761799720"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-lg hover:scale-105 transition-transform shadow-xl"
+          >
+            <svg viewBox="0 0 384 512" className="w-6 h-6 fill-current"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+            Download on the App Store
+          </Link>
+          <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm border border-gray-100">
+            <QRCodeSVG 
+              value="https://apps.apple.com/app/id6761799720" 
+              size={100} 
+              className="rounded-lg"
+              imageSettings={{
+                src: "/icon.png",
+                x: undefined,
+                y: undefined,
+                height: 24,
+                width: 24,
+                excavate: true,
+              }}
+            />
+            <span className="text-xs font-semibold text-gray-400 mt-2">Scan to download</span>
+          </div>
         </div>
       </section>
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="py-10 px-6 bg-gray-950 border-t border-white/5 text-center space-y-4">
         <p className="text-gray-600 text-sm">
-          <span className="font-bold text-gray-400">Bantera</span> · Audio-first language learning · Coming soon
+          <span className="font-bold text-gray-400">Bantera</span> · Audio-first language learning · Available on iOS
         </p>
         <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
           <Link
