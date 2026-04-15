@@ -1093,8 +1093,8 @@ export async function transcribeAudioCuesAction(opts: {
   provider?: 'gemini' | 'openai' | 'assemblyai' | 'cloudflare' | 'revai' | 'speechmatics';
   /** AssemblyAI speech model — 'universal-2' (default) or 'universal-3-pro' */
   assemblyAiSpeechModel?: string;
-  /** BCP-47 language tag (e.g. 'en-US', 'zh', 'ja') — used by Rev.ai */
   language?: string;
+  includeScript?: boolean;
 }): Promise<TranscribeAudioCuesResult> {
   assertDevActionEnabled();
   const {
@@ -1105,10 +1105,11 @@ export async function transcribeAudioCuesAction(opts: {
     provider = 'gemini',
     assemblyAiSpeechModel,
     language,
+    includeScript = true,
   } = opts;
 
   // Pre-split long lines (>10 words) at sentence boundaries before sending to any provider.
-  const splitLines = originalLines ? presplitLines(originalLines) : undefined;
+  const splitLines = (originalLines && includeScript) ? presplitLines(originalLines) : undefined;
 
   // ── OpenAI branch ──
   if (provider === 'openai') {

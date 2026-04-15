@@ -318,6 +318,7 @@ export default function GeminiTestPage() {
   const [cueCustomAudioBase64, setCueCustomAudioBase64] = useState<string | null>(null);
   const [cueCustomAudioMime, setCueCustomAudioMime] = useState<string>('audio/wav');
   const [cueCustomAudioName, setCueCustomAudioName] = useState<string | null>(null);
+  const [cueIncludeScript, setCueIncludeScript] = useState(true);
   const cueFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const step1Done = !!(selectedTextModel && selectedAudioModel && selectedImageModel);
@@ -387,9 +388,10 @@ export default function GeminiTestPage() {
         langValue, voice1, voice2, durationSecs, theme,
         selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel,
         transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel, selectedCloudflareModel,
+        cueIncludeScript,
       }));
     } catch { /* quota exceeded etc */ }
-  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel, transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel, selectedCloudflareModel]);
+  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel, transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel, selectedCloudflareModel, cueIncludeScript]);
 
   // 3. Fetch models; restore saved model selections
   useEffect(() => {
@@ -432,6 +434,9 @@ export default function GeminiTestPage() {
         }
         if (saved.selectedCloudflareModel && (CLOUDFLARE_WHISPER_MODELS as readonly string[]).includes(saved.selectedCloudflareModel)) {
           setSelectedCloudflareModel(saved.selectedCloudflareModel);
+        }
+        if (saved.cueIncludeScript !== undefined) {
+          setCueIncludeScript(saved.cueIncludeScript === 'true' || saved.cueIncludeScript === true);
         }
       } catch {
         if (res.textModels[0])  setSelectedTextModel(res.textModels[0]);
@@ -507,6 +512,7 @@ export default function GeminiTestPage() {
       provider: transcriptionProvider,
       assemblyAiSpeechModel: transcriptionProvider === 'assemblyai' ? selectedAssemblyAIModel : undefined,
       language: langValue,
+      includeScript: cueIncludeScript,
     });
     setTranscriptionLoading(false);
     if (res.success) {
@@ -1042,6 +1048,22 @@ export default function GeminiTestPage() {
                 )}
                 {transcriptionLoading ? 'Transcribing…' : 'Generate time-based cues'}
               </button>
+
+              {/* Include script checkbox */}
+              {dialogueLines.length > 0 && transcriptionProvider === 'gemini' && (
+                <div className="flex items-center gap-2 px-1">
+                  <input
+                    type="checkbox"
+                    id="cue-include-script-toggle"
+                    checked={cueIncludeScript}
+                    onChange={(e) => setCueIncludeScript(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 transition-all cursor-pointer"
+                  />
+                  <label htmlFor="cue-include-script-toggle" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                    Send original dialogue script to AI for alignment
+                  </label>
+                </div>
+              )}
               {!effectiveCueAudioBase64 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400/90">Generate audio in Step 3 first, or upload an audio file above.</p>
               )}
