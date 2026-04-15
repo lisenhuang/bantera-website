@@ -843,33 +843,43 @@ async function transcribeWithRevAI(opts: {
   mimeType: string;
   language?: string;  // e.g. 'en', 'zh', 'ja'
   originalLines?: DialogueLine[];
+  mode?: 'stt' | 'alignment';
 }): Promise<TranscribeAudioCuesResult> {
   const apiToken = process.env.REVAI_ACCESS_TOKEN;
   if (!apiToken) return { success: false, error: 'REVAI_ACCESS_TOKEN is not configured in .env.local' };
 
+  const mode = opts.mode ?? 'stt';
   const hasOriginalLines = Array.isArray(opts.originalLines) && opts.originalLines.length > 0;
-
-  // transcript_text: plain text of all lines joined — Rev.ai aligns each word
-  const transcriptText = hasOriginalLines && opts.originalLines
-    ? opts.originalLines.map((l) => l.text).join(' ')
-    : '';
-
-  if (!transcriptText.trim()) {
-    return { success: false, error: 'Rev.ai forced alignment requires dialogue lines (transcript text).' };
-  }
-
-  // Rev.ai uses BCP-47 base codes; strip region suffix (en-US → en, zh → zh)
-  const revaiLang = (opts.language ?? 'en').split('-')[0];
-
-  // 1. Submit alignment job via multipart/form-data
+  let revaiLang = (opts.language ?? 'en').split('-')[0];
+  if (revaiLang === 'zh') revaiLang = 'cmn';
+  
   const buffer = Buffer.from(opts.audioBase64, 'base64');
-  const form = new FormData();
-  form.append('media', new Blob([buffer], { type: opts.mimeType }), 'audio');
-  form.append('options', new Blob([JSON.stringify({ transcript_text: transcriptText, language: revaiLang })], { type: 'application/json' }));
 
+  // 1. Submit job (Alignment or STT)
   let jobId: string;
   try {
-    const res = await fetch('https://api.rev.ai/alignment/v1/jobs', {
+    const isAlignment = mode === 'alignment';
+    const endpoint = isAlignment
+      ? 'https://api.rev.ai/alignment/v1/jobs'
+      : 'https://api.rev.ai/speechtotext/v1/jobs';
+
+    const form = new FormData();
+    form.append('media', new Blob([buffer], { type: opts.mimeType }), 'audio');
+
+    if (isAlignment) {
+      const transcriptText = hasOriginalLines && opts.originalLines
+        ? opts.originalLines.map((l) => l.text).join(' ')
+        : '';
+      if (!transcriptText.trim()) {
+        return { success: false, error: 'Rev.ai forced alignment requires dialogue lines (transcript text).' };
+      }
+      form.append('options', new Blob([JSON.stringify({ transcript_text: transcriptText, language: revaiLang })], { type: 'application/json' }));
+    } else {
+      // STT options
+      form.append('options', new Blob([JSON.stringify({ language: revaiLang, skip_diarization: false })], { type: 'application/json' }));
+    }
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiToken}` },
       body: form,
@@ -883,12 +893,17 @@ async function transcribeWithRevAI(opts: {
     return { success: false, error: `Rev.ai submit failed: ${err instanceof Error ? err.message : String(err)}` };
   }
 
-  // 2. Poll until status === 'completed' (max ~5 min, every 3 s)
-  type RevJob = { id: string; status: 'in_progress' | 'completed' | 'failed'; failure_detail?: string };
+  // 2. Poll until status === 'completed' (Alignment) or 'transcribed' (STT)
+  type RevJob = { id: string; status: 'in_progress' | 'completed' | 'transcribed' | 'failed'; failure_detail?: string };
+  const targetStatus = mode === 'alignment' ? 'completed' : 'transcribed';
+  const pollUrl = mode === 'alignment'
+    ? `https://api.rev.ai/alignment/v1/jobs/${jobId}`
+    : `https://api.rev.ai/speechtotext/v1/jobs/${jobId}`;
+
   for (let attempt = 0; attempt < 100; attempt++) {
     await new Promise<void>((resolve) => setTimeout(resolve, 3000));
     try {
-      const res = await fetch(`https://api.rev.ai/alignment/v1/jobs/${jobId}`, {
+      const res = await fetch(pollUrl, {
         headers: { Authorization: `Bearer ${apiToken}` },
       });
       if (!res.ok) continue;
@@ -896,10 +911,14 @@ async function transcribeWithRevAI(opts: {
       if (job.status === 'failed') {
         return { success: false, error: `Rev.ai job failed: ${job.failure_detail ?? 'unknown'}` };
       }
-      if (job.status !== 'completed') continue;
+      if (job.status !== targetStatus) continue;
 
-      // 3. Fetch transcript (word-level forced alignment)
-      const tRes = await fetch(`https://api.rev.ai/alignment/v1/jobs/${jobId}/transcript`, {
+      // 3. Fetch transcript (JSON format)
+      const transcriptUrl = mode === 'alignment'
+        ? `https://api.rev.ai/alignment/v1/jobs/${jobId}/transcript`
+        : `https://api.rev.ai/speechtotext/v1/jobs/${jobId}/transcript`;
+
+      const tRes = await fetch(transcriptUrl, {
         headers: { Authorization: `Bearer ${apiToken}`, Accept: 'application/vnd.rev.transcript.v1.0+json' },
       });
       if (!tRes.ok) {
@@ -912,7 +931,25 @@ async function transcribeWithRevAI(opts: {
 
       const transcript = await tRes.json() as RevTranscript;
 
-      // Flatten all words (type === 'text') with timestamps
+      if (mode === 'stt') {
+        // Map monologues directly to segments
+        const segments: TranscriptionCueSegment[] = (transcript.monologues ?? []).map((mono) => {
+          const textElements = mono.elements.filter((el) => el.type === 'text' || el.type === 'punct');
+          const firstWord = mono.elements.find((el) => el.type === 'text' && el.ts != null);
+          const lastWord  = [...mono.elements].reverse().find((el) => el.type === 'text' && el.end_ts != null);
+
+          return {
+            startSec: firstWord?.ts ?? 0,
+            endSec:   lastWord?.end_ts ?? 0,
+            speaker:  `Speaker${mono.speaker + 1}`,
+            text:     textElements.map((el) => el.value).join('').trim(),
+          };
+        }).filter((s) => s.text.length > 0);
+
+        return { success: true, cues: { segments } };
+      }
+
+      // Alignment logic (Existing)
       const words: { value: string; ts: number; end_ts: number }[] = [];
       for (const mono of transcript.monologues ?? []) {
         for (const el of mono.elements ?? []) {
@@ -926,22 +963,18 @@ async function transcribeWithRevAI(opts: {
         return { success: false, error: 'Rev.ai returned no word timestamps.' };
       }
 
-      // Map words back to original lines by word count
       const lines = hasOriginalLines && opts.originalLines ? opts.originalLines : [];
       if (lines.length === 0) {
-        // No original lines — return single cue spanning all words
+        const transcriptText = words.map((w) => w.value).join(' ');
         return {
           success: true,
           cues: { segments: [{ startSec: words[0].ts, endSec: words[words.length - 1].end_ts, speaker: 'Speaker1', text: transcriptText }] },
         };
       }
 
-      // Build per-line word counts, then assign words to lines
       const lineWordCounts = lines.map((l) => l.text.split(/\s+/).filter(Boolean).length);
       const totalLineWords = lineWordCounts.reduce((a, b) => a + b, 0);
 
-      // Scale: our word count may differ from Rev.ai's (punctuation stripped etc).
-      // Use proportional assignment: line i gets a slice of words proportional to its word share.
       const cues: TranscriptionCueSegment[] = [];
       let wordCursor = 0;
       for (let i = 0; i < lines.length; i++) {
@@ -957,7 +990,6 @@ async function transcribeWithRevAI(opts: {
         });
         wordCursor += lineWordCount;
       }
-      // Ensure last line stretches to the final word
       if (cues.length > 0) {
         cues[cues.length - 1].endSec = +words[words.length - 1].end_ts.toFixed(3);
       }
@@ -968,7 +1000,8 @@ async function transcribeWithRevAI(opts: {
     }
   }
 
-  return { success: false, error: 'Rev.ai alignment timed out after ~5 minutes.' };
+  const timeoutMsg = mode === 'alignment' ? 'Rev.ai alignment timed out.' : 'Rev.ai transcription timed out.';
+  return { success: false, error: `${timeoutMsg} after ~5 minutes.` };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1095,6 +1128,8 @@ export async function transcribeAudioCuesAction(opts: {
   assemblyAiSpeechModel?: string;
   language?: string;
   includeScript?: boolean;
+  /** Rev.ai mode — 'stt' or 'alignment' */
+  revAiMode?: 'stt' | 'alignment';
 }): Promise<TranscribeAudioCuesResult> {
   assertDevActionEnabled();
   const {
@@ -1106,6 +1141,7 @@ export async function transcribeAudioCuesAction(opts: {
     assemblyAiSpeechModel,
     language,
     includeScript = true,
+    revAiMode,
   } = opts;
 
   // Pre-split long lines (>10 words) at sentence boundaries before sending to any provider.
@@ -1128,7 +1164,7 @@ export async function transcribeAudioCuesAction(opts: {
 
   // ── Rev.ai Forced Alignment branch ──
   if (provider === 'revai') {
-    return transcribeWithRevAI({ audioBase64, mimeType, language, originalLines: splitLines });
+    return transcribeWithRevAI({ audioBase64, mimeType, language, originalLines: splitLines, mode: revAiMode });
   }
 
   // ── Speechmatics Forced Alignment branch ──

@@ -319,6 +319,7 @@ export default function GeminiTestPage() {
   const [cueCustomAudioMime, setCueCustomAudioMime] = useState<string>('audio/wav');
   const [cueCustomAudioName, setCueCustomAudioName] = useState<string | null>(null);
   const [cueIncludeScript, setCueIncludeScript] = useState(true);
+  const [revAiMode, setRevAiMode] = useState<'stt' | 'alignment'>('stt');
   const cueFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const step1Done = !!(selectedTextModel && selectedAudioModel && selectedImageModel);
@@ -388,10 +389,10 @@ export default function GeminiTestPage() {
         langValue, voice1, voice2, durationSecs, theme,
         selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel,
         transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel, selectedCloudflareModel,
-        cueIncludeScript,
+        cueIncludeScript, revAiMode,
       }));
     } catch { /* quota exceeded etc */ }
-  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel, transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel, selectedCloudflareModel, cueIncludeScript]);
+  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel, transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel, selectedCloudflareModel, cueIncludeScript, revAiMode]);
 
   // 3. Fetch models; restore saved model selections
   useEffect(() => {
@@ -437,6 +438,9 @@ export default function GeminiTestPage() {
         }
         if (saved.cueIncludeScript !== undefined) {
           setCueIncludeScript(saved.cueIncludeScript === 'true' || saved.cueIncludeScript === true);
+        }
+        if (saved.revAiMode && ['stt', 'alignment'].includes(saved.revAiMode as string)) {
+          setRevAiMode(saved.revAiMode as 'stt' | 'alignment');
         }
       } catch {
         if (res.textModels[0])  setSelectedTextModel(res.textModels[0]);
@@ -513,6 +517,7 @@ export default function GeminiTestPage() {
       assemblyAiSpeechModel: transcriptionProvider === 'assemblyai' ? selectedAssemblyAIModel : undefined,
       language: langValue,
       includeScript: cueIncludeScript,
+      revAiMode,
     });
     setTranscriptionLoading(false);
     if (res.success) {
@@ -955,8 +960,23 @@ export default function GeminiTestPage() {
               )}
               {transcriptionProvider === 'revai' && (
                 <div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                    Forced alignment — sends the dialogue script + audio to Rev.ai and gets back word-level timestamps. Language is taken from the selected language above. Requires <code className="font-mono">REVAI_ACCESS_TOKEN</code>.
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" htmlFor="revai-mode-select">
+                    Rev.ai Mode
+                  </label>
+                  <select
+                    id="revai-mode-select"
+                    value={revAiMode}
+                    onChange={(e) => setRevAiMode(e.target.value as 'stt' | 'alignment')}
+                    className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 transition-all"
+                  >
+                    <option value="stt">Speech-to-Text (Default)</option>
+                    <option value="alignment">Forced Alignment</option>
+                  </select>
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                    {revAiMode === 'stt'
+                      ? 'Asynchronous STT — sends audio to Rev.ai and gets back a transcript. Ignores dialogue script.'
+                      : 'Forced alignment — sends the dialogue script + audio to Rev.ai and gets back word-level timestamps.'}
+                    {' '}Requires <code className="font-mono">REVAI_ACCESS_TOKEN</code>.
                   </p>
                 </div>
               )}
