@@ -8,25 +8,24 @@ type RevElement = { type: 'text' | 'punct' | 'unknown'; value: string; ts?: numb
 type RevTranscript = { monologues: { speaker: number; elements: RevElement[] }[] };
 
 // ── Per-line cue ──────────────────────────────────────────────────
-type Cue = { startSec: number; endSec: number; text: string };
+type CueWord = { value: string; ts: number; end_ts: number };
+type Cue = { startSec: number; endSec: number; text: string; words: CueWord[] };
 
 function normWord(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-// Split an input word into match tokens.
-// "hole-in-the-wall" → ["hole","in","the","wall"] so each part advances wPos.
-// Plain words → single-element array.
+// "hole-in-the-wall" → ["hole","in","the","wall"] so each part advances wPos
 function tokenizeWord(w: string): string[] {
   return w.split(/[-–—]/).map(normWord).filter(Boolean);
 }
 
 function buildCues(transcript: RevTranscript, inputLines: string[]): Cue[] {
-  const words: { norm: string; ts: number; end_ts: number }[] = [];
+  const words: { norm: string; value: string; ts: number; end_ts: number }[] = [];
   for (const mono of transcript.monologues ?? []) {
     for (const el of mono.elements ?? []) {
       if (el.type === 'text' && el.ts != null && el.end_ts != null) {
-        words.push({ norm: normWord(el.value), ts: el.ts, end_ts: el.end_ts });
+        words.push({ norm: normWord(el.value), value: el.value, ts: el.ts, end_ts: el.end_ts });
       }
     }
   }
@@ -41,25 +40,39 @@ function buildCues(transcript: RevTranscript, inputLines: string[]): Cue[] {
 
     const lineStartPos = wPos;
     let lineEndPos = wPos;
+    const matchedWords: CueWord[] = [];
 
     for (const iw of inputWords) {
-      // Hyphenated words are split into parts; each part matched separately
-      for (const token of tokenizeWord(iw)) {
+      const tokens = tokenizeWord(iw);
+      // Track combined ts/end_ts across all parts of a hyphenated word
+      let wordTs: number | null = null;
+      let wordEndTs: number | null = null;
+
+      for (const token of tokens) {
         const limit = Math.min(wPos + 6, words.length);
         for (let j = wPos; j < limit; j++) {
           if (words[j].norm === token) {
+            if (wordTs === null) wordTs = words[j].ts;
+            wordEndTs = words[j].end_ts;
             lineEndPos = j;
             wPos = j + 1;
             break;
           }
         }
       }
+
+      // Store the input word (preserving original form e.g. "hole-in-the-wall")
+      // with combined timestamps from all its matched tokens
+      if (wordTs !== null && wordEndTs !== null) {
+        matchedWords.push({ value: iw, ts: wordTs, end_ts: wordEndTs });
+      }
     }
 
     cues.push({
       startSec: +words[Math.min(lineStartPos, words.length - 1)].ts.toFixed(3),
-      endSec:   +words[Math.min(lineEndPos,  words.length - 1)].end_ts.toFixed(3),
+      endSec:   +words[Math.min(lineEndPos,   words.length - 1)].end_ts.toFixed(3),
       text: lineText.trim(),
+      words: matchedWords,
     });
   }
 
@@ -93,7 +106,12 @@ function PlayButton({ onClick, playing }: { onClick: () => void; playing: boolea
 }
 
 // ── Cue table ─────────────────────────────────────────────────────
-function CueTable({ cues, playingIdx, onPlay }: { cues: Cue[]; playingIdx: number | null; onPlay: (i: number, c: Cue) => void }) {
+function CueTable({ cues, playingIdx, playbackTime, onPlay }: {
+  cues: Cue[];
+  playingIdx: number | null;
+  playbackTime: number;
+  onPlay: (i: number, c: Cue) => void;
+}) {
   return (
     <div className="rounded-xl border border-sky-200 dark:border-sky-500/30 overflow-x-auto">
       <table className="w-full text-sm min-w-md">
@@ -110,10 +128,26 @@ function CueTable({ cues, playingIdx, onPlay }: { cues: Cue[]; playingIdx: numbe
             <tr key={i} className={`border-t border-gray-100 dark:border-white/5 transition-colors ${
               playingIdx === i ? 'bg-sky-50 dark:bg-sky-500/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
             }`}>
-              <td className="px-2 py-2"><PlayButton onClick={() => onPlay(i, cue)} playing={playingIdx === i} /></td>
+              <td className="px-2 py-2">
+                <PlayButton onClick={() => onPlay(i, cue)} playing={playingIdx === i} />
+              </td>
               <td className="px-3 py-2 font-mono text-xs text-gray-500 dark:text-gray-400">{fmt(cue.startSec)}</td>
               <td className="px-3 py-2 font-mono text-xs text-gray-500 dark:text-gray-400">{fmt(cue.endSec)}</td>
-              <td className="px-3 py-2 text-gray-900 dark:text-white">{cue.text}</td>
+              <td className="px-3 py-2 leading-relaxed">
+                {cue.words.length > 0 ? (
+                  cue.words.map((w, wi) => (
+                    <span key={wi} className={
+                      playbackTime >= w.ts && playbackTime <= w.end_ts
+                        ? 'text-orange-500 font-semibold'
+                        : 'text-gray-900 dark:text-white'
+                    }>
+                      {w.value}{wi < cue.words.length - 1 ? ' ' : ''}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-gray-900 dark:text-white">{cue.text}</span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -166,30 +200,31 @@ export default function RevAIPage() {
   const [localCues, setLocalCues] = useState<Cue[]>([]);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  // Shared playback — track which section is active
+  // Shared playback
   const [playing, setPlaying] = useState<{ section: 'api' | 'local'; idx: number } | null>(null);
+  const [playbackTime, setPlaybackTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopCleanupRef = useRef<(() => void) | null>(null);
+  const rafRef = useRef<number | null>(null);
   const logsEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Revoke object URL on unmount
   useEffect(() => () => { if (localWavObjectUrl.current) URL.revokeObjectURL(localWavObjectUrl.current); }, []);
 
-  // Elapsed timer
   useEffect(() => {
     if (!loading) { setElapsed(0); return; }
     const id = setInterval(() => setElapsed((s) => s + 1), 1000);
     return () => clearInterval(id);
   }, [loading]);
 
-  // Auto-scroll logs
   useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
 
   const stopPlayback = useCallback(() => {
+    if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     stopCleanupRef.current?.();
     stopCleanupRef.current = null;
     audioRef.current?.pause();
     setPlaying(null);
+    setPlaybackTime(0);
   }, []);
 
   function playCue(section: 'api' | 'local', idx: number, cue: Cue, src: string) {
@@ -201,6 +236,13 @@ export default function RevAIPage() {
     setPlaying({ section, idx });
 
     const onSeeked = () => {
+      // RAF loop for smooth per-word highlighting
+      const tick = () => {
+        if (el) setPlaybackTime(el.currentTime);
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      rafRef.current = requestAnimationFrame(tick);
+
       const onTime = () => { if (el.currentTime >= cue.endSec) stopPlayback(); };
       const onEnded = () => stopPlayback();
       el.addEventListener('timeupdate', onTime);
@@ -222,7 +264,6 @@ export default function RevAIPage() {
     el.load();
   }
 
-  // ── Try to build local cues whenever all 3 files are ready ──────
   function tryBuildLocalCues() {
     setLocalError(null);
     const src = localWavObjectUrl.current;
@@ -245,29 +286,19 @@ export default function RevAIPage() {
 
   function handleTxtFile(file: File) {
     const reader = new FileReader();
-    reader.onload = () => {
-      localTxtContent.current = reader.result as string;
-      setLocalTxtName(file.name);
-      tryBuildLocalCues();
-    };
+    reader.onload = () => { localTxtContent.current = reader.result as string; setLocalTxtName(file.name); tryBuildLocalCues(); };
     reader.readAsText(file);
   }
 
   function handleJsonFile(file: File) {
     const reader = new FileReader();
     reader.onload = () => {
-      try {
-        localJsonContent.current = JSON.parse(reader.result as string) as RevTranscript;
-        setLocalJsonName(file.name);
-        tryBuildLocalCues();
-      } catch {
-        setLocalError('Failed to parse JSON file.');
-      }
+      try { localJsonContent.current = JSON.parse(reader.result as string) as RevTranscript; setLocalJsonName(file.name); tryBuildLocalCues(); }
+      catch { setLocalError('Failed to parse JSON file.'); }
     };
     reader.readAsText(file);
   }
 
-  // ── API submit ───────────────────────────────────────────────────
   const canSubmit = audioUrl.trim().length > 0 && text.trim().length > 0 && !loading;
 
   async function handleSubmit() {
@@ -357,6 +388,7 @@ export default function RevAIPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Cues</p>
               <CueTable cues={apiCues} playingIdx={playing?.section === 'api' ? playing.idx : null}
+                playbackTime={playing?.section === 'api' ? playbackTime : 0}
                 onPlay={(i, c) => playCue('api', i, c, audioUrl)} />
             </div>
           )}
@@ -391,6 +423,7 @@ export default function RevAIPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Cues</p>
               <CueTable cues={localCues} playingIdx={playing?.section === 'local' ? playing.idx : null}
+                playbackTime={playing?.section === 'local' ? playbackTime : 0}
                 onPlay={(i, c) => playCue('local', i, c, localWavObjectUrl.current!)} />
             </div>
           )}
