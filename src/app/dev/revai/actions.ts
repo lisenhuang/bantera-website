@@ -24,7 +24,7 @@ export async function alignWithRevAIAction(opts: {
   if (!apiToken) return { success: false, error: 'REVAI_ACCESS_TOKEN is not configured in .env.local', logs };
 
   const { audioUrl, text, language = 'en' } = opts;
-  const revaiLang = language.split('-')[0];
+  const revaiLang = language.trim() || 'en';
 
   // 1. Submit alignment job
   log(`Submitting job — language: ${revaiLang}, audio: ${audioUrl}`);

@@ -180,9 +180,24 @@ function FilePicker({ label, accept, fileName, onFile }: {
 
 // ── Main page ─────────────────────────────────────────────────────
 export default function RevAIPage() {
+  const languageOptions = [
+    { value: 'en-US', label: 'English (US)' },
+    { value: 'en-GB', label: 'English (UK)' },
+    { value: 'es-ES', label: 'Spanish' },
+    { value: 'fr-FR', label: 'French' },
+    { value: 'de-DE', label: 'German' },
+    { value: 'it-IT', label: 'Italian' },
+    { value: 'pt-BR', label: 'Portuguese (Brazil)' },
+    { value: 'cmn', label: 'Chinese (Simplified)' },
+    { value: 'zh-TW', label: 'Chinese (Traditional)' },
+    { value: 'ja-JP', label: 'Japanese' },
+    { value: 'ko-KR', label: 'Korean' },
+  ];
+
   // API section
   const [audioUrl, setAudioUrl] = useState('');
   const [text, setText] = useState('');
+  const [language, setLanguage] = useState('en-US');
   const [loading, setLoading] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -308,7 +323,11 @@ export default function RevAIPage() {
     setRawJson(null);
     setApiCues([]);
     setLogs([]);
-    const res = await alignWithRevAIAction({ audioUrl: audioUrl.trim(), text: text.trim() });
+    const res = await alignWithRevAIAction({
+      audioUrl: audioUrl.trim(),
+      text: text.trim(),
+      language,
+    });
     setLogs(res.logs);
     setLoading(false);
     if (res.success) {
@@ -343,6 +362,24 @@ export default function RevAIPage() {
               placeholder="https://example.com/audio.wav"
               className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/60 transition-all"
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="language">
+              Language
+            </label>
+            <select
+              id="language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/60 transition-all"
+            >
+              {languageOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1.5">

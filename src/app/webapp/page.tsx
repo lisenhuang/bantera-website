@@ -207,9 +207,7 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
                       <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
                         {audio.transcriptCues.length} cues
                       </span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
-                        {audio.creatorDisplayName?.trim() || "Bantera"}
-                      </span>
+
                       {audio.isAiGenerated ? (
                         <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-800">
                           AI audio
