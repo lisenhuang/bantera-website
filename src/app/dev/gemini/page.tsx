@@ -22,9 +22,14 @@ const ASSEMBLYAI_SPEECH_MODELS = [
   'universal-3-pro',
 ] as const;
 
+const CLOUDFLARE_WHISPER_MODELS = [
+  '@cf/openai/whisper-large-v3-turbo',
+  '@cf/openai/whisper',
+] as const;
+
 type CueResult = {
   model: string;
-  provider: 'gemini' | 'openai' | 'assemblyai';
+  provider: 'gemini' | 'openai' | 'assemblyai' | 'cloudflare' | 'revai' | 'speechmatics';
   segments: TranscriptionCueSegment[];
 };
 
@@ -301,9 +306,10 @@ export default function GeminiTestPage() {
   const [cueResults, setCueResults] = useState<CueResult[]>([]);
   const [transcriptionLoading, setTranscriptionLoading] = useState(false);
   const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
-  const [transcriptionProvider, setTranscriptionProvider] = useState<'gemini' | 'openai' | 'assemblyai'>('gemini');
+  const [transcriptionProvider, setTranscriptionProvider] = useState<'gemini' | 'openai' | 'assemblyai' | 'cloudflare' | 'revai' | 'speechmatics'>('gemini');
   const [selectedOpenAITranscriptionModel, setSelectedOpenAITranscriptionModel] = useState<string>(OPENAI_TRANSCRIPTION_MODELS[0]);
   const [selectedAssemblyAIModel, setSelectedAssemblyAIModel] = useState<string>(ASSEMBLYAI_SPEECH_MODELS[0]);
+  const [selectedCloudflareModel, setSelectedCloudflareModel] = useState<string>(CLOUDFLARE_WHISPER_MODELS[0]);
   /** Which (resultIndex, segIndex) is currently playing. */
   const [playingCue, setPlayingCue] = useState<{ resultIndex: number; segIndex: number } | null>(null);
   /** Playback stop mode: stop at cue's own endSec, or play through to next cue's startSec. */
@@ -325,9 +331,10 @@ export default function GeminiTestPage() {
 
   const transcribeBtnDisabled = (() => {
     if (!effectiveCueAudioBase64 || transcriptionLoading) return true;
-    if (transcriptionProvider === 'gemini')    return !selectedTranscriptionModel;
-    if (transcriptionProvider === 'openai')    return !selectedOpenAITranscriptionModel;
-    return false; // assemblyai — no model selection required
+    if (transcriptionProvider === 'gemini')     return !selectedTranscriptionModel;
+    if (transcriptionProvider === 'openai')     return !selectedOpenAITranscriptionModel;
+    if (transcriptionProvider === 'cloudflare') return !selectedCloudflareModel;
+    return false; // assemblyai / revai — no model selection required
   })();
   const currentLang = LANGUAGE_OPTIONS.find((l) => l.value === langValue) ?? LANGUAGE_OPTIONS[0];
 
@@ -379,10 +386,10 @@ export default function GeminiTestPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         langValue, voice1, voice2, durationSecs, theme,
         selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel,
-        transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel,
+        transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel, selectedCloudflareModel,
       }));
     } catch { /* quota exceeded etc */ }
-  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel, transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel]);
+  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel, transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel, selectedCloudflareModel]);
 
   // 3. Fetch models; restore saved model selections
   useEffect(() => {
@@ -414,14 +421,17 @@ export default function GeminiTestPage() {
             ? saved.selectedTranscriptionModel
             : res.transcriptionModels[0] ?? '',
         );
-        if (saved.transcriptionProvider === 'openai' || saved.transcriptionProvider === 'gemini' || saved.transcriptionProvider === 'assemblyai') {
-          setTranscriptionProvider(saved.transcriptionProvider);
+        if (['openai', 'gemini', 'assemblyai', 'cloudflare', 'revai', 'speechmatics'].includes(saved.transcriptionProvider)) {
+          setTranscriptionProvider(saved.transcriptionProvider as 'gemini' | 'openai' | 'assemblyai' | 'cloudflare' | 'revai' | 'speechmatics');
         }
         if (saved.selectedOpenAITranscriptionModel && (OPENAI_TRANSCRIPTION_MODELS as readonly string[]).includes(saved.selectedOpenAITranscriptionModel)) {
           setSelectedOpenAITranscriptionModel(saved.selectedOpenAITranscriptionModel);
         }
         if (saved.selectedAssemblyAIModel && (ASSEMBLYAI_SPEECH_MODELS as readonly string[]).includes(saved.selectedAssemblyAIModel)) {
           setSelectedAssemblyAIModel(saved.selectedAssemblyAIModel);
+        }
+        if (saved.selectedCloudflareModel && (CLOUDFLARE_WHISPER_MODELS as readonly string[]).includes(saved.selectedCloudflareModel)) {
+          setSelectedCloudflareModel(saved.selectedCloudflareModel);
         }
       } catch {
         if (res.textModels[0])  setSelectedTextModel(res.textModels[0]);
@@ -480,8 +490,11 @@ export default function GeminiTestPage() {
 
   const handleTranscribeCues = useCallback(async () => {
     const model =
-      transcriptionProvider === 'openai'    ? selectedOpenAITranscriptionModel :
-      transcriptionProvider === 'assemblyai' ? selectedAssemblyAIModel :
+      transcriptionProvider === 'openai'      ? selectedOpenAITranscriptionModel :
+      transcriptionProvider === 'assemblyai'  ? selectedAssemblyAIModel :
+      transcriptionProvider === 'cloudflare'  ? selectedCloudflareModel :
+      transcriptionProvider === 'revai'        ? 'rev.ai' :
+      transcriptionProvider === 'speechmatics' ? 'speechmatics' :
       selectedTranscriptionModel;
     if (!effectiveCueAudioBase64 || !model) return;
     setTranscriptionLoading(true);
@@ -493,6 +506,7 @@ export default function GeminiTestPage() {
       originalLines: dialogueLines,
       provider: transcriptionProvider,
       assemblyAiSpeechModel: transcriptionProvider === 'assemblyai' ? selectedAssemblyAIModel : undefined,
+      language: langValue,
     });
     setTranscriptionLoading(false);
     if (res.success) {
@@ -500,7 +514,7 @@ export default function GeminiTestPage() {
     } else {
       setTranscriptionError(res.error);
     }
-  }, [effectiveCueAudioBase64, effectiveCueAudioMime, dialogueLines, transcriptionProvider, selectedTranscriptionModel, selectedOpenAITranscriptionModel, selectedAssemblyAIModel]);
+  }, [effectiveCueAudioBase64, effectiveCueAudioMime, dialogueLines, transcriptionProvider, selectedTranscriptionModel, selectedOpenAITranscriptionModel, selectedAssemblyAIModel, selectedCloudflareModel, langValue]);
 
   /** Hidden element for segment playback (separate from Step 3 visible player). */
   const cuePlaybackAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -840,6 +854,9 @@ export default function GeminiTestPage() {
                     { id: 'gemini',     label: '✦ Gemini'     },
                     { id: 'openai',     label: '⬡ OpenAI'     },
                     { id: 'assemblyai', label: '◈ AssemblyAI' },
+                    { id: 'cloudflare', label: '☁ Cloudflare' },
+                    { id: 'revai',        label: '⏱ Rev.ai'        },
+                    { id: 'speechmatics', label: '◎ Speechmatics'  },
                   ] as const).map((p) => (
                     <button
                       key={p.id}
@@ -907,6 +924,40 @@ export default function GeminiTestPage() {
                   </select>
                   <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
                     Runs speaker diarization — returns utterances with real ms timestamps. May take 30–90 s.
+                  </p>
+                </div>
+              )}
+              {transcriptionProvider === 'cloudflare' && (
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" htmlFor="cloudflare-model-select">
+                    Cloudflare Whisper model
+                  </label>
+                  <select
+                    id="cloudflare-model-select"
+                    value={selectedCloudflareModel}
+                    onChange={(e) => setSelectedCloudflareModel(e.target.value)}
+                    className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 transition-all"
+                  >
+                    {CLOUDFLARE_WHISPER_MODELS.map((m) => (
+                      <option key={m} value={m}>{m.replace('@cf/openai/', '')}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                    whisper-large-v3-turbo returns segment timestamps · whisper returns word-level timestamps. Requires <code className="font-mono">CLOUDFLARE_ACCOUNT_ID</code> and <code className="font-mono">CLOUDFLARE_API_TOKEN</code>.
+                  </p>
+                </div>
+              )}
+              {transcriptionProvider === 'revai' && (
+                <div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Forced alignment — sends the dialogue script + audio to Rev.ai and gets back word-level timestamps. Language is taken from the selected language above. Requires <code className="font-mono">REVAI_ACCESS_TOKEN</code>.
+                  </p>
+                </div>
+              )}
+              {transcriptionProvider === 'speechmatics' && (
+                <div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Forced alignment — sends one cue per line as plain text + audio to Speechmatics, returns a start timestamp per line. Language is taken from the selected language above. Requires <code className="font-mono">SPEECHMATICS_API_KEY</code>.
                   </p>
                 </div>
               )}
@@ -1041,9 +1092,15 @@ export default function GeminiTestPage() {
                         ? 'bg-green-50 dark:bg-green-500/10 border-green-300 dark:border-green-500/30 text-green-700 dark:text-green-300'
                         : result.provider === 'assemblyai'
                         ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300'
+                        : result.provider === 'cloudflare'
+                        ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-700 dark:text-orange-300'
+                        : result.provider === 'revai'
+                        ? 'bg-sky-50 dark:bg-sky-500/10 border-sky-300 dark:border-sky-500/30 text-sky-700 dark:text-sky-300'
+                        : result.provider === 'speechmatics'
+                        ? 'bg-teal-50 dark:bg-teal-500/10 border-teal-300 dark:border-teal-500/30 text-teal-700 dark:text-teal-300'
                         : 'bg-violet-50 dark:bg-violet-500/10 border-violet-300 dark:border-violet-500/30 text-violet-700 dark:text-violet-300'
                     }`}>
-                      {result.provider === 'openai' ? '⬡' : result.provider === 'assemblyai' ? '◈' : '✦'} {result.model.replace('models/', '')}
+                      {result.provider === 'openai' ? '⬡' : result.provider === 'assemblyai' ? '◈' : result.provider === 'cloudflare' ? '☁' : result.provider === 'revai' ? '⏱' : result.provider === 'speechmatics' ? '◎' : '✦'} {result.model.replace('models/', '').replace('@cf/openai/', '')}
                     </span>
                     {rIdx === 0 && (
                       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Latest</span>

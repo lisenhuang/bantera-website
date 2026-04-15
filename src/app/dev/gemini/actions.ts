@@ -647,15 +647,454 @@ async function transcribeWithAssemblyAI(opts: {
   return { success: false, error: 'AssemblyAI transcription timed out after ~5 minutes.' };
 }
 
+// ─────────────────────────────────────────────────────────────
+// Cloudflare Workers AI Whisper transcription helper
+// POST base64 audio → segments or word-level timestamps
+// ─────────────────────────────────────────────────────────────
+async function transcribeWithCloudflare(opts: {
+  audioBase64: string;
+  mimeType: string;
+  model: string;
+  originalLines?: DialogueLine[];
+}): Promise<TranscribeAudioCuesResult> {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken  = process.env.CLOUDFLARE_API_TOKEN;
+  if (!accountId || !apiToken) {
+    return { success: false, error: 'Missing CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN in .env.local' };
+  }
+
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${opts.model}`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        audio: opts.audioBase64,
+        ...(opts.originalLines && opts.originalLines.length > 0
+          ? { initial_prompt: opts.originalLines.map((l) => l.text).join(' ') }
+          : {}),
+      }),
+    });
+  } catch (err: unknown) {
+    return { success: false, error: `Network error calling Cloudflare AI: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '(no body)');
+    return { success: false, error: `Cloudflare AI error ${res.status}: ${body}` };
+  }
+
+  // CF Whisper returns startMs/endMs (milliseconds) — not start/end in seconds.
+  // It may also already include a speaker label from its own diarization.
+  type CfWhisperSegment = { startMs: number; endMs: number; speaker?: string; text: string };
+  type CfWhisperWord    = { word: string; start: number; end: number };
+  type CfWhisperResult  = {
+    result?: { text?: string; segments?: CfWhisperSegment[]; words?: CfWhisperWord[] };
+    success?: boolean;
+    errors?: { message: string }[];
+  };
+
+  const data = await res.json() as CfWhisperResult;
+
+  if (data.success === false) {
+    const errMsg = data.errors?.map((e) => e.message).join(', ') ?? 'Unknown Cloudflare AI error';
+    return { success: false, error: errMsg };
+  }
+
+  const result = data.result;
+  if (!result) {
+    return { success: false, error: 'No result returned from Cloudflare AI.' };
+  }
+
+  const hasOriginalLines = Array.isArray(opts.originalLines) && opts.originalLines.length > 0;
+  let cues: TranscriptionCueSegment[];
+
+  if (result.segments && result.segments.length > 0) {
+    const segs = result.segments;
+    const hasTimestamps = segs.some((s) => s.startMs != null && s.endMs != null);
+
+    if (!hasTimestamps) {
+      // CF returned null timestamps — estimate proportionally from WAV duration + word counts.
+      const linesToUse = hasOriginalLines && opts.originalLines ? opts.originalLines : segs.map((s, i) => ({
+        speaker: s.speaker ?? (i % 2 === 0 ? 'Speaker1' : 'Speaker2'),
+        text: s.text.trim(),
+      }));
+      const totalDuration = getWavDurationSec(opts.audioBase64);
+      const allWords = linesToUse.reduce((acc, l) => acc + l.text.split(/\s+/).filter(Boolean).length, 0);
+      let cumWords = 0;
+      cues = linesToUse.map((line) => {
+        const lineWords = line.text.split(/\s+/).filter(Boolean).length;
+        const startSec  = allWords > 0 ? (cumWords / allWords) * totalDuration : 0;
+        cumWords += lineWords;
+        const endSec = allWords > 0 ? (cumWords / allWords) * totalDuration : totalDuration;
+        return { startSec: +startSec.toFixed(3), endSec: +endSec.toFixed(3), speaker: line.speaker, text: line.text };
+      });
+    } else if (hasOriginalLines && opts.originalLines) {
+      // Align utterances (real ms timing) to original lines (ground-truth text + speakers).
+      // When M < N, multiple lines share the same utterance — split that range
+      // proportionally by word count so timestamps don't collide.
+      const M = segs.length;
+      const N = opts.originalLines.length;
+      const lines = opts.originalLines;
+
+      cues = lines.map((line, i) => {
+        const startIdx = Math.floor((i * M) / N);
+        const endIdx   = Math.max(startIdx, Math.min(Math.floor(((i + 1) * M) / N) - 1, M - 1));
+        const uStart = (segs[startIdx].startMs ?? 0) / 1000;
+        const uEnd   = (segs[endIdx].endMs   ?? 0) / 1000;
+
+        const siblings = lines
+          .map((_, j) => {
+            const si = Math.floor((j * M) / N);
+            const ei = Math.max(si, Math.min(Math.floor(((j + 1) * M) / N) - 1, M - 1));
+            return si === startIdx && ei === endIdx ? j : -1;
+          })
+          .filter((j) => j >= 0);
+
+        if (siblings.length <= 1) {
+          return { startSec: uStart, endSec: uEnd, speaker: line.speaker, text: line.text };
+        }
+
+        const duration  = uEnd - uStart;
+        const sibTexts  = siblings.map((j) => lines[j].text);
+        const totalWords = sibTexts.reduce((s, t) => s + (t.split(/\s+/).filter(Boolean).length), 0) || 1;
+        const myOffset  = siblings.indexOf(i);
+        const cumWords  = sibTexts.slice(0, myOffset).reduce((s, t) => s + (t.split(/\s+/).filter(Boolean).length), 0);
+        const myWords   = line.text.split(/\s+/).filter(Boolean).length;
+
+        return {
+          startSec: +(uStart + (cumWords / totalWords) * duration).toFixed(3),
+          endSec:   +(uStart + ((cumWords + myWords) / totalWords) * duration).toFixed(3),
+          speaker:  line.speaker,
+          text:     line.text,
+        };
+      });
+    } else {
+      // No script — use CF segments directly; convert ms → sec.
+      cues = segs.map((seg, i) => ({
+        startSec: (seg.startMs ?? 0) / 1000,
+        endSec:   (seg.endMs   ?? 0) / 1000,
+        speaker:  seg.speaker ?? (i % 2 === 0 ? 'Speaker1' : 'Speaker2'),
+        text:     seg.text.trim(),
+      }));
+    }
+  } else if (result.words && result.words.length > 0) {
+    // Old whisper model returns word-level timestamps in seconds.
+    const words = result.words;
+    if (hasOriginalLines && opts.originalLines) {
+      const M = words.length;
+      const N = opts.originalLines.length;
+      const lines = opts.originalLines;
+
+      cues = lines.map((line, i) => {
+        const startIdx = Math.floor((i * M) / N);
+        const endIdx   = Math.max(startIdx, Math.min(Math.floor(((i + 1) * M) / N) - 1, M - 1));
+        const uStart = words[startIdx].start;
+        const uEnd   = words[endIdx].end;
+
+        const siblings = lines
+          .map((_, j) => {
+            const si = Math.floor((j * M) / N);
+            const ei = Math.max(si, Math.min(Math.floor(((j + 1) * M) / N) - 1, M - 1));
+            return si === startIdx && ei === endIdx ? j : -1;
+          })
+          .filter((j) => j >= 0);
+
+        if (siblings.length <= 1) {
+          return { startSec: uStart, endSec: uEnd, speaker: line.speaker, text: line.text };
+        }
+
+        const duration   = uEnd - uStart;
+        const sibTexts   = siblings.map((j) => lines[j].text);
+        const totalWords = sibTexts.reduce((s, t) => s + (t.split(/\s+/).filter(Boolean).length), 0) || 1;
+        const myOffset   = siblings.indexOf(i);
+        const cumWords   = sibTexts.slice(0, myOffset).reduce((s, t) => s + (t.split(/\s+/).filter(Boolean).length), 0);
+        const myWords    = line.text.split(/\s+/).filter(Boolean).length;
+
+        return {
+          startSec: +(uStart + (cumWords / totalWords) * duration).toFixed(3),
+          endSec:   +(uStart + ((cumWords + myWords) / totalWords) * duration).toFixed(3),
+          speaker:  line.speaker,
+          text:     line.text,
+        };
+      });
+    } else {
+      const totalDuration = words[words.length - 1]?.end ?? 0;
+      cues = [{ startSec: 0, endSec: totalDuration, speaker: 'Speaker1', text: result.text?.trim() ?? '' }];
+    }
+  } else {
+    return { success: false, error: 'Cloudflare Whisper returned no segments or words. The audio may be too short or silent.' };
+  }
+
+  return { success: true, cues: { segments: cues } };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Rev.ai Forced Alignment helper
+// Multipart POST (audio binary + transcript_text) → poll → word timestamps → map to lines
+// ─────────────────────────────────────────────────────────────
+async function transcribeWithRevAI(opts: {
+  audioBase64: string;
+  mimeType: string;
+  language?: string;  // e.g. 'en', 'zh', 'ja'
+  originalLines?: DialogueLine[];
+}): Promise<TranscribeAudioCuesResult> {
+  const apiToken = process.env.REVAI_ACCESS_TOKEN;
+  if (!apiToken) return { success: false, error: 'REVAI_ACCESS_TOKEN is not configured in .env.local' };
+
+  const hasOriginalLines = Array.isArray(opts.originalLines) && opts.originalLines.length > 0;
+
+  // transcript_text: plain text of all lines joined — Rev.ai aligns each word
+  const transcriptText = hasOriginalLines && opts.originalLines
+    ? opts.originalLines.map((l) => l.text).join(' ')
+    : '';
+
+  if (!transcriptText.trim()) {
+    return { success: false, error: 'Rev.ai forced alignment requires dialogue lines (transcript text).' };
+  }
+
+  // Rev.ai uses BCP-47 base codes; strip region suffix (en-US → en, zh → zh)
+  const revaiLang = (opts.language ?? 'en').split('-')[0];
+
+  // 1. Submit alignment job via multipart/form-data
+  const buffer = Buffer.from(opts.audioBase64, 'base64');
+  const form = new FormData();
+  form.append('media', new Blob([buffer], { type: opts.mimeType }), 'audio');
+  form.append('options', new Blob([JSON.stringify({ transcript_text: transcriptText, language: revaiLang })], { type: 'application/json' }));
+
+  let jobId: string;
+  try {
+    const res = await fetch('https://api.rev.ai/alignment/v1/jobs', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiToken}` },
+      body: form,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '(no body)');
+      return { success: false, error: `Rev.ai submit error ${res.status}: ${body}` };
+    }
+    ({ id: jobId } = await res.json() as { id: string });
+  } catch (err: unknown) {
+    return { success: false, error: `Rev.ai submit failed: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  // 2. Poll until status === 'completed' (max ~5 min, every 3 s)
+  type RevJob = { id: string; status: 'in_progress' | 'completed' | 'failed'; failure_detail?: string };
+  for (let attempt = 0; attempt < 100; attempt++) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+    try {
+      const res = await fetch(`https://api.rev.ai/alignment/v1/jobs/${jobId}`, {
+        headers: { Authorization: `Bearer ${apiToken}` },
+      });
+      if (!res.ok) continue;
+      const job = await res.json() as RevJob;
+      if (job.status === 'failed') {
+        return { success: false, error: `Rev.ai job failed: ${job.failure_detail ?? 'unknown'}` };
+      }
+      if (job.status !== 'completed') continue;
+
+      // 3. Fetch transcript (word-level forced alignment)
+      const tRes = await fetch(`https://api.rev.ai/alignment/v1/jobs/${jobId}/transcript`, {
+        headers: { Authorization: `Bearer ${apiToken}`, Accept: 'application/vnd.rev.transcript.v1.0+json' },
+      });
+      if (!tRes.ok) {
+        return { success: false, error: `Rev.ai transcript fetch error ${tRes.status}` };
+      }
+
+      type RevElement = { type: 'text' | 'punct' | 'unknown'; value: string; ts?: number; end_ts?: number };
+      type RevMonologue = { speaker: number; elements: RevElement[] };
+      type RevTranscript = { monologues: RevMonologue[] };
+
+      const transcript = await tRes.json() as RevTranscript;
+
+      // Flatten all words (type === 'text') with timestamps
+      const words: { value: string; ts: number; end_ts: number }[] = [];
+      for (const mono of transcript.monologues ?? []) {
+        for (const el of mono.elements ?? []) {
+          if (el.type === 'text' && el.ts != null && el.end_ts != null) {
+            words.push({ value: el.value, ts: el.ts, end_ts: el.end_ts });
+          }
+        }
+      }
+
+      if (words.length === 0) {
+        return { success: false, error: 'Rev.ai returned no word timestamps.' };
+      }
+
+      // Map words back to original lines by word count
+      const lines = hasOriginalLines && opts.originalLines ? opts.originalLines : [];
+      if (lines.length === 0) {
+        // No original lines — return single cue spanning all words
+        return {
+          success: true,
+          cues: { segments: [{ startSec: words[0].ts, endSec: words[words.length - 1].end_ts, speaker: 'Speaker1', text: transcriptText }] },
+        };
+      }
+
+      // Build per-line word counts, then assign words to lines
+      const lineWordCounts = lines.map((l) => l.text.split(/\s+/).filter(Boolean).length);
+      const totalLineWords = lineWordCounts.reduce((a, b) => a + b, 0);
+
+      // Scale: our word count may differ from Rev.ai's (punctuation stripped etc).
+      // Use proportional assignment: line i gets a slice of words proportional to its word share.
+      const cues: TranscriptionCueSegment[] = [];
+      let wordCursor = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const lineFraction = lineWordCounts[i] / totalLineWords;
+        const lineWordCount = Math.max(1, Math.round(lineFraction * words.length));
+        const startIdx = Math.min(wordCursor, words.length - 1);
+        const endIdx   = Math.min(wordCursor + lineWordCount - 1, words.length - 1);
+        cues.push({
+          startSec: +words[startIdx].ts.toFixed(3),
+          endSec:   +words[endIdx].end_ts.toFixed(3),
+          speaker:  lines[i].speaker,
+          text:     lines[i].text,
+        });
+        wordCursor += lineWordCount;
+      }
+      // Ensure last line stretches to the final word
+      if (cues.length > 0) {
+        cues[cues.length - 1].endSec = +words[words.length - 1].end_ts.toFixed(3);
+      }
+
+      return { success: true, cues: { segments: cues } };
+    } catch {
+      // transient network error — keep polling
+    }
+  }
+
+  return { success: false, error: 'Rev.ai alignment timed out after ~5 minutes.' };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Speechmatics Forced Alignment helper
+// Multipart POST (audio + text file, one line per cue) → poll → one_per_line timestamps
+// ─────────────────────────────────────────────────────────────
+async function transcribeWithSpeechmatics(opts: {
+  audioBase64: string;
+  mimeType: string;
+  language?: string;
+  originalLines?: DialogueLine[];
+}): Promise<TranscribeAudioCuesResult> {
+  const apiKey = process.env.SPEECHMATICS_API_KEY;
+  if (!apiKey) return { success: false, error: 'SPEECHMATICS_API_KEY is not configured in .env.local' };
+
+  const hasOriginalLines = Array.isArray(opts.originalLines) && opts.originalLines.length > 0;
+  if (!hasOriginalLines || !opts.originalLines) {
+    return { success: false, error: 'Speechmatics alignment requires dialogue lines.' };
+  }
+
+  const lines = opts.originalLines;
+  const lang = (opts.language ?? 'en').split('-')[0];
+
+  // text_file: one plain-text line per cue (no speaker labels)
+  const transcriptText = lines.map((l) => l.text).join('\n');
+
+  // 1. Submit alignment job (multipart)
+  const buffer = Buffer.from(opts.audioBase64, 'base64');
+  const form = new FormData();
+  form.append('config', JSON.stringify({
+    type: 'alignment',
+    alignment_config: { language: lang },
+  }));
+  form.append('data_file', new Blob([buffer], { type: opts.mimeType }), 'audio');
+  form.append('text_file', new Blob([transcriptText], { type: 'text/plain' }), 'transcript.txt');
+
+  const BASE = 'https://asr.api.speechmatics.com';
+
+  let jobId: string;
+  try {
+    const res = await fetch(`${BASE}/v2/jobs`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '(no body)');
+      return { success: false, error: `Speechmatics submit error ${res.status}: ${body}` };
+    }
+    ({ id: jobId } = await res.json() as { id: string });
+  } catch (err: unknown) {
+    return { success: false, error: `Speechmatics submit failed: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  // 2. Poll until done (max ~5 min, every 3 s)
+  type SmJob = { job: { id: string; status: 'running' | 'done' | 'rejected' | 'deleted'; errors?: { message: string }[] } };
+  for (let attempt = 0; attempt < 100; attempt++) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+    try {
+      const res = await fetch(`${BASE}/v2/jobs/${jobId}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (!res.ok) continue;
+      const data = await res.json() as SmJob;
+      const job = data.job;
+
+      if (job.status === 'rejected') {
+        return { success: false, error: `Speechmatics job rejected: ${job.errors?.map((e) => e.message).join(', ') ?? 'unknown'}` };
+      }
+      if (job.status !== 'done') continue;
+
+      // 3. Fetch alignment result — one_per_line format: "[HH:MM:SS.s] text"
+      const aRes = await fetch(`${BASE}/v2/jobs/${jobId}/alignment?tags=one_per_line`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (!aRes.ok) {
+        return { success: false, error: `Speechmatics alignment fetch error ${aRes.status}: ${await aRes.text().catch(() => '')}` };
+      }
+
+      const alignText = await aRes.text();
+
+      // Parse "[HH:MM:SS.s] text" → startSec
+      const parseTs = (ts: string): number => {
+        const [h, m, s] = ts.split(':').map(Number);
+        return h * 3600 + m * 60 + s;
+      };
+
+      const parsed: { startSec: number }[] = [];
+      for (const row of alignText.trim().split('\n')) {
+        const match = row.match(/^\[(\d{2}:\d{2}:\d{2}\.\d+)\]/);
+        if (match) parsed.push({ startSec: parseTs(match[1]) });
+      }
+
+      if (parsed.length === 0) {
+        return { success: false, error: 'Speechmatics returned no aligned lines.' };
+      }
+
+      // endSec = next line's startSec; last line ends at WAV duration
+      const totalDuration = getWavDurationSec(opts.audioBase64);
+      const cues: TranscriptionCueSegment[] = parsed.map((p, i) => ({
+        startSec: +p.startSec.toFixed(3),
+        endSec:   +(i < parsed.length - 1 ? parsed[i + 1].startSec : totalDuration).toFixed(3),
+        speaker:  lines[i]?.speaker ?? (i % 2 === 0 ? 'Speaker1' : 'Speaker2'),
+        text:     lines[i]?.text ?? '',
+      }));
+
+      return { success: true, cues: { segments: cues } };
+    } catch {
+      // transient network error — keep polling
+    }
+  }
+
+  return { success: false, error: 'Speechmatics alignment timed out after ~5 minutes.' };
+}
+
 export async function transcribeAudioCuesAction(opts: {
   audioBase64: string;
   mimeType?: string;
   transcriptionModel: string;
   originalLines?: DialogueLine[];
-  /** 'gemini' (default), 'openai', or 'assemblyai' */
-  provider?: 'gemini' | 'openai' | 'assemblyai';
+  /** 'gemini' (default), 'openai', 'assemblyai', 'cloudflare', 'revai', or 'speechmatics' */
+  provider?: 'gemini' | 'openai' | 'assemblyai' | 'cloudflare' | 'revai' | 'speechmatics';
   /** AssemblyAI speech model — 'universal-2' (default) or 'universal-3-pro' */
   assemblyAiSpeechModel?: string;
+  /** BCP-47 language tag (e.g. 'en-US', 'zh', 'ja') — used by Rev.ai */
+  language?: string;
 }): Promise<TranscribeAudioCuesResult> {
   assertDevActionEnabled();
   const {
@@ -665,6 +1104,7 @@ export async function transcribeAudioCuesAction(opts: {
     originalLines,
     provider = 'gemini',
     assemblyAiSpeechModel,
+    language,
   } = opts;
 
   // Pre-split long lines (>10 words) at sentence boundaries before sending to any provider.
@@ -678,6 +1118,21 @@ export async function transcribeAudioCuesAction(opts: {
   // ── AssemblyAI branch ──
   if (provider === 'assemblyai') {
     return transcribeWithAssemblyAI({ audioBase64, mimeType, speechModel: assemblyAiSpeechModel, originalLines: splitLines });
+  }
+
+  // ── Cloudflare Workers AI branch ──
+  if (provider === 'cloudflare') {
+    return transcribeWithCloudflare({ audioBase64, mimeType, model: transcriptionModel, originalLines: splitLines });
+  }
+
+  // ── Rev.ai Forced Alignment branch ──
+  if (provider === 'revai') {
+    return transcribeWithRevAI({ audioBase64, mimeType, language, originalLines: splitLines });
+  }
+
+  // ── Speechmatics Forced Alignment branch ──
+  if (provider === 'speechmatics') {
+    return transcribeWithSpeechmatics({ audioBase64, mimeType, language, originalLines: splitLines });
   }
 
   const hasOriginalLines = Array.isArray(splitLines) && splitLines.length > 0;
