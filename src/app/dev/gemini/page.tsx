@@ -17,9 +17,14 @@ const OPENAI_TRANSCRIPTION_MODELS = [
   'whisper-1',
 ] as const;
 
+const ASSEMBLYAI_SPEECH_MODELS = [
+  'universal-2',
+  'universal-3-pro',
+] as const;
+
 type CueResult = {
   model: string;
-  provider: 'gemini' | 'openai';
+  provider: 'gemini' | 'openai' | 'assemblyai';
   segments: TranscriptionCueSegment[];
 };
 
@@ -296,14 +301,34 @@ export default function GeminiTestPage() {
   const [cueResults, setCueResults] = useState<CueResult[]>([]);
   const [transcriptionLoading, setTranscriptionLoading] = useState(false);
   const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
-  const [transcriptionProvider, setTranscriptionProvider] = useState<'gemini' | 'openai'>('gemini');
+  const [transcriptionProvider, setTranscriptionProvider] = useState<'gemini' | 'openai' | 'assemblyai'>('gemini');
   const [selectedOpenAITranscriptionModel, setSelectedOpenAITranscriptionModel] = useState<string>(OPENAI_TRANSCRIPTION_MODELS[0]);
+  const [selectedAssemblyAIModel, setSelectedAssemblyAIModel] = useState<string>(ASSEMBLYAI_SPEECH_MODELS[0]);
   /** Which (resultIndex, segIndex) is currently playing. */
   const [playingCue, setPlayingCue] = useState<{ resultIndex: number; segIndex: number } | null>(null);
+  /** Playback stop mode: stop at cue's own endSec, or play through to next cue's startSec. */
+  const [cuePlayMode, setCuePlayMode] = useState<'endSec' | 'nextStart'>('nextStart');
+  /** Custom audio uploaded by the user for Step 4 (overrides Step 3 audio). */
+  const [cueCustomAudioBase64, setCueCustomAudioBase64] = useState<string | null>(null);
+  const [cueCustomAudioMime, setCueCustomAudioMime] = useState<string>('audio/wav');
+  const [cueCustomAudioName, setCueCustomAudioName] = useState<string | null>(null);
+  const cueFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const step1Done = !!(selectedTextModel && selectedAudioModel && selectedImageModel);
   const step2Done = dialogueLines.length > 0;
   const activeStep = !step1Done ? 1 : !step2Done ? 2 : 3;
+
+  /** Effective audio for Step 4: custom upload takes priority over Step 3 generated audio. */
+  const effectiveCueAudioBase64 = cueCustomAudioBase64 ?? audioBase64;
+  const effectiveCueAudioMime   = cueCustomAudioBase64 ? cueCustomAudioMime : 'audio/wav';
+  const cueAudioSrc = effectiveCueAudioBase64 ? `data:${effectiveCueAudioMime};base64,${effectiveCueAudioBase64}` : null;
+
+  const transcribeBtnDisabled = (() => {
+    if (!effectiveCueAudioBase64 || transcriptionLoading) return true;
+    if (transcriptionProvider === 'gemini')    return !selectedTranscriptionModel;
+    if (transcriptionProvider === 'openai')    return !selectedOpenAITranscriptionModel;
+    return false; // assemblyai — no model selection required
+  })();
   const currentLang = LANGUAGE_OPTIONS.find((l) => l.value === langValue) ?? LANGUAGE_OPTIONS[0];
 
   const prefsLoaded = useRef(false);
@@ -354,10 +379,10 @@ export default function GeminiTestPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         langValue, voice1, voice2, durationSecs, theme,
         selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel,
-        transcriptionProvider, selectedOpenAITranscriptionModel,
+        transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel,
       }));
     } catch { /* quota exceeded etc */ }
-  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel, transcriptionProvider, selectedOpenAITranscriptionModel]);
+  }, [langValue, voice1, voice2, durationSecs, theme, selectedTextModel, selectedAudioModel, selectedImageModel, selectedTranscriptionModel, transcriptionProvider, selectedOpenAITranscriptionModel, selectedAssemblyAIModel]);
 
   // 3. Fetch models; restore saved model selections
   useEffect(() => {
@@ -389,11 +414,14 @@ export default function GeminiTestPage() {
             ? saved.selectedTranscriptionModel
             : res.transcriptionModels[0] ?? '',
         );
-        if (saved.transcriptionProvider === 'openai' || saved.transcriptionProvider === 'gemini') {
+        if (saved.transcriptionProvider === 'openai' || saved.transcriptionProvider === 'gemini' || saved.transcriptionProvider === 'assemblyai') {
           setTranscriptionProvider(saved.transcriptionProvider);
         }
         if (saved.selectedOpenAITranscriptionModel && (OPENAI_TRANSCRIPTION_MODELS as readonly string[]).includes(saved.selectedOpenAITranscriptionModel)) {
           setSelectedOpenAITranscriptionModel(saved.selectedOpenAITranscriptionModel);
+        }
+        if (saved.selectedAssemblyAIModel && (ASSEMBLYAI_SPEECH_MODELS as readonly string[]).includes(saved.selectedAssemblyAIModel)) {
+          setSelectedAssemblyAIModel(saved.selectedAssemblyAIModel);
         }
       } catch {
         if (res.textModels[0])  setSelectedTextModel(res.textModels[0]);
@@ -451,16 +479,20 @@ export default function GeminiTestPage() {
   }, [dialogueTitle, dialogueLines, currentLang, selectedImageModel, step2Done]);
 
   const handleTranscribeCues = useCallback(async () => {
-    const model = transcriptionProvider === 'openai' ? selectedOpenAITranscriptionModel : selectedTranscriptionModel;
-    if (!audioBase64 || !model) return;
+    const model =
+      transcriptionProvider === 'openai'    ? selectedOpenAITranscriptionModel :
+      transcriptionProvider === 'assemblyai' ? selectedAssemblyAIModel :
+      selectedTranscriptionModel;
+    if (!effectiveCueAudioBase64 || !model) return;
     setTranscriptionLoading(true);
     setTranscriptionError(null);
     const res = await transcribeAudioCuesAction({
-      audioBase64,
-      mimeType: 'audio/wav',
+      audioBase64: effectiveCueAudioBase64,
+      mimeType: effectiveCueAudioMime,
       transcriptionModel: model,
       originalLines: dialogueLines,
       provider: transcriptionProvider,
+      assemblyAiSpeechModel: transcriptionProvider === 'assemblyai' ? selectedAssemblyAIModel : undefined,
     });
     setTranscriptionLoading(false);
     if (res.success) {
@@ -468,7 +500,7 @@ export default function GeminiTestPage() {
     } else {
       setTranscriptionError(res.error);
     }
-  }, [audioBase64, dialogueLines, transcriptionProvider, selectedTranscriptionModel, selectedOpenAITranscriptionModel]);
+  }, [effectiveCueAudioBase64, effectiveCueAudioMime, dialogueLines, transcriptionProvider, selectedTranscriptionModel, selectedOpenAITranscriptionModel, selectedAssemblyAIModel]);
 
   /** Hidden element for segment playback (separate from Step 3 visible player). */
   const cuePlaybackAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -487,7 +519,7 @@ export default function GeminiTestPage() {
       const el = cuePlaybackAudioRef.current;
       const segments = cueResults[resultIndex]?.segments;
       const row = segments?.[segIndex];
-      if (!el || !audioBase64 || !row) return;
+      if (!el || !effectiveCueAudioBase64 || !row) return;
 
       const start = typeof row.startSec === 'number' ? row.startSec : parseFloat(String(row.startSec));
       const end   = typeof row.endSec   === 'number' ? row.endSec   : parseFloat(String(row.endSec));
@@ -497,9 +529,11 @@ export default function GeminiTestPage() {
       const nextStart = nextRow
         ? (typeof nextRow.startSec === 'number' ? nextRow.startSec : parseFloat(String(nextRow.startSec)))
         : Number.NaN;
-      const stopAtSec = Number.isFinite(nextStart)
-        ? Math.max(t0, nextStart)
-        : Math.max(t0, end + 0.18);
+      const stopAtSec = cuePlayMode === 'endSec'
+        ? Math.max(t0, end + 0.05)   // stop at cue's own endSec (tiny tail so last word isn't clipped)
+        : Number.isFinite(nextStart)
+          ? Math.max(t0, nextStart)  // play through to next cue's start
+          : Math.max(t0, end + 0.18);
 
       const isPlaying = playingCue?.resultIndex === resultIndex && playingCue?.segIndex === segIndex && !el.paused;
       if (isPlaying) { stopCuePlayback(); return; }
@@ -521,11 +555,11 @@ export default function GeminiTestPage() {
         .then(() => { frameId = window.requestAnimationFrame(onAnimationFrame); })
         .catch(() => { stopCuePlayback(); });
     },
-    [audioBase64, cueResults, playingCue, stopCuePlayback],
+    [effectiveCueAudioBase64, cueResults, playingCue, stopCuePlayback, cuePlayMode],
   );
 
   useEffect(() => {
-    if (!audioBase64) { stopCuePlayback(); setCueResults([]); }
+    if (!audioBase64) { stopCuePlayback(); setCueResults([]); setCueCustomAudioBase64(null); setCueCustomAudioName(null); }
   }, [audioBase64, stopCuePlayback]);
 
   useEffect(() => {
@@ -802,25 +836,29 @@ export default function GeminiTestPage() {
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Transcription provider</p>
                 <div className="flex gap-2">
-                  {(['gemini', 'openai'] as const).map((p) => (
+                  {([
+                    { id: 'gemini',     label: '✦ Gemini'     },
+                    { id: 'openai',     label: '⬡ OpenAI'     },
+                    { id: 'assemblyai', label: '◈ AssemblyAI' },
+                  ] as const).map((p) => (
                     <button
-                      key={p}
+                      key={p.id}
                       type="button"
-                      onClick={() => setTranscriptionProvider(p)}
+                      onClick={() => setTranscriptionProvider(p.id)}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                        transcriptionProvider === p
+                        transcriptionProvider === p.id
                           ? 'bg-emerald-600/20 dark:bg-emerald-600/30 border-emerald-500/60 text-emerald-700 dark:text-emerald-200 shadow-sm'
                           : 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-emerald-400 dark:hover:border-emerald-500/50'
                       }`}
                     >
-                      {p === 'gemini' ? '✦ Gemini' : '⬡ OpenAI'}
+                      {p.label}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Model selector — changes based on provider */}
-              {transcriptionProvider === 'gemini' ? (
+              {transcriptionProvider === 'gemini' && (
                 <ModelSelect
                   id="transcription-model-select"
                   label="Gemini transcription model"
@@ -831,7 +869,8 @@ export default function GeminiTestPage() {
                   error={modelsError ?? undefined}
                   accentColor="emerald"
                 />
-              ) : (
+              )}
+              {transcriptionProvider === 'openai' && (
                 <div>
                   <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" htmlFor="openai-transcription-model-select">
                     OpenAI transcription model
@@ -847,16 +886,102 @@ export default function GeminiTestPage() {
                     ))}
                   </select>
                   <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
-                    Uses OpenAI Whisper — timestamps aligned to original script lines.
+                    whisper-1 returns real segment timestamps · gpt-4o models estimate timing from word counts.
                   </p>
                 </div>
               )}
+              {transcriptionProvider === 'assemblyai' && (
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" htmlFor="assemblyai-model-select">
+                    AssemblyAI speech model
+                  </label>
+                  <select
+                    id="assemblyai-model-select"
+                    value={selectedAssemblyAIModel}
+                    onChange={(e) => setSelectedAssemblyAIModel(e.target.value)}
+                    className="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 transition-all"
+                  >
+                    {ASSEMBLYAI_SPEECH_MODELS.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                    Runs speaker diarization — returns utterances with real ms timestamps. May take 30–90 s.
+                  </p>
+                </div>
+              )}
+
+              {/* Audio source — Step 3 audio or custom upload */}
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Audio source</p>
+                <input
+                  ref={cueFileInputRef}
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  aria-label="Upload audio file for transcription"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const dataUrl = reader.result as string;
+                      // dataUrl = "data:<mime>;base64,<data>"
+                      const comma = dataUrl.indexOf(',');
+                      const mime  = dataUrl.slice(5, dataUrl.indexOf(';'));
+                      const b64   = dataUrl.slice(comma + 1);
+                      setCueCustomAudioBase64(b64);
+                      setCueCustomAudioMime(mime);
+                      setCueCustomAudioName(file.name);
+                      setCueResults([]);
+                      stopCuePlayback();
+                    };
+                    reader.readAsDataURL(file);
+                    // reset input so the same file can be re-selected
+                    e.target.value = '';
+                  }}
+                />
+                {cueCustomAudioName ? (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50 dark:bg-emerald-500/10 text-sm">
+                    <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                    </svg>
+                    <span className="flex-1 truncate text-emerald-800 dark:text-emerald-200 font-medium">{cueCustomAudioName}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setCueCustomAudioBase64(null); setCueCustomAudioName(null); setCueResults([]); stopCuePlayback(); }}
+                      className="text-emerald-600 dark:text-emerald-400 hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0"
+                      title="Remove custom audio — revert to Step 3 audio"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => cueFileInputRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-sm text-gray-600 dark:text-gray-300 hover:border-emerald-400 dark:hover:border-emerald-500/50 transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Upload audio file
+                    </button>
+                    {audioBase64 && (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">Using Step 3 audio</span>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <button
                 id="generate-transcription-cues-btn"
                 type="button"
                 onClick={handleTranscribeCues}
-                disabled={!audioBase64 || (transcriptionProvider === 'gemini' ? !selectedTranscriptionModel : !selectedOpenAITranscriptionModel) || transcriptionLoading}
+                disabled={transcribeBtnDisabled}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {transcriptionLoading ? <SpinnerIcon /> : (
@@ -866,18 +991,44 @@ export default function GeminiTestPage() {
                 )}
                 {transcriptionLoading ? 'Transcribing…' : 'Generate time-based cues'}
               </button>
-              {!audioBase64 && (
-                <p className="text-xs text-amber-600 dark:text-amber-400/90">Generate audio in Step 3 first.</p>
+              {!effectiveCueAudioBase64 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400/90">Generate audio in Step 3 first, or upload an audio file above.</p>
               )}
               {transcriptionError && <ErrorBanner message={transcriptionError} />}
-              {audioSrc && (
+              {cueAudioSrc && (
                 <audio
                   ref={cuePlaybackAudioRef}
-                  src={audioSrc}
+                  src={cueAudioSrc}
                   preload="auto"
                   className="hidden"
                   aria-hidden="true"
                 />
+              )}
+
+              {/* Playback mode toggle — only shown when there are results */}
+              {cueResults.length > 0 && (
+                <div className="flex items-center gap-3 pt-1">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider shrink-0">Play cue until</span>
+                  <div className="flex gap-1.5">
+                    {([
+                      { id: 'endSec',    label: 'End time' },
+                      { id: 'nextStart', label: 'Next cue start' },
+                    ] as const).map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setCuePlayMode(opt.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                          cuePlayMode === opt.id
+                            ? 'bg-emerald-600/20 dark:bg-emerald-600/30 border-emerald-500/50 text-emerald-700 dark:text-emerald-200'
+                            : 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-emerald-400 dark:hover:border-emerald-500/40'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {/* Accumulated cue result tables — newest first */}
@@ -888,9 +1039,11 @@ export default function GeminiTestPage() {
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
                       result.provider === 'openai'
                         ? 'bg-green-50 dark:bg-green-500/10 border-green-300 dark:border-green-500/30 text-green-700 dark:text-green-300'
+                        : result.provider === 'assemblyai'
+                        ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300'
                         : 'bg-violet-50 dark:bg-violet-500/10 border-violet-300 dark:border-violet-500/30 text-violet-700 dark:text-violet-300'
                     }`}>
-                      {result.provider === 'openai' ? '⬡' : '✦'} {result.model.replace('models/', '')}
+                      {result.provider === 'openai' ? '⬡' : result.provider === 'assemblyai' ? '◈' : '✦'} {result.model.replace('models/', '')}
                     </span>
                     {rIdx === 0 && (
                       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Latest</span>
@@ -902,8 +1055,8 @@ export default function GeminiTestPage() {
                       <thead>
                         <tr className="bg-emerald-50 dark:bg-emerald-500/10 text-left text-xs uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
                           <th className="px-2 py-2 font-semibold w-14 shrink-0">Play</th>
-                          <th className="px-3 py-2 font-semibold">Start (ms)</th>
-                          <th className="px-3 py-2 font-semibold">End (ms)</th>
+                          <th className="px-3 py-2 font-semibold">Start (s)</th>
+                          <th className="px-3 py-2 font-semibold">End (s)</th>
                           <th className="px-3 py-2 font-semibold">Speaker</th>
                           <th className="px-3 py-2 font-semibold">Text</th>
                         </tr>
@@ -936,8 +1089,8 @@ export default function GeminiTestPage() {
                                   )}
                                 </button>
                               </td>
-                              <td className="px-3 py-2 font-mono text-xs align-top">{Math.round((typeof row.startSec === 'number' ? row.startSec : parseFloat(String(row.startSec))) * 1000)}</td>
-                              <td className="px-3 py-2 font-mono text-xs align-top">{Math.round((typeof row.endSec === 'number' ? row.endSec : parseFloat(String(row.endSec))) * 1000)}</td>
+                              <td className="px-3 py-2 font-mono text-xs align-top">{(typeof row.startSec === 'number' ? row.startSec : parseFloat(String(row.startSec))).toFixed(3)}</td>
+                              <td className="px-3 py-2 font-mono text-xs align-top">{(typeof row.endSec === 'number' ? row.endSec : parseFloat(String(row.endSec))).toFixed(3)}</td>
                               <td className="px-3 py-2 align-top whitespace-nowrap">{row.speaker}</td>
                               <td className="px-3 py-2 align-top">{row.text}</td>
                             </tr>

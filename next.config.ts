@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   /** Large WAV base64 from /dev/gemini Step 5 transcription action */
   experimental: {
     serverActions: {
-      bodySizeLimit: "10mb",
+      bodySizeLimit: "100mb",
     },
   },
 };

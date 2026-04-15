@@ -394,6 +394,21 @@ function getWavDurationSec(base64: string): number {
   }
 }
 
+/**
+ * Pre-split dialogue lines before sending to any transcription provider.
+ * A line with more than 10 words is split at . ? ! boundaries into multiple
+ * lines, each inheriting the parent speaker. Lines ≤ 10 words are unchanged.
+ */
+function presplitLines(lines: DialogueLine[]): DialogueLine[] {
+  return lines.flatMap((line) => {
+    const wordCount = line.text.split(/\s+/).filter(Boolean).length;
+    if (wordCount <= 10) return [line];
+    const sentences = line.text.split(/(?<=[.?!])\s+/).map((s) => s.trim()).filter(Boolean);
+    if (sentences.length <= 1) return [line];
+    return sentences.map((sentence) => ({ speaker: line.speaker, text: sentence }));
+  });
+}
+
 async function transcribeWithOpenAI(opts: {
   audioBase64: string;
   mimeType: string;
@@ -471,14 +486,14 @@ async function transcribeWithOpenAI(opts: {
     const totalDuration = getWavDurationSec(opts.audioBase64);
 
     if (hasOriginalLines && opts.originalLines && totalDuration > 0) {
-      const allWords = opts.originalLines.reduce((acc, l) => acc + l.text.split(/\s+/).length, 0);
+      const allWords = opts.originalLines.reduce((acc, l) => acc + l.text.split(/\s+/).filter(Boolean).length, 0);
       let cumWords = 0;
       cues = opts.originalLines.map((line) => {
-        const lineWords = line.text.split(/\s+/).length;
+        const lineWords = line.text.split(/\s+/).filter(Boolean).length;
         const startSec  = (cumWords / allWords) * totalDuration;
         cumWords += lineWords;
         const endSec = (cumWords / allWords) * totalDuration;
-        return { startSec: +startSec.toFixed(2), endSec: +endSec.toFixed(2), speaker: line.speaker, text: line.text };
+        return { startSec: +startSec.toFixed(3), endSec: +endSec.toFixed(3), speaker: line.speaker, text: line.text };
       });
     } else {
       cues = [{ startSec: 0, endSec: totalDuration || 0, speaker: 'Speaker1', text: data.text?.trim() ?? '' }];
@@ -488,13 +503,159 @@ async function transcribeWithOpenAI(opts: {
   return { success: true, cues: { segments: cues } };
 }
 
+// ─────────────────────────────────────────────────────────────
+// AssemblyAI transcription helper
+// Upload → submit job with speaker_labels → poll → utterances
+// ─────────────────────────────────────────────────────────────
+async function transcribeWithAssemblyAI(opts: {
+  audioBase64: string;
+  mimeType: string;
+  speechModel?: string;
+  originalLines?: DialogueLine[];
+}): Promise<TranscribeAudioCuesResult> {
+  const apiKey = process.env.ASSEMBLYAI_API_KEY;
+  if (!apiKey) return { success: false, error: 'ASSEMBLYAI_API_KEY is not configured on the server.' };
+
+  // 1. Upload raw audio
+  const buffer = Buffer.from(opts.audioBase64, 'base64');
+  let uploadUrl: string;
+  try {
+    const res = await fetch('https://api.assemblyai.com/v2/upload', {
+      method: 'POST',
+      headers: { authorization: apiKey, 'content-type': opts.mimeType },
+      body: buffer,
+    });
+    if (!res.ok) return { success: false, error: `AssemblyAI upload error ${res.status}: ${await res.text()}` };
+    ({ upload_url: uploadUrl } = await res.json() as { upload_url: string });
+  } catch (err: unknown) {
+    return { success: false, error: `AssemblyAI upload failed: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  // 2. Submit transcript job with speaker diarization
+  let transcriptId: string;
+  try {
+    const res = await fetch('https://api.assemblyai.com/v2/transcript', {
+      method: 'POST',
+      headers: { authorization: apiKey, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        audio_url: uploadUrl,
+        speaker_labels: true,
+        // speech_models is required (no default). If universal-3-pro is chosen,
+        // include universal-2 as fallback for languages it doesn't cover.
+        speech_models: opts.speechModel === 'universal-3-pro'
+          ? ['universal-3-pro', 'universal-2']
+          : ['universal-2'],
+      }),
+    });
+    if (!res.ok) return { success: false, error: `AssemblyAI submit error ${res.status}: ${await res.text()}` };
+    ({ id: transcriptId } = await res.json() as { id: string });
+  } catch (err: unknown) {
+    return { success: false, error: `AssemblyAI submit failed: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  // 3. Poll until completed (max ~5 minutes, every 3 s)
+  type AssemblyTranscript = {
+    status: 'queued' | 'processing' | 'completed' | 'error';
+    utterances?: Array<{ start: number; end: number; text: string; speaker: string }>;
+    error?: string;
+  };
+
+  for (let attempt = 0; attempt < 100; attempt++) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+    try {
+      const res = await fetch(`https://api.assemblyai.com/v2/transcript/${transcriptId}`, {
+        headers: { authorization: apiKey },
+      });
+      if (!res.ok) continue;
+      const data = await res.json() as AssemblyTranscript;
+
+      if (data.status === 'error') {
+        return { success: false, error: `AssemblyAI transcription error: ${data.error ?? 'unknown'}` };
+      }
+
+      if (data.status === 'completed') {
+        const utterances = data.utterances ?? [];
+        if (utterances.length === 0) {
+          return { success: false, error: 'AssemblyAI returned no utterances. Try enabling speaker labels or check the audio.' };
+        }
+
+        const hasOriginalLines = Array.isArray(opts.originalLines) && opts.originalLines.length > 0;
+        let cues: TranscriptionCueSegment[];
+
+        if (hasOriginalLines && opts.originalLines) {
+          // Align utterances (real timing) to original lines (ground-truth text + speakers)
+          const M = utterances.length;
+          const N = opts.originalLines.length;
+          const lines = opts.originalLines;
+          cues = lines.map((line, i) => {
+            const startIdx = Math.floor((i * M) / N);
+            const endIdx   = Math.max(startIdx, Math.min(Math.floor(((i + 1) * M) / N) - 1, M - 1));
+            // AssemblyAI returns ms — convert to sec for our internal type
+            const uStart = utterances[startIdx].start / 1000;
+            const uEnd   = utterances[endIdx].end   / 1000;
+
+            // When multiple lines share the same utterance range (M < N),
+            // split the time proportionally by word count so timestamps don't collide.
+            const siblings = lines
+              .map((_, j) => {
+                const si = Math.floor((j * M) / N);
+                const ei = Math.max(si, Math.min(Math.floor(((j + 1) * M) / N) - 1, M - 1));
+                return si === startIdx && ei === endIdx ? j : -1;
+              })
+              .filter((j) => j >= 0);
+
+            if (siblings.length <= 1) {
+              return { startSec: uStart, endSec: uEnd, speaker: line.speaker, text: line.text };
+            }
+
+            const duration = uEnd - uStart;
+            const sibTexts = siblings.map((j) => lines[j].text);
+            const totalWords = sibTexts.reduce((s, t) => s + (t.split(/\s+/).filter(Boolean).length), 0) || 1;
+            const myOffset   = siblings.indexOf(i);
+            const cumWords   = sibTexts.slice(0, myOffset).reduce((s, t) => s + (t.split(/\s+/).filter(Boolean).length), 0);
+            const myWords    = line.text.split(/\s+/).filter(Boolean).length;
+
+            return {
+              startSec: +(uStart + (cumWords / totalWords) * duration).toFixed(3),
+              endSec:   +(uStart + ((cumWords + myWords) / totalWords) * duration).toFixed(3),
+              speaker:  line.speaker,
+              text:     line.text,
+            };
+          });
+        } else {
+          // No script — use utterances directly; map A/B/… → Speaker1/Speaker2/…
+          const speakerMap = new Map<string, string>();
+          let counter = 1;
+          cues = utterances.map((u) => {
+            if (!speakerMap.has(u.speaker)) speakerMap.set(u.speaker, `Speaker${counter++}`);
+            return {
+              startSec: u.start / 1000,
+              endSec:   u.end   / 1000,
+              speaker:  speakerMap.get(u.speaker)!,
+              text:     u.text,
+            };
+          });
+        }
+
+        return { success: true, cues: { segments: cues } };
+      }
+    } catch {
+      // transient network error — keep polling
+    }
+  }
+
+  return { success: false, error: 'AssemblyAI transcription timed out after ~5 minutes.' };
+}
+
 export async function transcribeAudioCuesAction(opts: {
   audioBase64: string;
   mimeType?: string;
   transcriptionModel: string;
   originalLines?: DialogueLine[];
-  /** 'gemini' (default) or 'openai' */
-  provider?: 'gemini' | 'openai';
+  /** 'gemini' (default), 'openai', or 'assemblyai' */
+  provider?: 'gemini' | 'openai' | 'assemblyai';
+  /** AssemblyAI speech model — 'universal-2' (default) or 'universal-3-pro' */
+  assemblyAiSpeechModel?: string;
 }): Promise<TranscribeAudioCuesResult> {
   assertDevActionEnabled();
   const {
@@ -503,32 +664,38 @@ export async function transcribeAudioCuesAction(opts: {
     transcriptionModel,
     originalLines,
     provider = 'gemini',
+    assemblyAiSpeechModel,
   } = opts;
+
+  // Pre-split long lines (>10 words) at sentence boundaries before sending to any provider.
+  const splitLines = originalLines ? presplitLines(originalLines) : undefined;
 
   // ── OpenAI branch ──
   if (provider === 'openai') {
-    return transcribeWithOpenAI({ audioBase64, mimeType, model: transcriptionModel, originalLines });
+    return transcribeWithOpenAI({ audioBase64, mimeType, model: transcriptionModel, originalLines: splitLines });
   }
 
-  const hasOriginalLines = Array.isArray(originalLines) && originalLines.length > 0;
+  // ── AssemblyAI branch ──
+  if (provider === 'assemblyai') {
+    return transcribeWithAssemblyAI({ audioBase64, mimeType, speechModel: assemblyAiSpeechModel, originalLines: splitLines });
+  }
+
+  const hasOriginalLines = Array.isArray(splitLines) && splitLines.length > 0;
   const originalLinesJson = hasOriginalLines
-    ? JSON.stringify(originalLines, null, 2)
+    ? JSON.stringify(splitLines, null, 2)
     : null;
 
   const textPrompt = hasOriginalLines
     ? `You are aligning a known two-speaker dialogue script to an audio recording.
 
-Use the provided script as ground truth.
-Do not paraphrase, correct, merge, split, reorder, or omit lines.
-Return exactly one segment for each script line, in the same order as the script.
-Copy each speaker label and text exactly from the script.
+Use the provided script as ground truth. Return exactly one segment per script line, in the same order.
+Copy each speaker label and text exactly from the script — do not paraphrase, correct, merge, split, reorder, or omit lines.
 
 Timing rules:
-- startSec and endSec must be in seconds from the beginning of the audio
-- decimals are allowed
-- make timings tight, but do not cut off the final spoken word of a line
-- segments must stay chronological
-- if uncertain, it is better to end a cue slightly late than slightly early
+- startSec and endSec must be in seconds from the beginning of the audio (decimals allowed).
+- Timings must be chronological and must not overlap.
+- Make timings tight — do not cut off the final spoken word of a segment.
+- If uncertain, end a cue slightly late rather than slightly early.
 
 Provided script:
 ${originalLinesJson}`
@@ -580,15 +747,10 @@ Order segments chronologically and cover all spoken content.`;
       text: String(segment.text ?? ''),
     }));
 
-    const cues =
-      hasOriginalLines && normalizedSegments.length === originalLines!.length
-        ? normalizedSegments.map((segment, index) => ({
-            startSec: segment.startSec,
-            endSec: segment.endSec,
-            speaker: originalLines![index].speaker,
-            text: originalLines![index].text,
-          }))
-        : normalizedSegments;
+    // Trust the AI's output directly — speaker labels and text are copied verbatim
+    // from the script by the prompt, and segments may be more than originalLines
+    // when long lines are split at sentence boundaries.
+    const cues = normalizedSegments;
 
     return { success: true, cues: { segments: cues } };
   } catch (err: unknown) {
