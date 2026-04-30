@@ -1,6 +1,6 @@
 # 🌐 Bantera — Website & Admin Dashboard
 
-> **Marketing site, web practice platform, and admin dashboard** for the Bantera language learning app.
+> **Introduction site, web practice platform, and admin dashboard** for the Bantera language learning app.
 
 [![App Store](https://img.shields.io/badge/App_Store-Download-blue?logo=apple&logoColor=white)](https://apps.apple.com/app/id6761799720)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
@@ -26,11 +26,11 @@ This project serves four distinct audiences from one codebase:
 
 ```
 bantera.app/
-├── /                      ← Introduction homepage (iOS app CTA)
+├── /                      ← Introduction homepage (iOS app CTA) → https://bantera.app
 ├── /privacy               ← Privacy policy
 ├── /support               ← Support page
 │
-├── /webapp                ← Public web practice platform
+├── /webapp                ← Public web practice platform → https://bantera.app/webapp?languageCode=en-NZ
 │   ├── /                  ← Browse audio by language
 │   ├── /[videoId]         ← Cue-by-cue practice player
 │   └── /studio            ← AI dialogue & audio generator
@@ -94,7 +94,7 @@ bantera.app/
 src/
 ├── app/
 │   ├── layout.tsx               # Root layout (dark mode, fonts, no-FOUC script)
-│   ├── page.tsx                 # Marketing homepage
+│   ├── page.tsx                 # Introduction homepage
 │   ├── actions.ts               # Shared server actions (AI generation)
 │   ├── webapp/                  # Public practice platform
 │   │   ├── page.tsx             # Audio browser
