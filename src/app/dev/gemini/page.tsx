@@ -437,7 +437,7 @@ export default function GeminiTestPage() {
           setSelectedCloudflareModel(saved.selectedCloudflareModel);
         }
         if (saved.cueIncludeScript !== undefined) {
-          setCueIncludeScript(saved.cueIncludeScript === 'true' || saved.cueIncludeScript === true);
+          setCueIncludeScript(saved.cueIncludeScript === 'true' || (saved.cueIncludeScript as unknown) === true);
         }
         if (saved.revAiMode && ['stt', 'alignment'].includes(saved.revAiMode as string)) {
           setRevAiMode(saved.revAiMode as 'stt' | 'alignment');
