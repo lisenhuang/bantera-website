@@ -1,10 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 
 const APP_STORE_URL = 'https://apps.apple.com/app/id6761799720';
+
+function subscribeToHtmlClass(cb: () => void) {
+  const observer = new MutationObserver(cb);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  return () => observer.disconnect();
+}
+
+function getDarkSnapshot(): boolean {
+  return document.documentElement.classList.contains('dark');
+}
+
+function getDarkServerSnapshot(): boolean {
+  return false;
+}
 
 function SunIcon() {
   return (
@@ -39,18 +53,10 @@ function AppleIcon() {
 }
 
 export default function DownloadPageClient() {
-  const [isDark, setIsDark] = useState<boolean | null>(null);
-  const [isApplePlatform, setIsApplePlatform] = useState(false);
-
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains('dark'));
-    setIsApplePlatform(/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent));
-  }, []);
+  const isDark = useSyncExternalStore(subscribeToHtmlClass, getDarkSnapshot, getDarkServerSnapshot);
 
   function toggleTheme() {
-    const next = !isDark;
-    document.documentElement.classList.toggle('dark', next);
-    setIsDark(next);
+    document.documentElement.classList.toggle('dark');
   }
 
   return (
@@ -80,13 +86,13 @@ export default function DownloadPageClient() {
           {/* App icon + name */}
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
-              <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-orange-400/30 to-violet-500/20 blur-2xl scale-110" />
+              <div className="absolute inset-0 rounded-[2.5rem] bg-linear-to-br from-orange-400/30 to-violet-500/20 blur-2xl scale-110" />
               <Image
                 src="/icon.png"
                 alt="Bantera app icon"
                 width={100}
                 height={100}
-                className="relative rounded-[2rem] shadow-2xl"
+                className="relative rounded-4xl shadow-2xl"
                 priority
               />
             </div>
@@ -132,9 +138,8 @@ export default function DownloadPageClient() {
             </p>
           </div>
 
-          {/* App Store button — Apple platforms only */}
-          {isApplePlatform && (
-            <a
+          {/* App Store button — always visible */}
+          <a
               href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
@@ -143,7 +148,6 @@ export default function DownloadPageClient() {
               <AppleIcon />
               Download on the App Store
             </a>
-          )}
 
           {/* Android coming soon */}
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
