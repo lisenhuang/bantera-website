@@ -198,3 +198,56 @@ export async function deleteAdminVideo(
 ): Promise<void> {
   await adminFetch(`/api/admin/videos/${videoId}`, token, { method: 'DELETE' });
 }
+
+// ── Messages ──────────────────────────────────────────────────────────────────
+
+export type AdminUserBrief = {
+  id: string;
+  name: string | null;
+  email: string | null;
+};
+
+export type AdminMessageListItem = {
+  id: string;
+  threadId: string;
+  threadType: string;
+  sender: AdminUserBrief;
+  recipient: AdminUserBrief | null;
+  groupLanguageKey: string | null;
+  groupLanguageDisplayName: string | null;
+  durationMs: number;
+  spokenLanguageCode: string;
+  originalFileName: string;
+  audioContentType: string;
+  createdAt: string;
+  expiresAt: string | null;
+};
+
+export async function listAdminMessages(
+  token: string,
+  params: {
+    threadType?: string;
+    from?: string;
+    to?: string;
+    limit?: number;
+    offset?: number;
+  } = {},
+): Promise<AdminPagedResult<AdminMessageListItem>> {
+  const q = new URLSearchParams();
+  if (params.threadType) q.set('threadType', params.threadType);
+  if (params.from) q.set('from', params.from);
+  if (params.to) q.set('to', params.to);
+  if (params.limit != null) q.set('limit', String(params.limit));
+  if (params.offset != null) q.set('offset', String(params.offset));
+  return adminFetch<AdminPagedResult<AdminMessageListItem>>(
+    `/api/admin/messages?${q.toString()}`,
+    token,
+  );
+}
+
+export async function deleteAdminMessage(
+  token: string,
+  messageId: string,
+): Promise<void> {
+  await adminFetch(`/api/admin/messages/${messageId}`, token, { method: 'DELETE' });
+}
