@@ -5,6 +5,13 @@ export type BanteraTranscriptCue = {
   text: string;
 };
 
+export type BanteraWordTiming = {
+  word: string;
+  startMs: number;
+  endMs: number;
+  confidence?: number | null;
+};
+
 export type BanteraPublicAudio = {
   id: string;
   userId: string;
@@ -13,6 +20,8 @@ export type BanteraPublicAudio = {
   transcriptLanguage: string;
   transcriptLanguageCode: string;
   transcriptCues: BanteraTranscriptCue[];
+  transcriptShortCues?: BanteraTranscriptCue[] | null;
+  wordTiming?: BanteraWordTiming[] | null;
   isPublic: boolean;
   durationMs: number;
   fileSizeBytes: number;
