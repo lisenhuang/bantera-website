@@ -142,6 +142,20 @@ export async function listPublicAudios({
     .map(normalizePublicAudio);
 }
 
+export type BanteraLearningLanguage = {
+  identifier: string;
+  displayName: string;
+  flagEmoji: string;
+};
+
+export async function getLearningLanguages(): Promise<BanteraLearningLanguage[]> {
+  try {
+    return await fetchJson<BanteraLearningLanguage[]>("/api/public/learning-languages");
+  } catch {
+    return [];
+  }
+}
+
 export async function getPublicAudio(
   videoId: string,
 ): Promise<BanteraPublicAudio | null> {
