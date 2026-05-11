@@ -43,10 +43,22 @@ export async function generateMetadata({
     };
   }
 
+  const title = `${audio.originalFileName} | Bantera Web App`;
+  const description = "Practise this Bantera public audio cue by cue in the browser.";
   return {
-    title: `${audio.originalFileName} | Bantera Web App`,
-    description:
-      "Practise this Bantera public audio cue by cue in the browser.",
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      ...(audio.coverImageUrl ? { images: [audio.coverImageUrl] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(audio.coverImageUrl ? { images: [audio.coverImageUrl] } : {}),
+    },
   };
 }
 

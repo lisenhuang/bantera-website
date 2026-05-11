@@ -19,9 +19,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { audioId } = await params;
   const audio = await getPublicAudio(audioId);
   if (!audio) return { title: "Audio Not Found | Bantera" };
+  const title = `Shadow: ${audio.originalFileName} | Bantera`;
+  const description = `Practice shadowing "${audio.originalFileName}" cue by cue with word-level highlighting in your browser.`;
   return {
-    title: `Shadow: ${audio.originalFileName} | Bantera`,
-    description: `Practice shadowing "${audio.originalFileName}" cue by cue with word-level highlighting in your browser.`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      ...(audio.coverImageUrl ? { images: [audio.coverImageUrl] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(audio.coverImageUrl ? { images: [audio.coverImageUrl] } : {}),
+    },
   };
 }
 
