@@ -27,10 +27,12 @@ function UserEditForm({ user }: { user: AdminUserDetail }) {
   const boundAction = patchUserAction.bind(null, user.id);
   const [state, formAction, pending] = useActionState(boundAction, undefined);
   const [clearLimit, setClearLimit] = useState(false);
+  const [alwaysOnline, setAlwaysOnline] = useState(user.alwaysOnline);
 
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="clearAiLimit" value={String(clearLimit)} />
+      <input type="hidden" name="alwaysOnline" value={String(alwaysOnline)} />
 
       <div>
         <label htmlFor="role" className="label-xs block mb-1.5">Role</label>
@@ -68,6 +70,24 @@ function UserEditForm({ user }: { user: AdminUserDetail }) {
             className="rounded border-gray-300 dark:border-white/20 text-indigo-600"
           />
           <span className="text-xs text-gray-500 dark:text-gray-400">Remove limit (set to unlimited)</span>
+        </label>
+      </div>
+
+      <div>
+        <label className="label-xs block mb-1.5">Presence</label>
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={alwaysOnline}
+            onChange={(e) => setAlwaysOnline(e.target.checked)}
+            className="rounded border-gray-300 dark:border-white/20 text-indigo-600 mt-0.5"
+          />
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            Always show as online in chat
+            <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Other users see this user with a green online dot even when they are not connected. Push notifications to this user are suppressed.
+            </span>
+          </span>
         </label>
       </div>
 
@@ -182,7 +202,34 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         <span className="text-gray-700 dark:text-gray-300 font-medium truncate">{user.name ?? user.id}</span>
       </div>
 
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{user.name ?? 'Unnamed user'}</h1>
+      <div className="flex items-center gap-4">
+        {user.avatarUrl ? (
+          <img
+            src={user.avatarUrl}
+            alt=""
+            width={80}
+            height={80}
+            className="rounded-full object-cover bg-gray-100 dark:bg-white/5"
+            style={{ width: '80px', height: '80px' }}
+          />
+        ) : (
+          <div
+            className="rounded-full bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold"
+            style={{ width: '80px', height: '80px', fontSize: '32px' }}
+          >
+            {(user.name?.trim()[0] ?? '?').toUpperCase()}
+          </div>
+        )}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{user.name ?? 'Unnamed user'}</h1>
+          {user.alwaysOnline && (
+            <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-500/30 px-2 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Always online
+            </p>
+          )}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left column */}

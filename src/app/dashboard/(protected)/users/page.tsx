@@ -79,6 +79,39 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
+function UserAvatar({
+  avatarUrl,
+  name,
+  size = 32,
+}: {
+  avatarUrl: string | null;
+  name: string | null;
+  size?: number;
+}) {
+  const initial = (name?.trim()[0] ?? '?').toUpperCase();
+  const dim = `${size}px`;
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt=""
+        width={size}
+        height={size}
+        className="rounded-full object-cover bg-gray-100 dark:bg-white/5"
+        style={{ width: dim, height: dim }}
+      />
+    );
+  }
+  return (
+    <div
+      className="rounded-full bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300 flex items-center justify-center font-medium"
+      style={{ width: dim, height: dim, fontSize: `${Math.max(10, Math.round(size * 0.4))}px` }}
+    >
+      {initial}
+    </div>
+  );
+}
+
 function formatDate(iso: string | null) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -182,6 +215,7 @@ function UsersContent() {
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
               <tr>
+                <th className="px-3 py-3 w-12" />
                 {SORT_COLUMNS.map((col) => (
                   <SortHeader key={col.key} col={col} currentSort={sort} currentDir={dir} />
                 ))}
@@ -190,13 +224,13 @@ function UsersContent() {
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {!result ? (
                 <tr>
-                  <td colSpan={SORT_COLUMNS.length} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">
+                  <td colSpan={SORT_COLUMNS.length + 1} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">
                     Loading…
                   </td>
                 </tr>
               ) : result.items.length === 0 ? (
                 <tr>
-                  <td colSpan={SORT_COLUMNS.length} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">
+                  <td colSpan={SORT_COLUMNS.length + 1} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">
                     No users found
                   </td>
                 </tr>
@@ -207,6 +241,9 @@ function UsersContent() {
                     onClick={() => router.push(`/dashboard/users/${user.id}`)}
                     className="hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer transition-colors"
                   >
+                    <td className="px-3 py-3">
+                      <UserAvatar avatarUrl={user.avatarUrl} name={user.name} size={32} />
+                    </td>
                     <td className="px-3 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                       {user.name ?? <span className="text-gray-400">—</span>}
                     </td>

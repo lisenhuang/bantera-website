@@ -14,6 +14,7 @@ export type AdminUserListItem = {
   createdAt: string;
   lastLoginAt: string | null;
   videoCount: number;
+  avatarUrl: string | null;
 };
 
 export type AdminIdentityInfo = {
@@ -40,6 +41,8 @@ export type AdminUserDetail = {
   lastLoginAt: string | null;
   identities: AdminIdentityInfo[];
   stats: AdminUserStats;
+  avatarUrl: string | null;
+  alwaysOnline: boolean;
 };
 
 export type AdminVideoListItem = {
@@ -144,6 +147,7 @@ export async function patchAdminUser(
     status?: string;
     aiAudioDailyLimit?: number | null;
     clearAiLimit?: boolean;
+    alwaysOnline?: boolean | null;
   },
 ): Promise<void> {
   await adminFetch(`/api/admin/users/${userId}`, token, {
@@ -153,6 +157,7 @@ export async function patchAdminUser(
       status: body.status ?? null,
       aiAudioDailyLimit: body.aiAudioDailyLimit ?? null,
       clearAiLimit: body.clearAiLimit ?? false,
+      alwaysOnline: body.alwaysOnline ?? null,
     }),
   });
 }

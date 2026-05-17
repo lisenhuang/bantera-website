@@ -18,6 +18,7 @@ export async function patchUserAction(
   const status = formData.get('status') as string | null;
   const limitStr = formData.get('aiAudioDailyLimit') as string | null;
   const clearLimit = formData.get('clearAiLimit') === 'true';
+  const alwaysOnline = formData.get('alwaysOnline') === 'true';
 
   let aiAudioDailyLimit: number | undefined;
   if (!clearLimit && limitStr != null && limitStr !== '') {
@@ -31,6 +32,7 @@ export async function patchUserAction(
       status: status || undefined,
       aiAudioDailyLimit,
       clearAiLimit: clearLimit,
+      alwaysOnline,
     });
     revalidatePath(`/dashboard/users/${userId}`);
     revalidatePath('/dashboard/users');
