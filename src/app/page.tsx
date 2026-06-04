@@ -1,11 +1,34 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
+import { JsonLd } from '@/components/json-ld';
 
 export const metadata: Metadata = {
-  title: 'Bantera — Learn Languages Through Real Conversation',
+  title: 'Bantera — Learn Languages by Actually Speaking',
   description:
-    'Bantera is an audio-first language learning app. Listen to real spoken content, practise speaking, and find language exchange partners who speak what you want to learn.',
+    'Bantera is an audio-first language learning app. Listen to real spoken content, practise speaking, record yourself for AI pronunciation feedback, and find language exchange partners who speak what you want to learn.',
+  alternates: { canonical: '/' },
+};
+
+// Schema.org app entity — what answer engines extract for "best language app"
+// comparison queries. Pricing/aggregateRating intentionally omitted (not asserting
+// unverified facts).
+const appLd = {
+  '@context': 'https://schema.org',
+  '@type': 'MobileApplication',
+  '@id': 'https://bantera.app/#app',
+  name: 'Bantera',
+  applicationCategory: 'EducationalApplication',
+  applicationSubCategory: 'Language Learning',
+  operatingSystem: 'iOS',
+  url: 'https://bantera.app',
+  downloadUrl: 'https://apps.apple.com/app/id6761799720',
+  installUrl: 'https://apps.apple.com/app/id6761799720',
+  description:
+    'Audio-first language learning app. Listen to real spoken content cue-by-cue, hide or reveal subtitles and translations, record yourself for AI transcription and pronunciation comparison, and find language exchange partners.',
+  inLanguage: ['en', 'zh', 'ja', 'ko', 'es', 'fr', 'de', 'pt', 'it', 'ar'],
+  author: { '@type': 'Person', name: 'Lisen Huang' },
+  publisher: { '@id': 'https://bantera.app/#organization' },
 };
 
 // ── Feature data ──────────────────────────────────────────────────
@@ -74,6 +97,7 @@ const LANGUAGES = ['🇺🇸 English', '🇨🇳 Mandarin', '🇯🇵 Japanese',
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white font-sans antialiased transition-colors duration-300">
+      <JsonLd data={appLd} />
 
       {/* ── Nav ──────────────────────────────────────────────── */}
       <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-white/10">
@@ -415,6 +439,12 @@ export default function HomePage() {
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.656l-5.214-6.817-5.964 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
             </svg>
             <span>X</span>
+          </Link>
+          <Link
+            href="/faq"
+            className="text-gray-500 hover:text-orange-400 transition-colors"
+          >
+            FAQ
           </Link>
           <Link
             href="/privacy"

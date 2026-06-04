@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type ActivePage = "privacy" | "support";
+type ActivePage = "faq" | "privacy" | "support";
 
 export function SiteLegalChrome({
   activePage,
@@ -26,6 +26,9 @@ export function SiteLegalChrome({
           Bantera
         </Link>
         <div className="flex items-center gap-6">
+          <Link href="/faq" className={linkClass("faq")}>
+            FAQ
+          </Link>
           <Link href="/privacy" className={linkClass("privacy")}>
             Privacy
           </Link>

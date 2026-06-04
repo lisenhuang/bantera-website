@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Support — Bantera",
   description:
     "Get help with Bantera. Contact the developer and find answers to common questions.",
+  alternates: { canonical: "/support" },
 };
 
 export default function SupportPage() {

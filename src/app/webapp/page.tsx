@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Public Audio | Bantera",
   description:
     "Choose a language, browse Bantera public audio, and practise listening cue by cue in the browser.",
+  alternates: { canonical: "/webapp" },
 };
 
 export const dynamic = "force-dynamic";

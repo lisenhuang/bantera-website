@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Privacy Policy — Bantera",
   description:
     "How Bantera collects, uses, and protects your information when you use our language learning app and services.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPage() {

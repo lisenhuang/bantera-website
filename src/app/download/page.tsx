@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: 'Download Bantera — App Store',
   description:
     'Download Bantera, the audio-first language speaking and listening practice app. Listen to real conversations, practise speaking, and connect with language exchange partners.',
+  alternates: { canonical: '/download' },
 };
 
 const APP_STORE_URL = 'https://apps.apple.com/app/id6761799720';

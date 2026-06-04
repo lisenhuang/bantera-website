@@ -1,0 +1,22 @@
+# Bantera
+
+> Bantera is an audio-first language learning app for iOS. Learn languages by actually speaking: listen to real spoken content cue-by-cue, hide or reveal subtitles and translations, record yourself to get AI transcription and pronunciation comparison, and find language exchange partners who natively speak the language you're learning. Supported languages include English, Mandarin, Japanese, Korean, Spanish, French, German, Portuguese, Italian, and Arabic, with more added over time.
+
+## Core pages
+- [Home](https://bantera.app/): Overview of Bantera's audio-first speaking, listening, recording, and language-exchange features.
+- [FAQ](https://bantera.app/faq): Supported languages, how pronunciation feedback and language exchange work, and platform availability.
+- [Download](https://bantera.app/download): Get Bantera on the iOS App Store.
+- [Support](https://bantera.app/support): Contact the developer and get help.
+- [Privacy Policy](https://bantera.app/privacy): How Bantera collects, uses, and protects your information.
+
+## Web experience
+- [Web listening practice](https://bantera.app/webapp): Browse public audio and practise listening cue-by-cue in the browser.
+- [Dialogue Studio](https://bantera.app/webapp/studio): Generate multi-speaker practice dialogue and audio in the browser.
+
+## App
+- [Bantera on the App Store](https://apps.apple.com/app/id6761799720): Official iOS download.
+
+## About
+- Developer: Lisen Huang
+- Contact: contact@bantera.app
+- X / Twitter: https://x.com/BanteraApp
