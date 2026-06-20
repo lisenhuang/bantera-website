@@ -103,9 +103,6 @@ export default function HomePage() {
       <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-xl font-black tracking-tight text-gray-900 dark:text-white">Bantera</span>
-          <span className="ml-2 hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30">
-            Available on iOS
-          </span>
         </div>
       </nav>
 
