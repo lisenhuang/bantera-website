@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
+import { androidRelease } from '@/lib/android-release';
 
 const APP_STORE_URL = 'https://apps.apple.com/app/id6761799720';
 
@@ -48,6 +49,14 @@ function AppleIcon() {
   return (
     <svg viewBox="0 0 384 512" className="w-5 h-5 fill-current">
       <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+    </svg>
+  );
+}
+
+function AndroidIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+      <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67c-.19-.29-.57-.38-.86-.22-.3.16-.42.54-.26.85L6.4 9.48A10.78 10.78 0 0 0 1 18h22a10.78 10.78 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" />
     </svg>
   );
 }
@@ -149,18 +158,25 @@ export default function DownloadPageClient() {
               Download on the App Store
             </a>
 
-          {/* Android coming soon */}
-          <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
-            <span className="text-lg">🤖</span>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Android version coming soon
-            </span>
+          {/* Android APK download */}
+          <div className="flex flex-col items-center gap-2 w-full">
+            <a
+              href="/bantera.apk"
+              download
+              className="inline-flex items-center justify-center gap-3 w-full px-8 py-4 rounded-2xl bg-green-600 text-white font-bold text-base hover:scale-105 active:scale-95 transition-transform shadow-xl"
+            >
+              <AndroidIcon />
+              Download for Android
+            </a>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              APK · Version {androidRelease.version} · Android 7.0+
+            </p>
           </div>
 
           {/* Available on badge */}
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/30">
-              Available on iOS &amp; iPadOS
+              Available on iOS, iPadOS &amp; Android
             </span>
           </div>
 
