@@ -138,6 +138,11 @@ export default function CloudflareImageGeneratorPage() {
   // Batch state — one entry per model when "All" is selected
   const [batch,        setBatch]        = useState<BatchItem[] | null>(null);
   const [batchRunning, setBatchRunning] = useState(false);
+  // Sequential = one model at a time, so each stopwatch is pure generation
+  // time. Parallel fires all at once, but Cloudflare's per-account concurrency
+  // limit then queues them and the timings include waiting in line.
+  const [batchMode, setBatchMode] = useState<'sequential' | 'parallel'>('sequential');
+  const [batchModeUsed, setBatchModeUsed] = useState<'sequential' | 'parallel'>('sequential');
 
   const selectedSize = SIZE_PRESETS[sizeIdx];
   const isAll = model === ALL_MODELS;
@@ -219,7 +224,7 @@ export default function CloudflareImageGeneratorPage() {
     listModelsAction().then(applyModels);
   }
 
-  // ── Generate: every model in parallel, each timed on its own ──────
+  // ── Generate: every model, each timed on its own ──────────────────
   async function handleGenerateAll() {
     if (!prompt.trim() || models.length === 0) return;
     setError(null);
@@ -227,6 +232,7 @@ export default function CloudflareImageGeneratorPage() {
     setUsedParams(null);
     setElapsed(null);
     setBatchRunning(true);
+    setBatchModeUsed(batchMode);
     setBatch(models.map((m) => ({
       model: m, status: 'pending', elapsedMs: null, imageSrc: null, mimeType: null, usedParams: null, error: null,
     })));
@@ -239,7 +245,7 @@ export default function CloudflareImageGeneratorPage() {
       height: selectedSize.h,
     };
 
-    await Promise.all(models.map(async (m) => {
+    const runOne = async (m: CfModel) => {
       const t0 = Date.now();
       let patch: Partial<BatchItem>;
       try {
@@ -252,7 +258,13 @@ export default function CloudflareImageGeneratorPage() {
       }
       const elapsedMs = Date.now() - t0;
       setBatch((prev) => prev?.map((b) => (b.model.id === m.id ? { ...b, ...patch, elapsedMs } : b)) ?? prev);
-    }));
+    };
+
+    if (batchMode === 'sequential') {
+      for (const m of models) await runOne(m);
+    } else {
+      await Promise.all(models.map(runOne));
+    }
 
     setBatchRunning(false);
   }
@@ -445,6 +457,37 @@ export default function CloudflareImageGeneratorPage() {
               </p>
             </div>
 
+            {/* Run mode — only meaningful when "All models" is selected */}
+            {isAll && (
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Run mode</label>
+                <div className="flex gap-2">
+                  {([
+                    { value: 'sequential', label: 'Sequential', hint: 'true per-model time' },
+                    { value: 'parallel',   label: 'Parallel',   hint: 'fastest overall, times include queueing' },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setBatchMode(opt.value)}
+                      disabled={batchRunning}
+                      className={`flex-1 px-3 py-2 rounded-lg text-xs border text-left transition-all disabled:opacity-60 ${
+                        batchMode === opt.value
+                          ? 'bg-orange-500/10 dark:bg-orange-600/30 border-orange-400 dark:border-orange-500/60 text-orange-600 dark:text-orange-200'
+                          : 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-orange-300 dark:hover:border-white/30'
+                      }`}
+                    >
+                      <span className="font-medium block">{opt.label}</span>
+                      <span className="text-[10px] opacity-80">{opt.hint}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[10px] text-gray-400 dark:text-gray-600">
+                  Cloudflare runs image requests on your account roughly one at a time, so parallel timings mostly measure the queue. Sequential gives each model the API to itself.
+                </p>
+              </div>
+            )}
+
             {/* Generate button */}
             <button
               onClick={handleGenerate}
@@ -459,7 +502,7 @@ export default function CloudflareImageGeneratorPage() {
               {batchRunning
                 ? `Generating… ${batchDone}/${batch?.length ?? 0} done`
                 : isPending ? 'Generating…'
-                : isAll ? `Generate with all ${models.length} models`
+                : isAll ? `Generate with all ${models.length} models (${batchMode})`
                 : 'Generate Image'}
             </button>
           </div>
@@ -474,7 +517,11 @@ export default function CloudflareImageGeneratorPage() {
                   <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-3xl mb-4">{isAll ? '⏱️' : '🎨'}</div>
                   <p className="text-sm">
                     {isAll
-                      ? (batch ? 'Results for every model are listed below, fastest first.' : 'All models will run in parallel — results and timings appear below.')
+                      ? (batch
+                          ? 'Results for every model are listed below, fastest first.'
+                          : batchMode === 'sequential'
+                            ? 'Models run one at a time — each timing is pure generation time. Results appear below as they finish.'
+                            : 'All models fire at once — results and timings appear below.')
                       : 'Your generated image will appear here'}
                   </p>
                 </div>
@@ -561,7 +608,7 @@ export default function CloudflareImageGeneratorPage() {
             <div className="flex items-baseline justify-between gap-4 mb-4">
               <h2 className="text-lg font-bold tracking-tight">All models · timing comparison</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {batchDone}/{batchSorted.length} finished · sorted fastest → slowest · all ran in parallel
+                {batchDone}/{batchSorted.length} finished · sorted fastest → slowest · {batchModeUsed === 'sequential' ? 'ran one at a time (pure generation time)' : 'ran in parallel (times include queueing)'}
               </p>
             </div>
 
