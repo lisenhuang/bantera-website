@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { getAccessToken, updateAiSettings } from '@/lib/dashboard-api';
+import { getAccessToken, updateAiPlaybackSettings, updateAiSettings } from '@/lib/dashboard-api';
 
 export type ModelSettingsState = { ok?: boolean; error?: string };
 
@@ -17,6 +17,22 @@ export async function saveModelSettingsAction(_prev: ModelSettingsState, form: F
   };
 
   const result = await updateAiSettings(token, { textModel: pick('textModel'), audioModel: pick('audioModel') });
+  if (!result.ok) {
+    if (result.status === 401) redirect('/dashboard/login');
+    return { error: result.message };
+  }
+
+  revalidatePath('/dashboard/ai');
+  return { ok: true };
+}
+
+export type PlaybackSettingsState = { ok?: boolean; error?: string };
+
+export async function savePlaybackSettingsAction(_prev: PlaybackSettingsState, form: FormData): Promise<PlaybackSettingsState> {
+  const token = await getAccessToken();
+  if (!token) redirect('/dashboard/login');
+
+  const result = await updateAiPlaybackSettings(token, { cueStartsAtPreviousCueEnd: form.get('enabled') === 'true' });
   if (!result.ok) {
     if (result.status === 401) redirect('/dashboard/login');
     return { error: result.message };

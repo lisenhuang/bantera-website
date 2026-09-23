@@ -12,6 +12,7 @@ import {
 } from '@/lib/dashboard-api';
 import { ColumnChart } from '../_components/charts';
 import { ModelSettingsForm } from './model-settings-form';
+import { PlaybackSettingsForm } from './playback-settings-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -213,6 +214,13 @@ export default async function AiPipelinePage({ searchParams }: {
           <p className="text-sm text-red-600 dark:text-red-400">Could not load the model settings.</p>
         )}
       </Card>
+
+      {/* Sentence timing */}
+      {settings?.playback && (
+        <Card title="Sentence timing" subtitle="Where each sentence of AI audio starts when played in the app.">
+          <PlaybackSettingsForm playback={settings.playback} />
+        </Card>
+      )}
 
       {summary && (
         <section className="space-y-4">
