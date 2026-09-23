@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { JsonLd } from "@/components/json-ld";
-import { getPublicAudio, type BanteraPublicAudio } from "@/lib/bantera-api";
+import { audioTitle, getPublicAudio, type BanteraPublicAudio } from "@/lib/bantera-api";
 import { SITE_URL } from "@/lib/site-content";
 import { ShadowingPlayer } from "./shadowing-player";
 
@@ -25,7 +25,7 @@ function lessonLd(audio: BanteraPublicAudio) {
     "@context": "https://schema.org",
     "@type": "LearningResource",
     "@id": `${url}#lesson`,
-    name: audio.originalFileName,
+    name: audioTitle(audio.originalFileName),
     url,
     description: `Listening and shadowing practice in ${audio.transcriptLanguage}: ${audio.transcriptCues.length} cues you can play one at a time.`,
     inLanguage: audio.transcriptLanguageCode,
@@ -37,7 +37,7 @@ function lessonLd(audio: BanteraPublicAudio) {
     provider: { "@id": `${SITE_URL}/#organization` },
     associatedMedia: {
       "@type": "AudioObject",
-      name: audio.originalFileName,
+      name: audioTitle(audio.originalFileName),
       encodingFormat: audio.videoContentType,
       duration: isoDuration(audio.durationMs),
       inLanguage: audio.transcriptLanguageCode,
@@ -57,8 +57,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { audioId } = await params;
   const audio = await getPublicAudio(audioId);
   if (!audio) return { title: "Audio Not Found | Bantera" };
-  const title = `Shadow: ${audio.originalFileName} | Bantera`;
-  const description = `Practice shadowing "${audio.originalFileName}" cue by cue with word-level highlighting in your browser.`;
+  const title = `Shadow: ${audioTitle(audio.originalFileName)} | Bantera`;
+  const description = `Practice shadowing "${audioTitle(audio.originalFileName)}" cue by cue with word-level highlighting in your browser.`;
   return {
     title,
     description,
@@ -96,7 +96,7 @@ export default async function ShadowingPage({ params }: PageProps) {
             <span className="hidden sm:inline">Back</span>
           </Link>
           <h1 className="flex-1 min-w-0 text-center text-base font-bold text-slate-800 truncate sm:text-lg">
-            {audio.originalFileName}
+            {audioTitle(audio.originalFileName)}
           </h1>
           <div className="shrink-0 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-black text-white tabular-nums">
             {formatDuration(audio.durationMs)}

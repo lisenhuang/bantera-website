@@ -5,11 +5,19 @@ export type BanteraTranscriptCue = {
   text: string;
 };
 
+/** Title shown for an audio: its file name without the extension, as in the app. */
+export function audioTitle(originalFileName: string) {
+  const dot = originalFileName.lastIndexOf(".");
+  return dot > 0 ? originalFileName.slice(0, dot) : originalFileName;
+}
+
 export type BanteraWordTiming = {
   word: string;
   startMs: number;
   endMs: number;
   confidence?: number | null;
+  /** Per-character timing inside a Chinese / Japanese word (newer audio only). */
+  parts?: { word: string; startMs: number; endMs: number }[] | null;
 };
 
 export type BanteraPublicAudio = {

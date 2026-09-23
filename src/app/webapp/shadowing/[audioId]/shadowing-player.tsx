@@ -8,8 +8,9 @@ import Link from "next/link";
 import type {
   BanteraPublicAudio,
   BanteraTranscriptCue,
-  BanteraWordTiming,
 } from "@/lib/bantera-api";
+import { audioTitle } from "@/lib/bantera-api";
+import { activeUnitAt, mapCueWords } from "@/lib/subtitle-words";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -36,18 +37,6 @@ function formatTimestamp(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(s / 60);
   return `${m}:${(s % 60).toString().padStart(2, "0")}`;
-}
-
-function computeCueWordTimings(
-  wordTiming: BanteraWordTiming[] | null | undefined,
-  cue: BanteraTranscriptCue,
-): (BanteraWordTiming | null)[] {
-  const words = cue.text.split(/\s+/).filter(Boolean);
-  if (!wordTiming?.length) return words.map(() => null);
-  const cueTimings = wordTiming.filter(
-    (w) => w.startMs >= cue.startMs - 300 && w.startMs < cue.endMs + 300,
-  );
-  return words.map((_, i) => cueTimings[i] ?? null);
 }
 
 function computeShadowingGapMs(
@@ -243,7 +232,7 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
   // Default hidden so users listen first
   const [showTranscript, setShowTranscript] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(0);
-  const [highlightedWordIndex, setHighlightedWordIndex] = useState<number | null>(null);
+  const [highlightedUnit, setHighlightedUnit] = useState<number | null>(null);
   const [modalFeature, setModalFeature] = useState<"translate" | "record" | null>(null);
   const [pendingAutoPlay, setPendingAutoPlay] = useState(false);
 
@@ -330,9 +319,11 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
     };
   }, [audioSrc]);
 
-  // Word timings for the active cue
-  const cueWordTimings = useMemo(
-    () => activeCue ? computeCueWordTimings(audio.wordTiming, activeCue) : [],
+  // Words of the active cue, matched to their timing (per character for Chinese / Japanese)
+  const cueWords = useMemo(
+    () => activeCue
+      ? mapCueWords(activeCue.text, audio.wordTiming, activeCue)
+      : { tokens: [], units: [] },
     [activeCue, audio.wordTiming],
   );
 
@@ -341,7 +332,7 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
   const pausePlayback = useCallback(() => {
     audioRef.current?.pause();
     setIsCuePlaying(false);
-    setHighlightedWordIndex(null);
+    setHighlightedUnit(null);
     if (progressBarRef.current) progressBarRef.current.style.width = "0%";
   }, []);
 
@@ -408,7 +399,7 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
       if (currentMs >= activeCue.endMs) {
         el.pause();
         setIsCuePlaying(false);
-        setHighlightedWordIndex(null);
+        setHighlightedUnit(null);
         if (progressBarRef.current) progressBarRef.current.style.width = "0%";
         if (isPlayingAllRef.current) {
           handleShadowingCueEnd();
@@ -426,20 +417,15 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
       if (progressBarRef.current) progressBarRef.current.style.width = `${progress * 100}%`;
 
       // Word highlight (batched — only re-renders when index changes)
-      const idx = cueWordTimings.findIndex(
-        (t) => t !== null && currentMs >= t.startMs && currentMs < t.endMs,
-      );
-      setHighlightedWordIndex((prev) => {
-        const next = idx >= 0 ? idx : null;
-        return prev === next ? prev : next;
-      });
+      const next = activeUnitAt(cueWords.units, currentMs);
+      setHighlightedUnit((prev) => (prev === next ? prev : next));
 
       frameId = requestAnimationFrame(tick);
     };
 
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
-  }, [isCuePlaying, activeCue, cueWordTimings, handleShadowingCueEnd]);
+  }, [isCuePlaying, activeCue, cueWords, handleShadowingCueEnd]);
 
   // Auto-play after Prev/Next navigation
   useEffect(() => {
@@ -518,7 +504,7 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       execute: () => ({
         id: audio.id,
-        title: audio.originalFileName,
+        title: audioTitle(audio.originalFileName),
         language: audio.transcriptLanguage,
         languageCode: audio.transcriptLanguageCode,
         durationSec: Math.round(audio.durationMs / 1000),
@@ -640,7 +626,27 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
     );
   }
 
-  const words = activeCue.text.split(/\s+/).filter(Boolean);
+  // Subtitle text split into plain text and timed word buttons, keeping the original
+  // spacing and punctuation.
+  const subtitleParts: React.ReactNode[] = [];
+  let textCursor = 0;
+  cueWords.tokens.forEach((token, i) => {
+    if (token.start > textCursor) subtitleParts.push(activeCue.text.slice(textCursor, token.start));
+    const timing = token.unit === null ? null : cueWords.units[token.unit];
+    const isHighlighted = token.unit !== null && token.unit === highlightedUnit;
+    subtitleParts.push(
+      <button
+        key={`${cueIndex}-${i}`}
+        type="button"
+        onClick={() => timing && seekToWord(timing.startMs)}
+        className={`rounded-sm transition-colors ${isHighlighted ? "bg-amber-400/50 text-amber-100 font-extrabold" : ""} ${timing ? "cursor-pointer hover:text-amber-300" : "cursor-default"}`}
+      >
+        {token.text}
+      </button>,
+    );
+    textCursor = token.end;
+  });
+  if (textCursor < activeCue.text.length) subtitleParts.push(activeCue.text.slice(textCursor));
   const controlsDisabled = !isAudioReady;
 
   return (
@@ -694,22 +700,7 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
           <div className="relative flex-1 flex items-center justify-center p-6 sm:p-10">
             {showTranscript ? (
               <p className="text-center text-white font-bold leading-relaxed text-xl sm:text-2xl md:text-3xl select-none">
-                {words.map((word, i) => {
-                  const timing = cueWordTimings[i];
-                  const isHighlighted = highlightedWordIndex === i;
-                  return (
-                    <span key={`${cueIndex}-${i}`}>
-                      {i > 0 && " "}
-                      <button
-                        type="button"
-                        onClick={() => timing && seekToWord(timing.startMs)}
-                        className={`rounded px-0.5 transition-colors ${isHighlighted ? "bg-amber-400/50 text-amber-100 font-extrabold" : ""} ${timing ? "cursor-pointer hover:text-amber-300" : "cursor-default"}`}
-                      >
-                        {word}
-                      </button>
-                    </span>
-                  );
-                })}
+                {subtitleParts}
               </p>
             ) : (
               <div className="text-center space-y-2">

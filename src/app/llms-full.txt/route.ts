@@ -1,4 +1,5 @@
 import {
+  audioTitle,
   getLearningLanguages,
   listPublicAudios,
   type BanteraLearningLanguage,
@@ -75,7 +76,7 @@ export async function GET() {
           const firstCue = a.transcriptCues.find((c) => c.text.trim())?.text.trim();
           const preview = firstCue ? ` — "${oneLine(firstCue).slice(0, 120)}"` : '';
           const kind = a.isAiGenerated ? 'AI-generated conversation' : 'audio';
-          return `- [${oneLine(a.originalFileName)}](${SITE_URL}/webapp/shadowing/${a.id}): ${kind}, ${formatDuration(a.durationMs)}, ${a.transcriptCues.length} cues${preview}`;
+          return `- [${oneLine(audioTitle(a.originalFileName))}](${SITE_URL}/webapp/shadowing/${a.id}): ${kind}, ${formatDuration(a.durationMs)}, ${a.transcriptCues.length} cues${preview}`;
         }),
       ].join('\n')).join('\n\n');
 

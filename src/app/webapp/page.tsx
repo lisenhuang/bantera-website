@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
+  audioTitle,
   getLearningLanguages,
   listPublicAudios,
 } from "@/lib/bantera-api";
@@ -203,7 +204,7 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
                           {audio.transcriptLanguageCode.toUpperCase()}
                         </div>
                         <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-                          {audio.originalFileName}
+                          {audioTitle(audio.originalFileName)}
                         </h2>
                       </div>
                       <div className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
