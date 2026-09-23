@@ -31,14 +31,25 @@ export type WebMcpTool = {
 
 type ModelContext = {
   registerTool(tool: WebMcpTool, options?: { signal?: AbortSignal }): unknown;
+  /** Older preview API: unregister by name instead of via AbortSignal. */
+  unregisterTool?(name: string): unknown;
 };
 
 export const NO_INPUT: JsonSchema = { type: 'object', properties: {} };
 
+const isModelContext = (value: unknown): value is ModelContext =>
+  !!value && typeof (value as ModelContext).registerTool === 'function';
+
+/**
+ * The current spec puts the API on `document.modelContext`. Chrome's earlier preview (and
+ * some agent polyfills) used `navigator.modelContext`, so fall back to that.
+ */
 export function getModelContext(): ModelContext | null {
   if (typeof document === 'undefined') return null;
-  const ctx = (document as Document & { modelContext?: ModelContext }).modelContext;
-  return ctx && typeof ctx.registerTool === 'function' ? ctx : null;
+  const onDocument = (document as Document & { modelContext?: unknown }).modelContext;
+  if (isModelContext(onDocument)) return onDocument;
+  const onNavigator = (navigator as Navigator & { modelContext?: unknown }).modelContext;
+  return isModelContext(onNavigator) ? onNavigator : null;
 }
 
 /**
@@ -52,6 +63,20 @@ export function registerWebMcpTools(tools: readonly WebMcpTool[], signal: AbortS
   for (const tool of tools) {
     try {
       const result = ctx.registerTool(tool, { signal });
+
+      // The current API returns a Promise and honours the signal. The older synchronous
+      // API ignored it, returning an { unregister } handle or offering unregisterTool(name).
+      // Unregister synchronously on abort, so it runs before any re-registration of the
+      // same name (e.g. React's development double-mount).
+      const isThenable = typeof (result as PromiseLike<unknown> | undefined)?.then === 'function';
+      if (!isThenable) {
+        signal.addEventListener('abort', () => {
+          const unregister = (result as { unregister?: () => unknown } | undefined)?.unregister;
+          if (typeof unregister === 'function') unregister.call(result);
+          else ctx.unregisterTool?.(tool.name);
+        }, { once: true });
+      }
+
       if (result instanceof Promise) {
         result.catch((err: unknown) => {
           if (!signal.aborted) console.warn(`[webmcp] could not register ${tool.name}`, err);
