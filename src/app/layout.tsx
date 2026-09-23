@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { JsonLd } from "@/components/json-ld";
+import { WebMcpSiteTools } from "@/components/webmcp/site-tools";
+
+// Chrome/Edge WebMCP origin-trial token for bantera.app. Without it WebMCP only works for
+// visitors who enabled the browser flag; with it, for everyone on a supported browser.
+const webMcpOriginTrialToken = process.env.NEXT_PUBLIC_WEBMCP_ORIGIN_TRIAL_TOKEN?.trim();
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -75,16 +80,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // suppressHydrationWarning: the inline script below adds class="dark" before React
+    // hydrates, so <html>'s class legitimately differs from the server render.
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        {webMcpOriginTrialToken && <meta httpEquiv="origin-trial" content={webMcpOriginTrialToken} />}
         <script dangerouslySetInnerHTML={{ __html: `(function(){var mq=window.matchMedia('(prefers-color-scheme: dark)');function a(d){document.documentElement.classList.toggle('dark',d);}a(mq.matches);mq.addEventListener('change',function(e){a(e.matches);});})();` }} />
       </head>
       <body className="min-h-full flex flex-col">
         <JsonLd data={organizationLd} />
         <JsonLd data={webSiteLd} />
+        <WebMcpSiteTools />
         {children}
       </body>
     </html>

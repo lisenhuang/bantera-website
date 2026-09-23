@@ -67,6 +67,58 @@ export type AdminStats = {
   uploadedVideos: number;
 };
 
+export type AnalyticsLanguageVariant = { code: string; displayName: string; flag: string; users: number };
+
+export type AnalyticsLanguage = {
+  key: string;
+  displayName: string;
+  flag: string;
+  users: number;
+  pct: number;
+  variants: AnalyticsLanguageVariant[];
+};
+
+export type AnalyticsLanguageBreakdown = {
+  byAccent: AnalyticsLanguage[];
+  combined: AnalyticsLanguage[];
+  unset: number;
+};
+
+export type AdminAnalytics = {
+  asOf: string;
+  rangeDays: number;
+  bucket: 'day' | 'week';
+  liveTrackingSince: string | null;
+  kpis: {
+    totalUsers: number;
+    newUsers: number;
+    newUsersPreviousPeriod: number;
+    dau: number;
+    wau: number;
+    mau: number;
+    totalContent: number;
+    uploads: number;
+    aiAudio: number;
+    aiJobs: number;
+    aiJobSuccessRatePct: number;
+    usersWithPushToken: number;
+  };
+  signups: { date: string; count: number }[];
+  activeUsers: { date: string; dau: number; wau: number; mau: number; approximate: boolean }[];
+  content: { date: string; uploads: number; aiAudio: number }[];
+  nativeLanguages: AnalyticsLanguageBreakdown;
+  learningLanguages: AnalyticsLanguageBreakdown;
+  countries: { code: string; flag: string; users: number }[];
+  usersWithoutLocation: number;
+  cities: { city: string; region: string | null; countryCode: string; flag: string; users: number }[];
+  providers: { provider: string; users: number }[];
+  languagePairs: {
+    native: string; nativeName: string; nativeFlag: string;
+    learning: string; learningName: string; learningFlag: string;
+    users: number;
+  }[];
+};
+
 export type AdminPagedResult<T> = {
   items: T[];
   total: number;
@@ -103,6 +155,10 @@ export async function getAccessToken(): Promise<string | undefined> {
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
+
+export async function getAdminAnalytics(token: string, days: number): Promise<AdminAnalytics> {
+  return adminFetch<AdminAnalytics>(`/api/admin/analytics?days=${days}`, token);
+}
 
 export async function getAdminStats(token: string): Promise<AdminStats> {
   return adminFetch<AdminStats>('/api/admin/stats', token);

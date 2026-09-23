@@ -39,3 +39,37 @@ body {
   @apply block text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5;
 }
 
+
+/* ── Dashboard charts ─────────────────────────────────────────────────────────
+   Chart tokens by role. Series colours are the dataviz reference palette's first
+   three categorical slots, validated against these exact card surfaces (white and
+   gray-900) in both modes. Dark mode is its own selected steps, not an inversion.
+   Text keeps the dashboard's gray ink tokens — series colour is only ever on marks. */
+.viz-root {
+  --viz-surface: #ffffff;
+  --viz-ink: #111827;
+  --viz-ink-2: #4b5563;
+  --viz-muted: #6b7280;
+  --viz-grid: #eef0f3;
+  --viz-axis: #d1d5db;
+  --viz-band: rgba(17, 24, 39, 0.035);
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  --viz-good: #006300;
+  --viz-bad: #d03b3b;
+}
+.dark .viz-root {
+  --viz-surface: #111827;
+  --viz-ink: #ffffff;
+  --viz-ink-2: #d1d5db;
+  --viz-muted: #9ca3af;
+  --viz-grid: #1f2937;
+  --viz-axis: #374151;
+  --viz-band: rgba(255, 255, 255, 0.04);
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+  --viz-good: #0ca30c;
+  --viz-bad: #e66767;
+}

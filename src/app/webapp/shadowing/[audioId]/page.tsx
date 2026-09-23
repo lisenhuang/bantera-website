@@ -2,12 +2,50 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getPublicAudio } from "@/lib/bantera-api";
+import { JsonLd } from "@/components/json-ld";
+import { getPublicAudio, type BanteraPublicAudio } from "@/lib/bantera-api";
+import { SITE_URL } from "@/lib/site-content";
 import { ShadowingPlayer } from "./shadowing-player";
 
 type PageProps = { params: Promise<{ audioId: string }> };
 
 export const dynamic = "force-dynamic";
+
+/** ISO 8601 duration, e.g. PT2M5S, for schema.org. */
+function isoDuration(ms: number) {
+  const s = Math.max(0, Math.round(ms / 1000));
+  return `PT${Math.floor(s / 60)}M${s % 60}S`;
+}
+
+// Describes the lesson for search and answer engines. The transcript is included because
+// it is the lesson's actual content; it is capped to keep the page light.
+function lessonLd(audio: BanteraPublicAudio) {
+  const url = `${SITE_URL}/webapp/shadowing/${audio.id}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    "@id": `${url}#lesson`,
+    name: audio.originalFileName,
+    url,
+    description: `Listening and shadowing practice in ${audio.transcriptLanguage}: ${audio.transcriptCues.length} cues you can play one at a time.`,
+    inLanguage: audio.transcriptLanguageCode,
+    learningResourceType: "Listening practice",
+    educationalUse: "Shadowing",
+    isAccessibleForFree: true,
+    timeRequired: isoDuration(audio.durationMs),
+    dateCreated: audio.createdAt,
+    provider: { "@id": `${SITE_URL}/#organization` },
+    associatedMedia: {
+      "@type": "AudioObject",
+      name: audio.originalFileName,
+      encodingFormat: audio.videoContentType,
+      duration: isoDuration(audio.durationMs),
+      inLanguage: audio.transcriptLanguageCode,
+      transcript: audio.transcriptText.slice(0, 5000),
+    },
+    ...(audio.isAiGenerated ? { creativeWorkStatus: "AI-generated" } : {}),
+  };
+}
 
 function formatDuration(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -24,6 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
+    alternates: { canonical: `/webapp/shadowing/${audioId}` },
     openGraph: {
       title,
       description,
@@ -45,6 +84,7 @@ export default async function ShadowingPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,_#fff7ed_0%,_#ffffff_35%,_#f8fafc_100%)] text-slate-950">
+      <JsonLd data={lessonLd(audio)} />
       <div className="mx-auto max-w-xl px-4 py-8 sm:py-12">
         {/* Header */}
         <div className="flex items-center gap-3">

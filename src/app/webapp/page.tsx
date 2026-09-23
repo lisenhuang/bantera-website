@@ -98,7 +98,14 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
             </p>
           </div>
 
-          <form className="mt-8">
+          {/* Declarative WebMCP: supporting browsers expose this form to agents as a tool.
+              It only navigates (a GET that loads the list), so auto-submit is safe. */}
+          <form
+            className="mt-8"
+            toolname="load_public_audio"
+            tooldescription="Shows the free public audio lessons for one practice language on this page. Choose a language code from the options."
+            toolautosubmit=""
+          >
             <label
               htmlFor="languageCode"
               className="mb-2 block text-sm font-semibold text-slate-700"
@@ -109,6 +116,7 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
               <select
                 id="languageCode"
                 name="languageCode"
+                toolparamdescription="The practice language to load lessons for, e.g. en-US or es-MX."
                 defaultValue={selectedLanguage?.identifier ?? ""}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium text-slate-950 outline-none transition focus:border-amber-400 focus:bg-white"
               >

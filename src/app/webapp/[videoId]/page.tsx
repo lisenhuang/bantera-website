@@ -48,6 +48,9 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // Same audio as the shadowing view, which is the page the web app links to —
+    // point search engines there so the two do not compete as duplicates.
+    alternates: { canonical: `/webapp/shadowing/${videoId}` },
     openGraph: {
       title,
       description,
