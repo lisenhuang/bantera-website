@@ -362,3 +362,91 @@ export async function listOAuthGrants(token: string): Promise<OAuthGrant[]> {
 export async function revokeOAuthGrant(token: string, familyId: string): Promise<void> {
   await adminFetch(`/api/admin/oauth/grants/${familyId}`, token, { method: 'DELETE' });
 }
+
+// ── AI models & pipeline health ──────────────────────────────────────────────
+
+export type AiModelOverride = { value: string; updatedAt: string; updatedByUserId: string | null } | null;
+
+export type AiSettings = {
+  textModel: string;
+  audioModel: string;
+  defaults: { textModel: string; audioModel: string };
+  overrides: { textModel: AiModelOverride; audioModel: AiModelOverride };
+  fixedModels: { webSearchModel: string; webSearchKeyPrefix: string; transcribeModel: string };
+  /** Live from Gemini's model list on every load. */
+  availableTextModels: string[];
+  availableAudioModels: string[];
+  modelListAvailable: boolean;
+};
+
+export async function getAiSettings(token: string): Promise<AiSettings> {
+  return adminFetch<AiSettings>('/api/admin/ai-settings', token);
+}
+
+/** Null clears an override (back to the default). Returns the backend's message on failure. */
+export async function updateAiSettings(
+  token: string,
+  body: { textModel: string | null; audioModel: string | null },
+): Promise<{ ok: true; settings: AiSettings } | { ok: false; status: number; message: string }> {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/ai-settings`, {
+    method: 'PUT',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  if (res.ok) return { ok: true, settings: (await res.json()) as AiSettings };
+  const error = (await res.json().catch(() => null)) as { message?: string } | null;
+  return { ok: false, status: res.status, message: error?.message ?? `Could not save (${res.status}).` };
+}
+
+export type AiPipelineSeverity = 'info' | 'warning' | 'error';
+
+export type AiPipelineSummary = {
+  days: number;
+  from: string;
+  generations: { total: number; done: number; failed: number; processing: number };
+  byCode: { severity: AiPipelineSeverity; stage: string; code: string; count: number; lastAt: string }[];
+  daily: { date: string; errors: number; warnings: number }[];
+  keyFailures: { key: string; count: number; lastAt: string }[];
+  quality: {
+    languageCode: string;
+    generations: number;
+    words: number;
+    exact: number;
+    corrected: number;
+    estimated: number;
+    retried: number;
+  }[];
+};
+
+export type AiPipelineEvent = {
+  id: string;
+  createdAt: string;
+  severity: AiPipelineSeverity;
+  stage: string;
+  code: string;
+  userId: string | null;
+  jobId: string | null;
+  endpoint: string | null;
+  languageCode: string | null;
+  model: string | null;
+  keyHint: string | null;
+  message: string | null;
+  detailJson: string | null;
+  durationMs: number | null;
+};
+
+export async function getAiPipelineSummary(token: string, days: number): Promise<AiPipelineSummary> {
+  return adminFetch<AiPipelineSummary>(`/api/admin/ai-pipeline/summary?days=${days}`, token);
+}
+
+export async function listAiPipelineEvents(
+  token: string,
+  params: { days: number; severity?: string; stage?: string; code?: string; limit?: number; offset?: number },
+): Promise<AdminPagedResult<AiPipelineEvent>> {
+  const qs = new URLSearchParams({ days: String(params.days), limit: String(params.limit ?? 50), offset: String(params.offset ?? 0) });
+  if (params.severity) qs.set('severity', params.severity);
+  if (params.stage) qs.set('stage', params.stage);
+  if (params.code) qs.set('code', params.code);
+  return adminFetch<AdminPagedResult<AiPipelineEvent>>(`/api/admin/ai-pipeline/events?${qs}`, token);
+}

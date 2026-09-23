@@ -328,3 +328,22 @@ export function findActiveToken(alignment: Alignment, timeSec: number): number {
   if (found < 0) return -1;
   return timeSec <= lines[tokens[found].line].endSec + 0.15 ? found : -1;
 }
+
+export type CoverageIssue = { missingLines: number[]; trailingEstimated: number; estimatedRatio: number };
+
+/**
+ * Same rule as the backend's retry: a transcript that dropped a whole line, the end of the
+ * dialogue, or more than 10% of words is transcribed once more.
+ */
+export function findCoverageIssue(alignment: Alignment): CoverageIssue | null {
+  const missingLines = alignment.lines
+    .map((line, i) => ({ i, missing: line.tokens.length > 0 && line.tokens.every((t) => t.status === 'estimated') }))
+    .filter((l) => l.missing)
+    .map((l) => l.i);
+  let trailingEstimated = 0;
+  for (let i = alignment.tokens.length - 1; i >= 0 && alignment.tokens[i].status === 'estimated'; i--) trailingEstimated++;
+  const estimatedRatio = alignment.tokens.length ? alignment.stats.estimated / alignment.tokens.length : 1;
+  return missingLines.length === 0 && trailingEstimated === 0 && estimatedRatio <= 0.1
+    ? null
+    : { missingLines, trailingEstimated, estimatedRatio };
+}

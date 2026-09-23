@@ -6,6 +6,7 @@ import { generateAudioAction, generateDialogueAction, listModelsAction } from '.
 import { alignWithAiAction, transcribeWordsAction } from './actions';
 import {
   alignByCharacters,
+  findCoverageIssue,
   mergeMatches,
   findActiveToken,
   formatScript,
@@ -252,6 +253,7 @@ export default function AudioTimingPage() {
   const [duration, setDuration] = useState(0);
   const [useLanguageHint, setUseLanguageHint] = useState(true);
   const [transcript, setTranscript] = useState<Transcript | null>(null);
+  const [retryNote, setRetryNote] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<{ signature: string; matches: TokenMatch[] } | null>(null);
   const [aligner, setAligner] = useState<Aligner>('hybrid');
   const [steps, setSteps] = useState<Record<StepName, StepState>>({ tts: IDLE, transcribe: IDLE, align: IDLE });
@@ -357,6 +359,7 @@ export default function AudioTimingPage() {
     setDuration(0);
     setTranscript(null);
     setAiResult(null);
+    setRetryNote(null);
     setActiveToken(-1);
     setActiveWord(-1);
     setSteps((prev) => ({ ...prev, transcribe: IDLE, align: IDLE }));
@@ -388,18 +391,43 @@ export default function AudioTimingPage() {
     setStep('transcribe', { state: 'running' });
     setAiResult(null);
     setStep('align', IDLE);
-    const res = await transcribeWordsAction({
+    setRetryNote(null);
+    const request = () => transcribeWordsAction({
       audioBase64: source.base64,
       mimeType: source.mime,
       model: transcribeModel,
       languageCode: useLanguageHint ? lang.code : '',
     });
+    const coverage = (words: TranscribedWord[]) =>
+      findCoverageIssue(resolveTimings(lines, tokens, words, alignByCharacters(tokens, words), duration));
+
+    const res = await request();
     if (!res.success) { setStep('transcribe', { state: 'error', error: res.error }); return null; }
     if (res.words.length === 0) { setStep('transcribe', { state: 'error', error: 'The transcript came back with no words.' }); return null; }
-    const next = { text: res.text, words: res.words };
-    setTranscript(next);
-    setStep('transcribe', { state: 'done', ms: res.ms });
-    return next;
+    let best = { text: res.text, words: res.words };
+    let ms = res.ms;
+
+    // Same rule as the backend: retry once when the transcript dropped part of the dialogue.
+    const issue = coverage(res.words);
+    if (issue) {
+      const describe = (i: NonNullable<typeof issue>) => i.missingLines.length
+        ? `line${i.missingLines.length > 1 ? 's' : ''} ${i.missingLines.map((l) => l + 1).join(', ')} missing`
+        : `${Math.round(i.estimatedRatio * 100)}% of words not heard`;
+      const again = await request();
+      if (again.success && again.words.length > 0) {
+        ms += again.ms;
+        const after = coverage(again.words);
+        const better = (after?.estimatedRatio ?? 0) < issue.estimatedRatio;
+        if (better) best = { text: again.text, words: again.words };
+        setRetryNote(`First transcript: ${describe(issue)}. Transcribed again: ${after ? describe(after) : 'complete'}${better ? ' — using the retry.' : ' — no better, keeping the first.'}`);
+      } else {
+        setRetryNote(`First transcript: ${describe(issue)}. The retry failed${again.success ? ' (no words)' : `: ${again.error}`}.`);
+      }
+    }
+
+    setTranscript(best);
+    setStep('transcribe', { state: 'done', ms });
+    return best;
   }
 
   async function runAlign(source: TranscribedWord[] | undefined = words) {
@@ -589,6 +617,9 @@ export default function AudioTimingPage() {
               📝 Transcribe audio
             </button>
             <ErrorText step={steps.transcribe} />
+            {retryNote && (
+              <p className="text-sm text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 rounded-lg px-3 py-2">↻ {retryNote}</p>
+            )}
             {transcript && (
               <div className="space-y-2">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
