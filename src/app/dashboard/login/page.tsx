@@ -1,10 +1,21 @@
 'use client';
 
-import { useActionState } from 'react';
+import { Suspense, useActionState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { loginAction } from './actions';
 
 export default function DashboardLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAction, undefined);
+  // Where to return after signing in, set by proxy.ts when it bounced us here.
+  const next = useSearchParams().get('next') ?? '';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
@@ -23,6 +34,7 @@ export default function DashboardLoginPage() {
         {/* Card */}
         <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm p-8">
           <form action={formAction} className="space-y-5">
+            <input type="hidden" name="next" value={next} />
             <div>
               <label htmlFor="email" className="label-xs block">Email</label>
               <input

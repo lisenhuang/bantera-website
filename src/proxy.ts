@@ -20,6 +20,9 @@ export function proxy(request: NextRequest) {
 
   if (role !== 'admin') {
     const loginUrl = new URL('/dashboard/login', request.url);
+    // Preserve where they were going, so flows that carry state in the URL
+    // (such as the OAuth consent page) survive the login round-trip.
+    loginUrl.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
 

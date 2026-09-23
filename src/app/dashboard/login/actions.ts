@@ -12,6 +12,7 @@ export async function loginAction(
 ): Promise<LoginState> {
   const email = (formData.get('email') as string)?.trim();
   const password = formData.get('password') as string;
+  const next = formData.get('next') as string | null;
 
   if (!email || !password) {
     return { error: 'Email and password are required.' };
@@ -78,7 +79,15 @@ export async function loginAction(
     path: '/',
   });
 
-  redirect('/dashboard');
+  redirect(isSafeNext(next) ? next : '/dashboard');
+}
+
+/**
+ * Only allow returning to a dashboard path. Rejects protocol-relative and absolute URLs so
+ * the `next` parameter cannot be used as an open redirect.
+ */
+function isSafeNext(next: string | null): next is string {
+  return !!next && next.startsWith('/dashboard/') && !next.startsWith('//');
 }
 
 export async function logoutAction(): Promise<never> {

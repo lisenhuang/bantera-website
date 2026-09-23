@@ -256,3 +256,53 @@ export async function deleteAdminMessage(
 ): Promise<void> {
   await adminFetch(`/api/admin/messages/${messageId}`, token, { method: 'DELETE' });
 }
+
+// ── MCP OAuth (admin consent + connected apps) ───────────────────────────────
+
+export type OAuthConsentRequest = {
+  requestId: string;
+  clientName: string;
+  clientId: string;
+  redirectUri: string;
+  redirectHost: string;
+  isLoopback: boolean;
+  requestedScopes: string[];
+  expiresAt: string;
+};
+
+export type OAuthGrant = {
+  familyId: string;
+  clientName: string;
+  clientId: string;
+  scopes: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string;
+};
+
+/** Loads a pending authorization request. Throws if it expired or was already used. */
+export async function getOAuthRequest(
+  token: string,
+  requestId: string,
+): Promise<OAuthConsentRequest> {
+  return adminFetch<OAuthConsentRequest>(`/api/admin/oauth/requests/${requestId}`, token);
+}
+
+/** Approves or denies a request; returns the URL to send the browser back to. */
+export async function submitOAuthConsent(
+  token: string,
+  body: { requestId: string; approve: boolean; scopes: string[] },
+): Promise<{ redirectUrl: string }> {
+  return adminFetch<{ redirectUrl: string }>('/api/admin/oauth/consent', token, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function listOAuthGrants(token: string): Promise<OAuthGrant[]> {
+  return adminFetch<OAuthGrant[]>('/api/admin/oauth/grants', token);
+}
+
+export async function revokeOAuthGrant(token: string, familyId: string): Promise<void> {
+  await adminFetch(`/api/admin/oauth/grants/${familyId}`, token, { method: 'DELETE' });
+}
