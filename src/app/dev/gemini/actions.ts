@@ -269,11 +269,12 @@ export async function generateAudioAction(opts: {
       };
     });
 
-    // Gemini TTS often returns raw PCM (audio/L16;rate=24000).
-    // Convert to a proper WAV file so the browser <audio> element can play it.
+    // Gemini TTS returns raw PCM: "audio/L16;codec=pcm;rate=24000" (2.5) or
+    // "audio/l16; rate=24000; channels=1" (3.1). Convert to a proper WAV file so the
+    // browser <audio> element can play it.
     let audioBase64 = raw.data;
     let mimeType = raw.mimeType;
-    if (mimeType.includes('L16') || mimeType.includes('pcm')) {
+    if (/l16|pcm/i.test(mimeType)) {
       const rateMatch = mimeType.match(/rate=(\d+)/);
       const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
       audioBase64 = pcmToWav(audioBase64, sampleRate);
