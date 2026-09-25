@@ -95,7 +95,17 @@
   {
     "id": "codebases",
     "slideId": "codebases",
-    "text": "Behind that experience are three separate codebases. The mobile app is built with Flutter for iOS and Android. That is where people listen, speak, and practise. The backend uses dot net. It handles things such as accounts, AI generation, and content. The website uses Next JS. It includes the homepage, shared practice pages, and administration. Postgres stores the application data, and Cloudflare R two stores the audio files. Each part has its own job, but they work together to create the experience you just saw. I enjoy seeing those different pieces come together around something I want to use myself."
+    "text": "Behind that experience are three separate codebases. First, the website uses Next JS. It includes the homepage, shared practice pages, and administration. The backend uses dot net. It handles things such as accounts, AI generation, and content. And the mobile app is built with Flutter for iOS and Android. That is where people listen, speak, and practise. Postgres stores the application data, and Cloudflare R two stores the audio files. Each part has its own job, but they work together to create the experience you just saw. I enjoy seeing those different pieces come together around something I want to use myself."
+  },
+  {
+    "id": "mcp",
+    "slideId": "mcp",
+    "text": "The dot net backend also has an MCP server. That means I can connect Bantera to ChatGPT or Claude with OAuth, and ask questions about the app's data in a conversation. This screenshot is an example from September twenty-fourth, not live numbers. I asked ChatGPT to show a language snapshot, and it made the chart you see here. The connection has separate read and write permissions, so an administrator can also make authorised changes without opening the dashboard. For me, that makes the backend useful beyond the app itself."
+  },
+  {
+    "id": "skills",
+    "slideId": "skills",
+    "text": "I also designed two ChatGPT skills for Bantera. With ChatGPT's text model, I can research recent AI news and write an original script for a listening lesson. Bantera AI News helps gather and check the stories. Bantera Audio prepares the cover, generates speech, adds word timings, and submits the completed lesson through MCP. The speaking voice and transcription still come from Gemini. ChatGPT is used for the research and writing. This gives me a way to turn a current topic into practice material that is interesting to listen to."
   },
   {
     "id": "deployment",

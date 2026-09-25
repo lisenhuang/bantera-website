@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { getAccessToken, updateAiPlaybackSettings, updateAiSettings } from '@/lib/dashboard-api';
+import { getAccessToken, updateAiAlignmentSettings, updateAiPlaybackSettings, updateAiSettings } from '@/lib/dashboard-api';
 
 export type ModelSettingsState = { ok?: boolean; error?: string };
 
@@ -33,6 +33,22 @@ export async function savePlaybackSettingsAction(_prev: PlaybackSettingsState, f
   if (!token) redirect('/dashboard/login');
 
   const result = await updateAiPlaybackSettings(token, { cueStartsAtPreviousCueEnd: form.get('enabled') === 'true' });
+  if (!result.ok) {
+    if (result.status === 401) redirect('/dashboard/login');
+    return { error: result.message };
+  }
+
+  revalidatePath('/dashboard/ai');
+  return { ok: true };
+}
+
+export type AlignmentSettingsState = { ok?: boolean; error?: string };
+
+export async function saveAlignmentSettingsAction(_prev: AlignmentSettingsState, form: FormData): Promise<AlignmentSettingsState> {
+  const token = await getAccessToken();
+  if (!token) redirect('/dashboard/login');
+
+  const result = await updateAiAlignmentSettings(token, { alignToOriginalDialogue: form.get('enabled') === 'true' });
   if (!result.ok) {
     if (result.status === 401) redirect('/dashboard/login');
     return { error: result.message };

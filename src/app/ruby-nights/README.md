@@ -1,6 +1,8 @@
-# Bantera presentation
+# Bantera at Ruby Nights
 
-Open `/presentation`. This is a browser slide deck, not a PowerPoint export.
+Open `/ruby-nights`. This is an independent copy of the browser presentation for Ruby Nights. Refine this route, its narration script and its media without changing `/presentation`.
+
+The cover identifies Ruby Nights Auckland and 19 Oct 2026. The rest of the slides retain the original story and can be tailored for this audience.
 
 ## Presenting
 
@@ -14,14 +16,14 @@ Open `/presentation`. This is a browser slide deck, not a PowerPoint export.
 
 ## Adding the remaining media
 
-Place supplied files in `public/presentation/` and update `media` in `content.ts`:
+Place supplied files in `public/ruby-nights/` and update `media` in `content.ts`:
 
 - `demo`: supplied recording, encoded as H.265 MP4 with an H.264 fallback and poster configured in `demoVideo`. Both versions are 720 × 1474, 30 fps, with the original AAC audio retained.
 - `deployment`: OpenClaw / Ubuntu deployment screenshot.
 - `backup`: OpenClaw database-backup screenshot showing the actual result.
 - `closing`: optional final photograph.
 
-Use URLs such as `/presentation/bantera-demo.mp4`. Missing media stays as an intentional placeholder. The video has native playback controls and does not autoplay. Leaving its slide unmounts the player and stops playback.
+Use URLs such as `/ruby-nights/bantera-demo.mp4`. Missing media stays as an intentional placeholder. The video has native playback controls and does not autoplay. Leaving its slide unmounts the player and stops playback.
 
 All slides share a warm light background. The closing English passage uses a deeper gold for contrast on the light background.
 
@@ -42,7 +44,7 @@ Source: `ScreenRecording_09-17-2026 11-03-54_1.mov` (5,582,987 bytes, 1206 × 24
 
 ## App feature screenshots
 
-Five slides follow the recorded demo, before the technical section. The deck now has 17 slides.
+Five slides follow the recorded demo, before the technical section. The deck now has 19 slides.
 
 - `#language-accents`: `IMG_6321.jpg`, copied to `language-accents.jpg`. Shows nine regional English options.
 - `#discover`: supplied Discover screenshot, copied to `discover.jpg`. Shows a New Zealand English audio feed and search.
@@ -54,6 +56,8 @@ The supplied screenshots retain their original pixels and proportions. The slide
 
 The `#pipeline` slide uses `IMG_6326.jpg`, copied unchanged to `ai-pipeline.jpg`. The four stages shown alongside it reflect the backend's primary path: Gemini text generates the original dialogue, Gemini TTS generates speech, Gemini transcription returns word timestamps, and the backend matches those words back to the script. The last stage uses exact character matches first, then a Gemini text model only for mismatches. The app groups transcription and matching as “Aligning audio”, which is still in progress in the screenshot. If Gemini timing fails, the backend can fall back to Rev.ai or estimated timing, depending on the endpoint and language.
 
+The `#mcp` and `#skills` slides follow the three-codebase overview, before deployment. `mcp-language-snapshot.png` and `chatgpt-bantera-skills.png` are unaltered copies of the supplied screenshots. The MCP slide shows the entire ChatGPT screenshot and repeats the request in larger text so the MCP interaction remains clear at presentation size. It describes the backend's OAuth-protected `/mcp` endpoint and its separate read/write permissions. The snapshot is dated 24 September 2026 and is an example, not live data. The skills slide uses a CSS crop to focus on the two local Bantera ChatGPT skills: ChatGPT researches and writes lesson content, Gemini makes the speech and transcription, and MCP submits the completed audio lesson to the backend.
+
 The `#deployment` slide includes the supplied OpenClaw conversation in `openclaw-deployment.png`. A CSS crop focuses on the first deployment request and its report, excluding the unrelated sidebar and adjacent conversations. The original screenshot file remains intact. The database backup screenshot is included on the following slide.
 
 The `#backup` slide uses `openclaw-daily-backup.png`. Two CSS excerpts show the 16 and 17 September SQL ZIP attachment deliveries at 5 a.m. The daily cron schedule and availability in chat reflect the presenter’s account. The screenshot demonstrates delivery, not restore testing. The source image is retained unchanged.
@@ -64,6 +68,6 @@ Use **Autoplay** to start from the current slide. Use Home first to start the wh
 
 The church story has separate question, answer, laughter and reflection clips. The answer stays hidden during the question, then appears when its recording starts. The demo has narration before and after the existing video; no narration overlaps the video. Transitions follow media completion rather than estimated reading time. Browser playback restrictions surface a Resume prompt.
 
-The editable script is `scripts/presentation-narration.json`. Static MP3s are in `public/presentation/narration/`; the playback manifest is `src/app/presentation/narration.json`. `scripts/generate-presentation-narration.py` reads a local backend credential or `GEMINI_API_KEY` at generation time only, and never writes credentials to the output. It generates the Charon voice with a warm male delivery prompt, normalises loudness, and uses cached outputs when the script is unchanged. It sends narration text to Google's Gemini API. Playback requires no Gemini connection or API key.
+The editable script is `scripts/ruby-nights-narration.json`. Static MP3s are in `public/ruby-nights/narration/`; the playback manifest is `src/app/ruby-nights/narration.json`. `scripts/generate-ruby-nights-narration.py` reads a local backend credential or `GEMINI_API_KEY` at generation time only, and never writes credentials to the output. It generates the Charon voice with a warm male delivery prompt, normalises loudness, and uses cached outputs when the script is unchanged. It sends narration text to Google's Gemini API. Playback requires no Gemini connection or API key.
 
-Generation status (24 September 2026): all 21 audio clips are ready across 17 slides. The sweet-as story says “I met a Kiwi” and uses she/her. The garage story says seventy percent, matching the 70% displayed on the slide. Updated recordings have fingerprinted URLs to avoid stale browser audio.
+Generation status: all 23 audio clips are ready across 19 slides, including the MCP and skills slides. The sweet-as story says “I met a Kiwi” and uses she/her. The garage story says seventy percent, matching the 70% displayed on the slide. Updated recordings have fingerprinted URLs to avoid stale browser audio.

@@ -13,6 +13,7 @@ import {
 import { ColumnChart } from '../_components/charts';
 import { ModelSettingsForm } from './model-settings-form';
 import { PlaybackSettingsForm } from './playback-settings-form';
+import { AlignmentSettingsForm } from './alignment-settings-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -214,6 +215,13 @@ export default async function AiPipelinePage({ searchParams }: {
           <p className="text-sm text-red-600 dark:text-red-400">Could not load the model settings.</p>
         )}
       </Card>
+
+      {/* Word highlighting */}
+      {settings?.alignment && (
+        <Card title="Word highlighting" subtitle="How new AI audio gets its displayed words and timestamps.">
+          <AlignmentSettingsForm alignment={settings.alignment} />
+        </Card>
+      )}
 
       {/* Sentence timing */}
       {settings?.playback && (

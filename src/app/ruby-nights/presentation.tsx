@@ -116,7 +116,7 @@ export default function Presentation() {
     <main ref={heading} tabIndex={-1} className={s.stage} aria-label={`Slide ${index + 1} of ${slides.length}: ${slide.title}`}>
       <div className={s.slide} key={slide.id}>
         {slide.id === 'hello' && <div className={s.cover}>
-          <p className={s.eyebrow}>A personal story. A language app.</p>
+          <div className={s.eventLine}><span>Ruby Nights Auckland</span><time dateTime="2026-10-19">19 Oct 2026</time></div>
           <h1>A conversation<br />worth <em>building</em> for.</h1>
           <div className={s.coverBottom}><p>Why I built Bantera,<br />and how it works.</p><p className={s.signature}>Ethan Huang<br /><span>Creator & fellow learner</span></p></div>
         </div>}
@@ -138,13 +138,13 @@ export default function Presentation() {
 
         {slide.id === 'accents' && <div className={`${s.split} ${s.garage}`}>
           <div><p className={s.eyebrow}>A visit to the garage</p><h1>Even in<br />my <em>own<br />language.</em></h1><p className={s.body}>I prepared in English.<br />The mechanic spoke Chinese.<br />His accent was unfamiliar.</p><p className={s.garageStat}><strong>70%</strong><span>About how much I understood.</span></p></div>
-          <figure className={s.garagePhoto}><Image src="/presentation/garage-conversation.png" alt="A mechanic explaining a brake repair to a customer beside a car in a workshop." width={1122} height={1402} sizes="(max-width: 760px) 86vw, 45vw" /></figure>
+          <figure className={s.garagePhoto}><Image src="/ruby-nights/garage-conversation.png" alt="A mechanic explaining a brake repair to a customer beside a car in a workshop." width={1122} height={1402} sizes="(max-width: 760px) 86vw, 45vw" /></figure>
         </div>}
 
         {slide.id === 'sweet-as' && <div className={`${s.split} ${s.photoSplit}`}>
           <div><p className={s.eyebrow}>A little bit of New Zealand</p><h1>“Sweet <em>as.</em>”</h1><p className={s.body}>A Kiwi friend taught me this last year.<br />Then I saw it in The Warehouse.</p><p className={s.photoCaption}>I sent her the photo.</p><p className={s.smallLabel}>Slang, a memory, and someone who helped.</p></div>
           <figure className={s.chatFigure}>
-            <Image className={s.chatImage} src="/presentation/sweet-as-chat-v3.png" alt="WhatsApp-style conversation titled Sweet as Kiwi friend with a kiwi bird profile picture. I send my Sweet As sign photo and ask: Do you remember teaching me sweet as? I saw this and thought of you. My Kiwi friend replies with thumbs up and face with tears of joy emojis." width={1086} height={1448} sizes="(max-width: 760px) 86vw, 40vw" priority />
+            <Image className={s.chatImage} src="/ruby-nights/sweet-as-chat-v3.png" alt="WhatsApp-style conversation titled Sweet as Kiwi friend with a kiwi bird profile picture. I send my Sweet As sign photo and ask: Do you remember teaching me sweet as? I saw this and thought of you. My Kiwi friend replies with thumbs up and face with tears of joy emojis." width={1086} height={1448} sizes="(max-width: 760px) 86vw, 40vw" priority />
           </figure>
         </div>}
 
@@ -155,22 +155,22 @@ export default function Presentation() {
 
         {slide.id === 'language-accents' && <div className={s.featureSlide}>
           <div><p className={s.eyebrow}>Language and accent</p><h1>A language,<br />and the <em>accents<br />within it.</em></h1><p className={s.body}>English sounds different around the world.<br />I wanted to practise hearing those differences.</p><p className={s.featureNote}>Nine regional English options shown here,<br />including New Zealand.</p></div>
-          <figure className={s.appFigure}><Image src="/presentation/language-accents.jpg" alt="Bantera learning-language selector with English options for the United States, United Kingdom, Australia, Canada, India, New Zealand, Ireland, Singapore and South Africa." width={1206} height={2461} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>Language and accent selection</figcaption></figure>
+          <figure className={s.appFigure}><Image src="/ruby-nights/language-accents.jpg" alt="Bantera learning-language selector with English options for the United States, United Kingdom, Australia, Canada, India, New Zealand, Ireland, Singapore and South Africa." width={1206} height={2461} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>Language and accent selection</figcaption></figure>
         </div>}
 
         {slide.id === 'discover' && <div className={s.featureSlide}>
           <div><p className={s.eyebrow}>Discover</p><h1>Find something<br /><em>to listen to.</em></h1><p className={s.body}>Short audio conversations in<br />New Zealand English, across<br />different real-life topics.</p><p className={s.featureNote}>Search by title or transcript, then choose a conversation to practise.</p></div>
-          <figure className={s.appFigure}><Image src="/presentation/discover.jpg" alt="Bantera Discover screen filtered to New Zealand English, with a search field and audio conversations about a festival, visas and school." width={1206} height={2465} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>Discover audio in New Zealand English</figcaption></figure>
+          <figure className={s.appFigure}><Image src="/ruby-nights/discover.jpg" alt="Bantera Discover screen filtered to New Zealand English, with a search field and audio conversations about a festival, visas and school." width={1206} height={2465} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>Discover audio in New Zealand English</figcaption></figure>
         </div>}
 
         {slide.id === 'ai-scenarios' && <div className={s.featureSlide}>
           <div><p className={s.eyebrow}>Learning through real situations</p><h1>English I’m<br /><em>about to use.</em></h1><p className={s.body}>Before a visit to the garage, I generate<br />a car-repair dialogue and practise<br />the words and expressions I’ll need.</p><p className={s.scenarioReflection}>For me, English sticks when I have a reason to use it.</p><p className={s.featureNote}>15 scenarios, or a custom situation of your own.</p></div>
-          <figure className={s.appFigure}><Image src="/presentation/ai-scenarios.jpg" alt="Generate with AI screen showing New Zealand English, 15 preset scenarios plus a Custom option, Coffee shop selected, and dialogue durations from one to four minutes." width={1206} height={2465} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>Everyday scenarios, with room for your own</figcaption></figure>
+          <figure className={s.appFigure}><Image src="/ruby-nights/ai-scenarios.jpg" alt="Generate with AI screen showing New Zealand English, 15 preset scenarios plus a Custom option, Coffee shop selected, and dialogue durations from one to four minutes." width={1206} height={2465} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>Everyday scenarios, with room for your own</figcaption></figure>
         </div>}
 
         {slide.id === 'chats' && <div className={s.featureSlide}>
           <div><p className={s.eyebrow}>Chats</p><h1>A place to meet<br /><em>and practise.</em></h1><p className={s.body}>Language spaces and direct chats<br />can bring learners together.</p><p className={s.featureNote}>I can help someone with Chinese while they help me with English.</p></div>
-          <figure className={s.appFigure}><Image src="/presentation/chats.jpg" alt="Bantera Chats screen showing spaces labelled English Learning and Chinese Native above a list of direct conversations." width={1206} height={2461} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>Language spaces and direct conversations</figcaption></figure>
+          <figure className={s.appFigure}><Image src="/ruby-nights/chats.jpg" alt="Bantera Chats screen showing spaces labelled English Learning and Chinese Native above a list of direct conversations." width={1206} height={2461} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>Language spaces and direct conversations</figcaption></figure>
         </div>}
 
         {slide.id === 'voice-exchange' && <div className={`${s.featureSlide} ${s.exchangeSlide}`}>
@@ -178,7 +178,7 @@ export default function Presentation() {
             <div className={s.exchangeExample}><p><span>I speak Chinese</span>I’m learning English.</p><p><span>You speak English</span>You’re learning Chinese.</p></div>
             <p className={s.featureNote}><strong>Every message starts with your voice.</strong><br />Voice messages only, to practise speaking and listening.<br />Transcription and translation when you need help.</p>
           </div>
-          <figure className={s.appFigure}><Image src="/presentation/voice-exchange.jpg" alt="Bantera conversation showing voice messages with playback and Transcribe buttons, plus a Hold to record audio control for sending a voice message." width={1206} height={2470} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>A conversation through voice messages</figcaption></figure>
+          <figure className={s.appFigure}><Image src="/ruby-nights/voice-exchange.jpg" alt="Bantera conversation showing voice messages with playback and Transcribe buttons, plus a Hold to record audio control for sending a voice message." width={1206} height={2470} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>A conversation through voice messages</figcaption></figure>
         </div>}
 
         {slide.id === 'pipeline' && <div className={`${s.featureSlide} ${s.pipelineSlide}`}>
@@ -193,16 +193,45 @@ export default function Presentation() {
             </ol>
             <p className={s.featureNote}>The app groups steps 3 and 4 as “Aligning audio”.</p>
           </div>
-          <figure className={s.appFigure}><Image src="/presentation/ai-pipeline.jpg" alt="Bantera generation progress screen: writing dialogue and generating audio are complete, while aligning audio is in progress." width={1206} height={2462} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>The generation steps, as they appear in Bantera</figcaption></figure>
+          <figure className={s.appFigure}><Image src="/ruby-nights/ai-pipeline.jpg" alt="Bantera generation progress screen: writing dialogue and generating audio are complete, while aligning audio is in progress." width={1206} height={2462} sizes="(max-width: 760px) 80vw, 35vw" /><figcaption>The generation steps, as they appear in Bantera</figcaption></figure>
         </div>}
 
         {slide.id === 'codebases' && <div className={s.architecture}>
           <p className={s.eyebrow}>Three separate codebases</p><h1>One app.<br /><em>A few moving parts.</em></h1>
           <div className={s.repositories}>
-            <div><span className={s.repoNumber}>01 / In your hand</span><h2>Flutter</h2><p>iOS & Android</p><span className={s.repoDetail}>Listening and speaking practice</span></div>
+            <div><span className={s.repoNumber}>01 / On the web</span><h2>Next.js</h2><p>The website</p><span className={s.repoDetail}>Homepage, shared practice and admin</span></div>
             <div><span className={s.repoNumber}>02 / Behind the scenes</span><h2>.NET</h2><p>The backend</p><span className={s.repoDetail}>Accounts, AI generation and content</span></div>
-            <div><span className={s.repoNumber}>03 / On the web</span><h2>Next.js</h2><p>The website</p><span className={s.repoDetail}>Homepage, shared practice and admin</span></div>
+            <div><span className={s.repoNumber}>03 / In your hand</span><h2>Flutter</h2><p>iOS & Android</p><span className={s.repoDetail}>Listening and speaking practice</span></div>
           </div><p className={s.storage}>PostgreSQL <span>application data</span><b>·</b> Cloudflare R2 <span>audio storage</span></p>
+        </div>}
+
+        {slide.id === 'mcp' && <div className={s.mcpSlide}>
+          <div className={s.mcpStory}>
+            <p className={s.eyebrow}>An admin interface beyond the dashboard</p>
+            <h1>Bantera can talk to<br /><em>ChatGPT & Claude.</em></h1>
+            <p className={s.mcpLead}>An OAuth connection lets me read Bantera data and make authorised changes without opening the admin dashboard.</p>
+            <blockquote className={s.mcpPrompt}><span>What I asked ChatGPT</span>“Please use Bantera MCP to get some data from this platform and show it using charts, tables, and emojis for the languages.”</blockquote>
+          </div>
+          <figure className={s.mcpFigure}>
+            <Image className={s.mcpFullImage} src="/ruby-nights/mcp-language-snapshot.png" alt="Full ChatGPT screen: I ask it to use Bantera MCP, and it displays an administrator's snapshot of accounts, audio lessons, and languages people are learning." width={770} height={1410} sizes="(max-width: 760px) 45vw, 28vw" unoptimized />
+            <figcaption>The full ChatGPT conversation · 24 Sep 2026</figcaption>
+          </figure>
+        </div>}
+
+        {slide.id === 'skills' && <div className={s.skillsSlide}>
+          <p className={s.eyebrow}>AI-assisted content</p>
+          <h1>From today’s news<br />to a <em>listening lesson.</em></h1>
+          <div className={s.skillsBody}>
+            <div className={s.skillsProcess}>
+              <div><span>01</span><p><strong>Find the story.</strong> Bantera AI News gathers and checks recent AI news.</p></div>
+              <div><span>02</span><p><strong>Make it teachable.</strong> ChatGPT writes the script; the skill prepares audio and timed words.</p></div>
+              <div><span>03</span><p><strong>Publish to Bantera.</strong> The finished lesson goes to the backend through MCP.</p></div>
+            </div>
+            <figure className={s.skillsFigure}>
+              <div className={s.skillsCrop}><Image src="/ruby-nights/chatgpt-bantera-skills.png" alt="ChatGPT showing the Bantera Audio and Bantera AI News skills as available commands." fill sizes="(max-width: 760px) 86vw, 44vw" unoptimized /></div>
+              <figcaption>My two Bantera skills in ChatGPT</figcaption>
+            </figure>
+          </div>
         </div>}
 
         {slide.id === 'deployment' && <div className={s.operationsSlide}>

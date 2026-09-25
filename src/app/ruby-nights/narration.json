@@ -4,7 +4,7 @@
     "slideId": "hello",
     "text": "Hello everyone. I'm Ethan Huang. Thank you for spending part of your afternoon with me. Today I'd like to share something I've been building, called Bantera. It started with a very personal reason. I wanted to improve my English, especially when listening and speaking with other people. Some of my friends wanted the same thing. So I began thinking about how AI could help us practise. I'll share a few stories, show you the app, and then take you behind the scenes to explain how I built it. But first, let me tell you about a small misunderstanding at an English class.",
     "kind": "audio",
-    "src": "/presentation/narration/hello.mp3?v=8f0d13b23177",
+    "src": "/ruby-nights/narration/hello.mp3?v=8f0d13b23177",
     "duration": 38.592
   },
   {
@@ -13,7 +13,7 @@
     "text": "I went to a free English class at a church. At that time, understanding an ordinary question could still be quite difficult for me. After the class, someone asked me, How did you find this class? I thought I understood perfectly. They wanted to know how I had discovered the place. So I thought for a moment, and gave a very honest answer.",
     "pauseAfterMs": 1800,
     "kind": "audio",
-    "src": "/presentation/narration/church-question.mp3?v=0caa93c6ffaf",
+    "src": "/ruby-nights/narration/church-question.mp3?v=0caa93c6ffaf",
     "duration": 25.224
   },
   {
@@ -23,7 +23,7 @@
     "text": "I found it on Google Maps.",
     "pauseAfterMs": 350,
     "kind": "audio",
-    "src": "/presentation/narration/church-answer.mp3?v=4da66253315b",
+    "src": "/ruby-nights/narration/church-answer.mp3?v=4da66253315b",
     "duration": 2.712
   },
   {
@@ -33,7 +33,7 @@
     "text": "[laughing] Ha, ha, ha!",
     "pauseAfterMs": 700,
     "kind": "audio",
-    "src": "/presentation/narration/church-laughter.mp3?v=17178f79dbfb",
+    "src": "/ruby-nights/narration/church-laughter.mp3?v=17178f79dbfb",
     "duration": 1.44
   },
   {
@@ -42,7 +42,7 @@
     "reveal": true,
     "text": "Of course, they were asking what I thought of the class. Did I enjoy it? Was it helpful? I knew the words, but I had missed the meaning. That is one of the things about learning a language. Understanding each word does not always mean understanding the conversation. And real conversations don't wait while you work it all out.",
     "kind": "audio",
-    "src": "/presentation/narration/church-reflection.mp3?v=cd5f3be5220a",
+    "src": "/ruby-nights/narration/church-reflection.mp3?v=cd5f3be5220a",
     "duration": 23.952
   },
   {
@@ -50,7 +50,7 @@
     "slideId": "why",
     "text": "I kept learning new words, and I read a lot. That helped, but listening and speaking were still difficult. When I write something, I can stop, think, and ask AI for help. When I read, I can look up a word and go back over the sentence. Face to face, it feels different. Someone is speaking, and then it is my turn to answer. Especially in a noisy place, I want to understand the person in front of me and respond myself. That was the reason I started building Bantera. I wanted somewhere to practise before those real conversations. And because AI can work with other languages too, I wanted the idea to be useful beyond English.",
     "kind": "audio",
-    "src": "/presentation/narration/why.mp3?v=93569669a785",
+    "src": "/ruby-nights/narration/why.mp3?v=93569669a785",
     "duration": 48.192
   },
   {
@@ -58,7 +58,7 @@
     "slideId": "accents",
     "text": "Another experience happened when I needed to get my car repaired. Before going to the garage, I used Bantera to prepare a conversation in English. I wanted to recognise the words and explain the problem. Then I met the mechanic, and he spoke Chinese. You might think that would make everything easy for me. But his accent was unfamiliar, and I understood perhaps seventy percent. I had to ask him to repeat things. Even in my own language, knowing the words wasn't enough. I needed to be familiar with how someone said them. That experience helped me understand why practising different accents matters.",
     "kind": "audio",
-    "src": "/presentation/narration/accents.mp3?v=8ce81336e9e5",
+    "src": "/ruby-nights/narration/accents.mp3?v=8ce81336e9e5",
     "duration": 43.872
   },
   {
@@ -66,7 +66,7 @@
     "slideId": "sweet-as",
     "text": "Last year, I met a Kiwi and asked her a question. If you could teach me just one Kiwi slang expression, what would it be? She thought for a moment, and then said, Sweet as. That is how I learned it. Then, just the other day, I went to The Warehouse and saw this sign. Sweet as price. It made me think of her, so I took a photo and sent it to her. I said, I remember learning this from you. She replied with a thumbs up and a laughing face with tears. For me, that is what makes language memorable. It is connected to a real moment and someone who helped me. Now, whenever I see sweet as, I think of that conversation.",
     "kind": "audio",
-    "src": "/presentation/narration/sweet-as.mp3?v=3ab4a9f6a32c",
+    "src": "/ruby-nights/narration/sweet-as.mp3?v=3ab4a9f6a32c",
     "duration": 48.504
   },
   {
@@ -74,7 +74,7 @@
     "slideId": "demo",
     "text": "Let me show you a short recording of Bantera. This example uses New Zealand English. You can listen to the conversation while the words are highlighted, and then practise saying them yourself. Let's listen for a moment.",
     "kind": "audio",
-    "src": "/presentation/narration/demo-intro.mp3?v=63441ef421ec",
+    "src": "/ruby-nights/narration/demo-intro.mp3?v=63441ef421ec",
     "duration": 14.472
   },
   {
@@ -87,7 +87,7 @@
     "slideId": "demo",
     "text": "That is a small example of the experience I wanted: a conversation you can listen to, return to, and practise at your own pace.",
     "kind": "audio",
-    "src": "/presentation/narration/demo-outro.mp3?v=661682a721ae",
+    "src": "/ruby-nights/narration/demo-outro.mp3?v=661682a721ae",
     "duration": 10.92
   },
   {
@@ -95,7 +95,7 @@
     "slideId": "language-accents",
     "text": "The garage experience also influenced the language choices in the app. English sounds different depending on who is speaking and where they come from. This screen shows nine regional English options, including New Zealand, Australia, the United Kingdom, and several others. I wanted learners to practise hearing those differences, rather than become familiar with only one version of English. The app also supports learning other languages. For me, the point is to feel a little more prepared when I meet someone whose voice or accent is new to me.",
     "kind": "audio",
-    "src": "/presentation/narration/language-accents.mp3?v=7270a731c98c",
+    "src": "/ruby-nights/narration/language-accents.mp3?v=7270a731c98c",
     "duration": 38.784
   },
   {
@@ -103,7 +103,7 @@
     "slideId": "discover",
     "text": "After choosing a language and accent, I can also open Discover and find audio conversations to practise with. Here, the feed is filtered to New Zealand English. The topics vary, from a festival to visa and school conversations. I can search by title or transcript and choose something I want to hear. So I don't always need to create a new dialogue to begin practising.",
     "kind": "audio",
-    "src": "/presentation/narration/discover.mp3?v=e57c57f1d831",
+    "src": "/ruby-nights/narration/discover.mp3?v=e57c57f1d831",
     "duration": 26.88
   },
   {
@@ -111,7 +111,7 @@
     "slideId": "ai-scenarios",
     "text": "The way I learn best is through situations I am about to experience. If I need to take my car to the garage, I generate a dialogue about car repairs. Then I can learn the expressions and vocabulary I might actually need. Before going out to do other things, I can prepare in the same way. It gives the practice a purpose. This screen offers fifteen scenarios, and there is also a custom option. Here, coffee shop is selected. For my garage example, I would use a custom situation. AI creates the dialogue, and I can listen and practise before I go. For me, English sticks when I have a reason to use it.",
     "kind": "audio",
-    "src": "/presentation/narration/ai-scenarios.mp3?v=fba30acb9fda",
+    "src": "/ruby-nights/narration/ai-scenarios.mp3?v=fba30acb9fda",
     "duration": 43.08
   },
   {
@@ -119,7 +119,7 @@
     "slideId": "chats",
     "text": "There is also a Chats tab, with language spaces and direct conversations. In this screenshot, you can see spaces for English learners and native Chinese speakers. I wanted a way for people to meet through language practice. If I am learning English, and someone else is learning Chinese, we might be able to help each other. Then, instead of only typing, we can actually speak and listen. The next screen shows what that conversation looks like.",
     "kind": "audio",
-    "src": "/presentation/narration/chats.mp3?v=42f6fc2ff2a4",
+    "src": "/ruby-nights/narration/chats.mp3?v=42f6fc2ff2a4",
     "duration": 32.832
   },
   {
@@ -127,7 +127,7 @@
     "slideId": "voice-exchange",
     "text": "Practising with AI is useful, but I also wanted people to help each other. Imagine that I speak Chinese and I am learning English. You speak English and you are learning Chinese. We each have something to share. In Bantera, we can send each other voice messages. I made the messages voice only because speaking and listening are the focus of the app. It gives us a reason to actually speak, and a reason to listen to another person. If a message is difficult to understand, transcription and translation are there to help. They provide support while we keep practising. And hopefully, some of those conversations can become friendships.",
     "kind": "audio",
-    "src": "/presentation/narration/voice-exchange.mp3?v=dcb4c5cc1425",
+    "src": "/ruby-nights/narration/voice-exchange.mp3?v=dcb4c5cc1425",
     "duration": 45.864
   },
   {
@@ -135,23 +135,39 @@
     "slideId": "pipeline",
     "text": "So how does the app create a practice conversation? After I choose a situation, Gemini first writes the original dialogue. Next, Gemini text to speech turns it into audio. A Gemini transcription model then listens to that audio and gives us each word with its timing. Finally, the backend compares those words with the original script. It keeps exact matches, and asks a Gemini text model to resolve words that sound right but were transcribed differently. This gives us timings for the words the learner actually sees. On this screen, those last two operations appear together as aligning audio. If Gemini timing fails, the backend has fallback methods.",
     "kind": "audio",
-    "src": "/presentation/narration/pipeline.mp3?v=a8fbebcc5718",
+    "src": "/ruby-nights/narration/pipeline.mp3?v=a8fbebcc5718",
     "duration": 49.2
   },
   {
     "id": "codebases",
     "slideId": "codebases",
-    "text": "Behind that experience are three separate codebases. The mobile app is built with Flutter for iOS and Android. That is where people listen, speak, and practise. The backend uses dot net. It handles things such as accounts, AI generation, and content. The website uses Next JS. It includes the homepage, shared practice pages, and administration. Postgres stores the application data, and Cloudflare R two stores the audio files. Each part has its own job, but they work together to create the experience you just saw. I enjoy seeing those different pieces come together around something I want to use myself.",
+    "text": "Behind that experience are three separate codebases. First, the website uses Next JS. It includes the homepage, shared practice pages, and administration. The backend uses dot net. It handles things such as accounts, AI generation, and content. And the mobile app is built with Flutter for iOS and Android. That is where people listen, speak, and practise. Postgres stores the application data, and Cloudflare R two stores the audio files. Each part has its own job, but they work together to create the experience you just saw. I enjoy seeing those different pieces come together around something I want to use myself.",
     "kind": "audio",
-    "src": "/presentation/narration/codebases.mp3?v=fd45c0e7065e",
-    "duration": 42.192
+    "src": "/ruby-nights/narration/codebases.mp3?v=df1ae213e4e4",
+    "duration": 44.904
+  },
+  {
+    "id": "mcp",
+    "slideId": "mcp",
+    "text": "The dot net backend also has an MCP server. That means I can connect Bantera to ChatGPT or Claude with OAuth, and ask questions about the app's data in a conversation. This screenshot is an example from September twenty-fourth, not live numbers. I asked ChatGPT to show a language snapshot, and it made the chart you see here. The connection has separate read and write permissions, so an administrator can also make authorised changes without opening the dashboard. For me, that makes the backend useful beyond the app itself.",
+    "kind": "audio",
+    "src": "/ruby-nights/narration/mcp.mp3?v=287b51996782",
+    "duration": 37.392
+  },
+  {
+    "id": "skills",
+    "slideId": "skills",
+    "text": "I also designed two ChatGPT skills for Bantera. With ChatGPT's text model, I can research recent AI news and write an original script for a listening lesson. Bantera AI News helps gather and check the stories. Bantera Audio prepares the cover, generates speech, adds word timings, and submits the completed lesson through MCP. The speaking voice and transcription still come from Gemini. ChatGPT is used for the research and writing. This gives me a way to turn a current topic into practice material that is interesting to listen to.",
+    "kind": "audio",
+    "src": "/ruby-nights/narration/skills.mp3?v=977f0019a347",
+    "duration": 37.152
   },
   {
     "id": "deployment",
     "slideId": "deployment",
     "text": "Building the app is one part of the work. I also need to get it running on a server. I use an Ubuntu server for the backend and website, with Open Claw helping me manage deployments. This screenshot shows an example. I ask it to deploy a new version of the Bantera website. It then reports the result, including the commit it deployed, the running containers, and the local and public health checks. Here, the report says the checks returned HTTP two hundred. I like having the request and the result together in a conversation, so I can see what happened.",
     "kind": "audio",
-    "src": "/presentation/narration/deployment.mp3?v=73b810dd315f",
+    "src": "/ruby-nights/narration/deployment.mp3?v=73b810dd315f",
     "duration": 41.52
   },
   {
@@ -159,7 +175,7 @@
     "slideId": "backup",
     "text": "Another important part is looking after the database. I set up an Open Claw cron job to make a backup every day at five in the morning. It sends the database file directly to my chat. These are two daily deliveries, with the date and a download link for each file. I don't have to download it immediately. The file is there in the chat when I need it. For me, this is part of running the app, just as much as adding a new feature. People create things in the app, and keeping a backup of that data matters.",
     "kind": "audio",
-    "src": "/presentation/narration/backup.mp3?v=1a7927208800",
+    "src": "/ruby-nights/narration/backup.mp3?v=1a7927208800",
     "duration": 33.744
   },
   {
@@ -168,7 +184,7 @@
     "text": "Now, what would you like to practise? Perhaps a job interview, a visit to the garage, or simply a conversation over coffee. You can scan this code or visit Bantera dot app to explore it. If you are watching this automatically and would like more time, you can pause here. I'd also love to hear what situations are difficult for you, and what would make practice more helpful. Before I finish, there is one thought I'd like to leave with you.",
     "pauseAfterMs": 800,
     "kind": "audio",
-    "src": "/presentation/narration/try.mp3?v=c2f474edfd4d",
+    "src": "/ruby-nights/narration/try.mp3?v=c2f474edfd4d",
     "duration": 30.144
   },
   {
@@ -176,7 +192,7 @@
     "slideId": "colours",
     "text": "There is a song called Glorious Years, by Beyond. Wong Ka Kui was a great Hong Kong singer and songwriter, and there is a passage in the song about the beauty of different colours together. The English line here is inspired by that meaning: The world is more beautiful when all its colours come together. It makes me think about the different voices and accents we hear. Every accent adds colour. I have an accent too, and I am still learning. What I hope for is simple. I'd love to meet people from all over the world and make new friends. Thank you for listening.",
     "kind": "audio",
-    "src": "/presentation/narration/colours.mp3?v=ea5ec7b83e76",
+    "src": "/ruby-nights/narration/colours.mp3?v=ea5ec7b83e76",
     "duration": 38.952
   }
 ]

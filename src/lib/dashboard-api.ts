@@ -379,11 +379,19 @@ export type AiSettings = {
   modelListAvailable: boolean;
   /** Missing on backends older than 1.0.112. */
   playback?: AiPlaybackSettings;
+  /** Missing on backends older than 1.0.119. */
+  alignment?: AiAlignmentSettings;
 };
 
 export type AiPlaybackSettings = {
   /** AI-audio sentences start where the previous sentence ends, not at their own first word. */
   cueStartsAtPreviousCueEnd: boolean;
+  updatedAt: string | null;
+};
+
+export type AiAlignmentSettings = {
+  /** New AI audio uses the original dialogue text for cues and word highlighting. */
+  alignToOriginalDialogue: boolean;
   updatedAt: string | null;
 };
 
@@ -418,6 +426,21 @@ export async function updateAiPlaybackSettings(
     body: JSON.stringify(body),
   });
   if (res.ok) return { ok: true, playback: (await res.json()) as AiPlaybackSettings };
+  const error = (await res.json().catch(() => null)) as { message?: string } | null;
+  return { ok: false, status: res.status, message: error?.message ?? `Could not save (${res.status}).` };
+}
+
+export async function updateAiAlignmentSettings(
+  token: string,
+  body: { alignToOriginalDialogue: boolean },
+): Promise<{ ok: true; alignment: AiAlignmentSettings } | { ok: false; status: number; message: string }> {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/ai-settings/alignment`, {
+    method: 'PUT',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  if (res.ok) return { ok: true, alignment: (await res.json()) as AiAlignmentSettings };
   const error = (await res.json().catch(() => null)) as { message?: string } | null;
   return { ok: false, status: res.status, message: error?.message ?? `Could not save (${res.status}).` };
 }
