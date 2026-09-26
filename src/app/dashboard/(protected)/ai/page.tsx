@@ -30,6 +30,10 @@ const CODE_HELP: Record<string, string> = {
   all_keys_unavailable: 'Every configured key is invalid or cooling down, so none were called.',
   key_quota_cooldown: 'This key hit a quota limit and is temporarily paused for this model.',
   key_disabled: 'This key is invalid or blocked and will be skipped until an admin retries it.',
+  model_attempt_started: 'A Gemini model call started; the model and masked key are shown.',
+  model_attempt_succeeded: 'This model call succeeded; duration is shown.',
+  content_rejected_attempt: 'Gemini returned a rejection marker; details show the reason and retry number.',
+  content_rejection_recovered: 'A later attempt generated the dialogue successfully.',
   transcription_completed: 'Gemini returned timed words; the details show their count and timing range.',
   transcription_failed: 'Gemini did not return usable timed words; the details show the error type and HTTP status when available.',
   transcription_timing_rejected: 'The direct transcript had invalid timing; the details show why and which word failed.',
@@ -51,6 +55,12 @@ const CODE_HELP: Record<string, string> = {
   mp3_encode_failed: 'MP3 encoding failed; the audio was stored as WAV.',
   mp3_encoder_missing: 'No MP3 encoder on the server; the audio was stored as WAV.',
   content_rejected: 'The topic was refused by the content policy.',
+  generation_started: 'The generation job started; details include the requested scenario.',
+  generation_completed: 'The generated video was saved.',
+  save_started: 'Saving the generated video started.',
+  save_succeeded: 'The generated video was saved.',
+  upload_started: 'Uploading generated audio started.',
+  upload_succeeded: 'Generated audio was uploaded.',
   generation_failed: 'The generation failed and the user saw an error.',
   generation_timeout: 'The generation timed out.',
 };
@@ -136,7 +146,7 @@ function EventRow({ event }: { event: AiPipelineEvent }) {
         <div className="mt-2 md:pl-39 space-y-2 text-xs">
           <p className="text-gray-500 dark:text-gray-400">
             {event.userId && <>User <Link className="text-indigo-600 dark:text-indigo-400 hover:underline" href={`/dashboard/users/${event.userId}`}>{event.userId.slice(0, 8)}</Link> · </>}
-            {event.jobId && <>Job {event.jobId.slice(0, 8)} · </>}
+            {event.jobId && <>Job <Link className="text-indigo-600 dark:text-indigo-400 hover:underline" href={`/dashboard/videos/job/${event.jobId}`}>{event.jobId.slice(0, 8)}</Link> · </>}
             {CODE_HELP[event.code] ?? ''}
           </p>
           {detail && (

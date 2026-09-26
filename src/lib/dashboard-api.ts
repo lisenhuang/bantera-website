@@ -58,6 +58,33 @@ export type AdminVideoListItem = {
   createdAt: string;
 };
 
+export type AdminPipelineRunRow = {
+  kind: 'video' | 'job';
+  id: string;
+  videoId: string | null;
+  userId: string;
+  creatorName: string | null;
+  name: string;
+  languageCode: string | null;
+  status: 'done' | 'uploaded' | 'failed' | 'processing';
+  isPublic: boolean | null;
+  isAiGenerated: boolean;
+  durationMs: number | null;
+  fileSizeBytes: number | null;
+  createdAt: string;
+};
+
+export type AdminPipelineRunDetail = {
+  run: AdminPipelineRunRow;
+  jobId: string | null;
+  scenarioId: string | null;
+  completedAt: string | null;
+  errorMessage: string | null;
+  events: AiPipelineEvent[];
+  eventsTruncated: boolean;
+  eventRetentionDays: number;
+};
+
 export type AdminStats = {
   totalUsers: number;
   totalVideos: number;
@@ -226,6 +253,34 @@ export async function deleteAdminUser(
 }
 
 // ── Videos ────────────────────────────────────────────────────────────────────
+
+export async function listAdminPipelineRuns(
+  token: string,
+  params: {
+    languageCode?: string;
+    isPublic?: boolean;
+    isAiGenerated?: boolean;
+    sort?: string;
+    dir?: string;
+    limit?: number;
+    offset?: number;
+  } = {},
+): Promise<AdminPagedResult<AdminPipelineRunRow>> {
+  const q = new URLSearchParams();
+  if (params.languageCode) q.set('languageCode', params.languageCode);
+  if (params.isPublic != null) q.set('isPublic', String(params.isPublic));
+  if (params.isAiGenerated != null) q.set('isAiGenerated', String(params.isAiGenerated));
+  if (params.sort) q.set('sort', params.sort);
+  if (params.dir) q.set('dir', params.dir);
+  if (params.limit != null) q.set('limit', String(params.limit));
+  if (params.offset != null) q.set('offset', String(params.offset));
+  return adminFetch<AdminPagedResult<AdminPipelineRunRow>>(`/api/admin/ai-pipeline/runs?${q.toString()}`, token);
+}
+
+export async function getAdminPipelineRun(token: string, kind: string, id: string): Promise<AdminPipelineRunDetail> {
+  return adminFetch<AdminPipelineRunDetail>(
+    `/api/admin/ai-pipeline/runs/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`, token);
+}
 
 export async function listAdminVideos(
   token: string,

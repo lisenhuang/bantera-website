@@ -4,19 +4,10 @@ import { Suspense, useEffect, useState, useTransition } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { BANTERA_LANGUAGE_OPTIONS } from '@/lib/bantera-api';
-import type { AdminVideoListItem, AdminPagedResult } from '@/lib/dashboard-api';
+import type { AdminPipelineRunRow, AdminPagedResult } from '@/lib/dashboard-api';
 import { deleteVideoAction } from './actions';
 
 const LIMIT = 20;
-
-const SORT_COLUMNS = [
-  { key: 'filename', label: 'File name' },
-  { key: 'language', label: 'Language' },
-  { key: 'createdAt', label: 'Creator' },
-  { key: 'duration', label: 'Duration' },
-  { key: 'size', label: 'Size' },
-  { key: 'createdAt', label: 'Date' },
-] as const;
 
 function formatDuration(ms: number) {
   const s = Math.round(ms / 1000);
@@ -117,13 +108,12 @@ function VideosContent() {
   const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
   const offset = (page - 1) * LIMIT;
 
-  const [result, setResult] = useState<AdminPagedResult<AdminVideoListItem> | null>(null);
+  const [result, setResult] = useState<AdminPagedResult<AdminPipelineRunRow> | null>(null);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
 
-  function load() {
-    setError(null);
+  useEffect(() => {
+    let active = true;
     const params = new URLSearchParams();
     if (languageCode) params.set('languageCode', languageCode);
     if (isPublicStr) params.set('isPublic', isPublicStr);
@@ -133,18 +123,20 @@ function VideosContent() {
     params.set('limit', String(LIMIT));
     params.set('offset', String(offset));
 
-    startTransition(() => {
-      fetch(`/api/dashboard/videos?${params.toString()}`)
-        .then((r) => {
-          if (!r.ok) throw new Error('Failed');
-          return r.json() as Promise<AdminPagedResult<AdminVideoListItem>>;
-        })
-        .then((data) => { setResult(data); setDeletedIds(new Set()); })
-        .catch(() => setError('Failed to load videos.'));
-    });
-  }
-
-  useEffect(() => { load(); }, [languageCode, isPublicStr, isAiStr, sort, dir, offset]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetch(`/api/dashboard/pipeline-runs?${params.toString()}`)
+      .then((r) => {
+        if (!r.ok) throw new Error('Failed');
+        return r.json() as Promise<AdminPagedResult<AdminPipelineRunRow>>;
+      })
+      .then((data) => {
+        if (!active) return;
+        setResult(data);
+        setDeletedIds(new Set());
+        setError(null);
+      })
+      .catch(() => { if (active) setError('Failed to load videos and generation jobs.'); });
+    return () => { active = false; };
+  }, [languageCode, isPublicStr, isAiStr, sort, dir, offset]);
 
   const totalPages = result ? Math.ceil(result.total / LIMIT) : 1;
 
@@ -171,7 +163,7 @@ function VideosContent() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Audio &amp; Videos</h1>
           {result && (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              {result.total.toLocaleString()} total
+              {result.total.toLocaleString()} videos and generation jobs
             </p>
           )}
         </div>
@@ -223,13 +215,14 @@ function VideosContent() {
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
               <tr>
-                <SortHeader colKey="filename" label="File name" currentSort={sort} currentDir={dir} />
+                <SortHeader colKey="filename" label="Item" currentSort={sort} currentDir={dir} />
                 <SortHeader colKey="language" label="Language" currentSort={sort} currentDir={dir} />
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Creator</th>
                 <SortHeader colKey="duration" label="Duration" currentSort={sort} currentDir={dir} />
                 <SortHeader colKey="size" label="Size" currentSort={sort} currentDir={dir} />
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Public</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">AI</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                 <SortHeader colKey="createdAt" label="Date" currentSort={sort} currentDir={dir} />
                 <th className="px-3 py-3" />
               </tr>
@@ -237,31 +230,33 @@ function VideosContent() {
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {!result ? (
                 <tr>
-                  <td colSpan={9} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">Loading…</td>
+                  <td colSpan={10} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">Loading…</td>
                 </tr>
               ) : visibleItems.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">No content found</td>
+                  <td colSpan={10} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">No content found</td>
                 </tr>
               ) : (
                 visibleItems.map((video) => (
                   <tr key={video.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                     <td className="px-3 py-3 text-gray-800 dark:text-gray-200 max-w-[180px]">
-                      <span className="block truncate" title={video.originalFileName}>{video.originalFileName}</span>
+                      <Link href={`/dashboard/videos/${video.kind}/${video.id}`} className="block truncate font-medium hover:text-indigo-600 dark:hover:text-indigo-400" title={video.name}>
+                        {video.name}
+                      </Link>
                     </td>
                     <td className="px-3 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {BANTERA_LANGUAGE_OPTIONS.find(l => l.code === video.transcriptLanguageCode)?.flag ?? ''}{' '}
-                      {video.transcriptLanguageCode}
+                      {BANTERA_LANGUAGE_OPTIONS.find(l => l.code === video.languageCode)?.flag ?? ''}{' '}
+                      {video.languageCode ?? '—'}
                     </td>
                     <td className="px-3 py-3 text-gray-600 dark:text-gray-400">{video.creatorName ?? '—'}</td>
                     <td className="px-3 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap tabular-nums">
-                      {formatDuration(video.durationMs)}
+                      {video.durationMs == null ? '—' : formatDuration(video.durationMs)}
                     </td>
                     <td className="px-3 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap tabular-nums">
-                      {formatSize(video.fileSizeBytes)}
+                      {video.fileSizeBytes == null ? '—' : formatSize(video.fileSizeBytes)}
                     </td>
                     <td className="px-3 py-3">
-                      {video.isPublic
+                      {video.isPublic == null ? <span className="text-gray-400 text-xs">—</span> : video.isPublic
                         ? <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium">Yes</span>
                         : <span className="text-gray-400 text-xs">No</span>}
                     </td>
@@ -270,14 +265,26 @@ function VideosContent() {
                         ? <span className="text-violet-600 dark:text-violet-400 text-xs font-medium">AI</span>
                         : <span className="text-gray-400 text-xs">No</span>}
                     </td>
+                    <td className="px-3 py-3">
+                      <span className={video.status === 'failed'
+                        ? 'text-red-600 dark:text-red-400 text-xs font-medium'
+                        : video.status === 'processing'
+                          ? 'text-amber-600 dark:text-amber-400 text-xs font-medium'
+                          : 'text-emerald-600 dark:text-emerald-400 text-xs font-medium'}>
+                        {video.status}
+                      </span>
+                    </td>
                     <td className="px-3 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {formatDate(video.createdAt)}
                     </td>
                     <td className="px-3 py-3">
-                      <DeleteVideoButton
-                        videoId={video.id}
-                        onDeleted={() => setDeletedIds((prev) => new Set([...prev, video.id]))}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Link href={`/dashboard/videos/${video.kind}/${video.id}`} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">Details</Link>
+                        {video.videoId && <DeleteVideoButton
+                          videoId={video.videoId}
+                          onDeleted={() => setDeletedIds((prev) => new Set([...prev, video.id]))}
+                        />}
+                      </div>
                     </td>
                   </tr>
                 ))
