@@ -370,8 +370,10 @@ export type AiModelOverride = { value: string; updatedAt: string; updatedByUserI
 export type AiSettings = {
   textModel: string;
   audioModel: string;
+  fallbackTextModel?: string | null;
+  fallbackAudioModel?: string | null;
   defaults: { textModel: string; audioModel: string };
-  overrides: { textModel: AiModelOverride; audioModel: AiModelOverride };
+  overrides: { textModel: AiModelOverride; audioModel: AiModelOverride; fallbackTextModel?: AiModelOverride; fallbackAudioModel?: AiModelOverride };
   fixedModels: { webSearchModel: string; webSearchKeyPrefix: string; transcribeModel: string };
   /** Live from Gemini's model list on every load. */
   availableTextModels: string[];
@@ -402,7 +404,7 @@ export async function getAiSettings(token: string): Promise<AiSettings> {
 /** Null clears an override (back to the default). Returns the backend's message on failure. */
 export async function updateAiSettings(
   token: string,
-  body: { textModel: string | null; audioModel: string | null },
+  body: { textModel: string | null; audioModel: string | null; fallbackTextModel: string | null; fallbackAudioModel: string | null },
 ): Promise<{ ok: true; settings: AiSettings } | { ok: false; status: number; message: string }> {
   const res = await fetch(`${getApiBaseUrl()}/api/admin/ai-settings`, {
     method: 'PUT',

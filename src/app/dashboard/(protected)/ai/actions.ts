@@ -16,7 +16,12 @@ export async function saveModelSettingsAction(_prev: ModelSettingsState, form: F
     return value === '' ? null : value;
   };
 
-  const result = await updateAiSettings(token, { textModel: pick('textModel'), audioModel: pick('audioModel') });
+  const result = await updateAiSettings(token, {
+    textModel: pick('textModel'),
+    audioModel: pick('audioModel'),
+    fallbackTextModel: pick('fallbackTextModel'),
+    fallbackAudioModel: pick('fallbackAudioModel'),
+  });
   if (!result.ok) {
     if (result.status === 401) redirect('/dashboard/login');
     return { error: result.message };
