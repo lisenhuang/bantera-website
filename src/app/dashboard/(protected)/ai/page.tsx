@@ -24,6 +24,9 @@ const PAGE_SIZE = 50;
 const CODE_HELP: Record<string, string> = {
   key_failed: 'A Gemini key failed; the next key was tried.',
   all_keys_failed: 'Every Gemini key failed for this step.',
+  transcription_completed: 'Gemini returned timed words; the details show their count and timing range.',
+  transcription_failed: 'Gemini did not return usable timed words; the details show the error type and HTTP status when available.',
+  transcription_timing_rejected: 'The direct transcript had invalid timing; the details show why and which word failed.',
   transcription_incomplete: 'The transcript missed part of the dialogue; transcribed again.',
   transcription_retry_improved: 'The second transcription heard more words.',
   transcription_retry_not_improved: 'The second transcription was no better.',
@@ -32,6 +35,8 @@ const CODE_HELP: Record<string, string> = {
   tts_speech_possibly_missing: 'Audio ends right after the last heard word: the TTS likely skipped the last line(s).',
   ai_alignment_failed: 'The AI word matching failed; exact matches only.',
   timing_rejected: 'Too many words not found; used the fallback timing instead.',
+  script_cues_unmatched: 'The timed words could not produce cues for every dialogue line.',
+  cue_alignment_failed: 'No valid cue timing was produced; the details show which matching attempts failed.',
   timing_failed: 'Word timing failed; used the fallback timing instead.',
   timing_fallback: 'Saved with Rev.ai or estimated timing instead of Gemini word timing.',
   timing_completed: 'Word timing finished (quality summary).',
@@ -166,10 +171,11 @@ export default async function AiPipelinePage({ searchParams }: {
   if (!settings && !summary && !events) redirect('/dashboard/login');
 
   const timingDone = summary ? countOf(summary, 'timing_completed') : 0;
-  const timingFellBack = summary ? countOf(summary, 'timing_rejected') + countOf(summary, 'timing_failed') : 0;
+  const timingFellBack = summary ? ['timing_rejected', 'timing_failed', 'transcription_timing_rejected', 'script_cues_unmatched']
+    .reduce((total, code) => total + countOf(summary, code), 0) : 0;
   const incomplete = summary ? countOf(summary, 'transcription_incomplete') : 0;
   const improved = summary ? countOf(summary, 'transcription_retry_improved') : 0;
-  const issues = summary?.byCode.filter((c) => c.code !== 'timing_completed') ?? [];
+  const issues = summary?.byCode.filter((c) => c.code !== 'timing_completed' && c.code !== 'transcription_completed') ?? [];
   const filtered = filters.severity || filters.stage || filters.code;
 
   return (
