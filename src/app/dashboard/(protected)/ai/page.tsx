@@ -27,6 +27,7 @@ const CODE_HELP: Record<string, string> = {
   transcription_completed: 'Gemini returned timed words; the details show their count and timing range.',
   transcription_failed: 'Gemini did not return usable timed words; the details show the error type and HTTP status when available.',
   transcription_timing_rejected: 'The direct transcript had invalid timing; the details show why and which word failed.',
+  transcription_timing_repaired: 'Gemini returned zero-length word timestamps; estimated timing for those words and kept the rest.',
   transcription_incomplete: 'The transcript missed part of the dialogue; transcribed again.',
   transcription_retry_improved: 'The second transcription heard more words.',
   transcription_retry_not_improved: 'The second transcription was no better.',
