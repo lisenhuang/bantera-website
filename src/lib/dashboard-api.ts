@@ -391,6 +391,36 @@ export type AiPlaybackSettings = {
   updatedAt: string | null;
 };
 
+export type GeminiKeyHealth = {
+  total: number;
+  healthy: number;
+  items: {
+    id: string;
+    hint: string;
+    status: 'invalid' | 'cooldown';
+    model: string | null;
+    retryAt: string | null;
+    reason: string | null;
+    detectedAt: string | null;
+  }[];
+};
+
+export async function getGeminiKeyHealth(token: string): Promise<GeminiKeyHealth> {
+  return adminFetch<GeminiKeyHealth>('/api/admin/ai-settings/keys', token);
+}
+
+export async function retryGeminiKey(
+  token: string, id: string,
+): Promise<{ ok: true } | { ok: false; status: number; message: string }> {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/ai-settings/keys/${encodeURIComponent(id)}/retry`, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.ok) return { ok: true };
+  return { ok: false, status: res.status, message: `Could not retry this key (${res.status}).` };
+}
+
 export type AiAlignmentSettings = {
   /** New AI audio uses the original dialogue text for cues and word highlighting. */
   alignToOriginalDialogue: boolean;

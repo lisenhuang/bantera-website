@@ -4,16 +4,19 @@ import {
   getAccessToken,
   getAiPipelineSummary,
   getAiSettings,
+  getGeminiKeyHealth,
   listAiPipelineEvents,
   type AiPipelineEvent,
   type AiPipelineSeverity,
   type AiPipelineSummary,
   type AiSettings,
+  type GeminiKeyHealth,
 } from '@/lib/dashboard-api';
 import { ColumnChart } from '../_components/charts';
 import { ModelSettingsForm } from './model-settings-form';
 import { PlaybackSettingsForm } from './playback-settings-form';
 import { AlignmentSettingsForm } from './alignment-settings-form';
+import { KeyHealthPanel } from './key-health-panel';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +27,9 @@ const PAGE_SIZE = 50;
 const CODE_HELP: Record<string, string> = {
   key_failed: 'A Gemini key failed; the next key was tried.',
   all_keys_failed: 'Every Gemini key failed for this step.',
+  all_keys_unavailable: 'Every configured key is invalid or cooling down, so none were called.',
+  key_quota_cooldown: 'This key hit a quota limit and is temporarily paused for this model.',
+  key_disabled: 'This key is invalid or blocked and will be skipped until an admin retries it.',
   transcription_completed: 'Gemini returned timed words; the details show their count and timing range.',
   transcription_failed: 'Gemini did not return usable timed words; the details show the error type and HTTP status when available.',
   transcription_timing_rejected: 'The direct transcript had invalid timing; the details show why and which word failed.',
@@ -157,7 +163,7 @@ export default async function AiPipelinePage({ searchParams }: {
     page: Math.max(0, Number.parseInt(sp.page ?? '0', 10) || 0),
   };
 
-  const [settings, summary, events] = await Promise.all([
+  const [settings, summary, events, keyHealth] = await Promise.all([
     getAiSettings(token).catch(() => null as AiSettings | null),
     getAiPipelineSummary(token, filters.days).catch(() => null as AiPipelineSummary | null),
     listAiPipelineEvents(token, {
@@ -168,6 +174,7 @@ export default async function AiPipelinePage({ searchParams }: {
       limit: PAGE_SIZE,
       offset: filters.page * PAGE_SIZE,
     }).catch(() => null),
+    getGeminiKeyHealth(token).catch(() => null as GeminiKeyHealth | null),
   ]);
   if (!settings && !summary && !events) redirect('/dashboard/login');
 
@@ -222,6 +229,12 @@ export default async function AiPipelinePage({ searchParams }: {
           <p className="text-sm text-red-600 dark:text-red-400">Could not load the model settings.</p>
         )}
       </Card>
+
+      {keyHealth && (
+        <Card title="Gemini key health" subtitle="Current key availability across all AI audio steps.">
+          <KeyHealthPanel health={keyHealth} />
+        </Card>
+      )}
 
       {/* Word highlighting */}
       {settings?.alignment && (

@@ -2,9 +2,24 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { getAccessToken, updateAiAlignmentSettings, updateAiPlaybackSettings, updateAiSettings } from '@/lib/dashboard-api';
+import { getAccessToken, retryGeminiKey, updateAiAlignmentSettings, updateAiPlaybackSettings, updateAiSettings } from '@/lib/dashboard-api';
 
 export type ModelSettingsState = { ok?: boolean; error?: string };
+
+export async function retryGeminiKeyAction(_prev: ModelSettingsState, form: FormData): Promise<ModelSettingsState> {
+  const token = await getAccessToken();
+  if (!token) redirect('/dashboard/login');
+  const id = String(form.get('id') ?? '');
+  if (!/^[a-f0-9]{64}$/.test(id)) return { error: 'Invalid key identifier.' };
+
+  const result = await retryGeminiKey(token, id);
+  if (!result.ok) {
+    if (result.status === 401) redirect('/dashboard/login');
+    return { error: result.message };
+  }
+  revalidatePath('/dashboard/ai');
+  return { ok: true };
+}
 
 /** The empty option means "use the default", which clears the override. */
 export async function saveModelSettingsAction(_prev: ModelSettingsState, form: FormData): Promise<ModelSettingsState> {
