@@ -21,7 +21,7 @@ Place supplied files in `public/ruby-nights/` and update `media` in `content.ts`
 - `demo`: supplied recording, encoded as H.265 MP4 with an H.264 fallback and poster configured in `demoVideo`. Both versions are 720 × 1474, 30 fps, with the original AAC audio retained.
 - `deployment`: OpenClaw / Ubuntu deployment screenshot.
 - `backup`: OpenClaw database-backup screenshot showing the actual result.
-- `closing`: optional final photograph.
+- `closing`: optional photograph for the colours reflection.
 
 Use URLs such as `/ruby-nights/bantera-demo.mp4`. Missing media stays as an intentional placeholder. The video has native playback controls and does not autoplay. Leaving its slide unmounts the player and stops playback.
 
@@ -44,7 +44,7 @@ Source: `ScreenRecording_09-17-2026 11-03-54_1.mov` (5,582,987 bytes, 1206 × 24
 
 ## App feature screenshots
 
-Five slides follow the recorded demo, before the technical section. The deck now has 19 slides.
+Five slides follow the recorded demo, before the technical section. The deck now has 20 slides.
 
 - `#language-accents`: `IMG_6321.jpg`, copied to `language-accents.jpg`. Shows nine regional English options.
 - `#discover`: supplied Discover screenshot, copied to `discover.jpg`. Shows a New Zealand English audio feed and search.
@@ -62,6 +62,8 @@ The `#deployment` slide includes the supplied OpenClaw conversation in `openclaw
 
 The `#backup` slide uses `openclaw-daily-backup.png`. Two CSS excerpts show the 16 and 17 September SQL ZIP attachment deliveries at 5 a.m. The daily cron schedule and availability in chat reflect the presenter’s account. The screenshot demonstrates delivery, not restore testing. The source image is retained unchanged.
 
+The final `#connect` slide links to Ethan Huang's LinkedIn profile at `linkedin.com/in/huanglisen`, as listed in his résumé. Its 430-pixel, high-contrast QR code embeds a small LinkedIn mark, uses high error correction and has a four-module quiet zone. The colours reflection now pauses before this short job-search postscript.
+
 ## Narrated autoplay
 
 Use **Autoplay** to start from the current slide. Use Home first to start the whole presentation. **Pause / Resume** preserve the current recording position, and **Stop** returns control to the presenter. Arrow navigation and Escape stop playback. The Audio speed button cycles through 0.75×, 1×, 1.25×, 1.5×, 1.75× and 2×. Changes apply immediately to narration, preserving pitch, and carry across slides. Videos always start at 1×; the audio speed control does not affect them or the between-clip pauses. Narration is labelled as AI narration.
@@ -70,4 +72,4 @@ The church story has separate question, answer, laughter and reflection clips. T
 
 The editable script is `scripts/ruby-nights-narration.json`. Static MP3s are in `public/ruby-nights/narration/`; the playback manifest is `src/app/ruby-nights/narration.json`. `scripts/generate-ruby-nights-narration.py` reads a local backend credential or `GEMINI_API_KEY` at generation time only, and never writes credentials to the output. It generates the Charon voice with a warm male delivery prompt, normalises loudness, and uses cached outputs when the script is unchanged. It sends narration text to Google's Gemini API. Playback requires no Gemini connection or API key.
 
-Generation status: all 23 audio clips are ready across 19 slides, including the MCP and skills slides. The sweet-as story says “I met a Kiwi” and uses she/her. The garage story says seventy percent, matching the 70% displayed on the slide. Updated recordings have fingerprinted URLs to avoid stale browser audio.
+Generation status: all 24 audio clips are ready across 20 slides, including the final LinkedIn slide. The sweet-as story says “I met a Kiwi” and uses she/her. The garage story says seventy percent, matching the 70% displayed on the slide. Updated recordings have fingerprinted URLs to avoid stale browser audio.

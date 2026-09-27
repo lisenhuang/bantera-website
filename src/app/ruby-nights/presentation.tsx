@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { closingQuote, demoVideo, media, slides } from './content';
+import { closingQuote, demoVideo, linkedInProfileUrl, media, slides } from './content';
 import s from './presentation.module.css';
 import { useAutoplay } from './use-autoplay';
 
@@ -267,6 +267,20 @@ export default function Presentation() {
           <div className={s.closingWords}>
             <figure className={s.lyric}><p className={s.lyricMeaning}>{closingQuote.english}</p><p className={s.chineseLyric} lang="zh-Hant">{closingQuote.chineseLyric}</p><figcaption><a className={s.artistName} href={closingQuote.source} target="_blank" rel="noreferrer">{closingQuote.attribution}</a><span className={s.artistDescription}>{closingQuote.artistDescription}</span><span className={s.translationNote}>{closingQuote.translationNote}</span></figcaption></figure>
             <div className={s.reflection}><p className={s.eyebrow}>What it means to me</p><h1>Every accent<br />adds <em>colour.</em></h1><p className={s.body}>I’d love to meet people from all over the world<br />and make new friends.</p></div>
+          </div>
+        </div>}
+
+        {slide.id === 'connect' && <div className={s.connectSlide}>
+          <div className={s.connectMessage}>
+            <p className={s.eyebrow}>One more thing</p>
+            <h1>I’m looking<br />for a <em>job.</em></h1>
+            <p>Let’s connect on LinkedIn.</p>
+          </div>
+          <div className={s.connectQrWrap}>
+            <a className={s.connectQr} href={linkedInProfileUrl} target="_blank" rel="noreferrer" aria-label="Open Ethan Huang’s LinkedIn profile">
+              <QRCodeSVG value={linkedInProfileUrl} size={430} level="H" marginSize={4} title="Scan to open Ethan Huang’s LinkedIn profile" imageSettings={{ src: '/ruby-nights/linkedin-mark.svg', width: 60, height: 60, excavate: true }} />
+            </a>
+            <p>Ethan Huang · LinkedIn</p>
           </div>
         </div>}
       </div>

@@ -116,6 +116,13 @@
 .translationNote { display: block; margin-top: 8px; font-size: 10px; opacity: .8; }
 .reflection .eyebrow { margin-bottom: 16px; }
 .reflection .body { font-size: clamp(17px, 1.65vw, 25px); margin-top: 20px; }
+.connectSlide { display: grid; grid-template-columns: 1.1fr .9fr; align-items: center; gap: 4%; }
+.connectSlide h1 { font-size: clamp(54px, 6vw, 98px); }
+.connectMessage > p:last-child { margin: 30px 0 0; color: var(--muted); font-size: clamp(21px, 2.1vw, 32px); line-height: 1.4; }
+.connectQrWrap { justify-self: center; text-align: center; }
+.connectQr { display: inline-block; padding: 8px; background: #fff; border-radius: 13px; box-shadow: 0 14px 40px #27292315; line-height: 0; }
+.connectQr svg { width: min(35vw, 430px); height: auto; }
+.connectQrWrap p { margin: 17px 0 0; color: var(--muted); font-size: 14px; }
 .controls { height: 68px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 5.5%; gap: 20px; }
 .utilities { display: flex; gap: 22px; }
 .utilities button { font-size: 11px; color: var(--muted); border: 0; padding: 6px 0; background: transparent; }
@@ -159,6 +166,7 @@
 .exchangeExample p { font-size: clamp(17px, 1.8vw, 27px); line-height: 1.5; margin: 0; }
 .exchangeExample span { display: block; font-size: clamp(13px, 1.2vw, 18px); color: var(--muted); margin-bottom: 7px; }
 @media (max-width: 760px) { .featureSlide { grid-template-columns: 1fr; gap: 32px; } .featureSlide h1 { font-size: clamp(38px, 8.5vw, 62px); } .appFigure img { height: auto; width: min(80vw, 360px); max-height: none; } .featureNote { font-size: 17px; } .exchangeExample { gap: 16px; } }
+@media (max-width: 760px) { .connectSlide { grid-template-columns: 1fr; gap: 35px; } .connectSlide h1 { font-size: clamp(48px, 9vw, 70px); } .connectMessage > p:last-child { margin-top: 20px; font-size: 20px; } .connectQr svg { width: min(76vw, 420px); } }
 
 .scenarioReflection { font-family: Georgia, serif; font-style: italic; font-size: clamp(22px, 2.4vw, 35px); line-height: 1.35; color: var(--accent); margin: 26px 0 0; max-width: 520px; }
 

@@ -190,9 +190,18 @@
   {
     "id": "colours",
     "slideId": "colours",
-    "text": "There is a song called Glorious Years, by Beyond. Wong Ka Kui was a great Hong Kong singer and songwriter, and there is a passage in the song about the beauty of different colours together. The English line here is inspired by that meaning: The world is more beautiful when all its colours come together. It makes me think about the different voices and accents we hear. Every accent adds colour. I have an accent too, and I am still learning. What I hope for is simple. I'd love to meet people from all over the world and make new friends. Thank you for listening.",
+    "text": "There is a song called Glorious Years, by Beyond. Wong Ka Kui was a great Hong Kong singer and songwriter, and there is a passage in the song about the beauty of different colours together. The English line here is inspired by that meaning: The world is more beautiful when all its colours come together. It makes me think about the different voices and accents we hear. Every accent adds colour. I have an accent too, and I am still learning. What I hope for is simple. I'd love to meet people from all over the world and make new friends.",
+    "pauseAfterMs": 1600,
     "kind": "audio",
-    "src": "/ruby-nights/narration/colours.mp3?v=ea5ec7b83e76",
-    "duration": 38.952
+    "src": "/ruby-nights/narration/colours.mp3?v=a3425603a361",
+    "duration": 41.064
+  },
+  {
+    "id": "connect",
+    "slideId": "connect",
+    "text": "One last thing. I'm looking for a software engineering job. If you know of an opportunity, I would love to connect. Please scan this code to find me on LinkedIn. Thank you for listening.",
+    "kind": "audio",
+    "src": "/ruby-nights/narration/connect.mp3?v=3b83bb44a44c",
+    "duration": 12.984
   }
 ]
