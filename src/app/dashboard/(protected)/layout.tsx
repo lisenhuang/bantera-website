@@ -57,6 +57,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/dashboard/audio-tests',
+    label: 'Audio tests',
+    exact: false,
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18c0 1.66-1.79 3-4 3s-4-1.34-4-3 1.79-3 4-3 4 1.34 4 3zm12-2c0 1.66-1.79 3-4 3s-4-1.34-4-3 1.79-3 4-3 4 1.34 4 3z" />
+      </svg>
+    ),
+  },
+  {
     href: '/dashboard/connections',
     label: 'Connected Apps',
     exact: false,
