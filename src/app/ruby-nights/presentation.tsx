@@ -205,6 +205,30 @@ export default function Presentation() {
           </div><p className={s.storage}>PostgreSQL <span>application data</span><b>·</b> Cloudflare R2 <span>audio storage</span></p>
         </div>}
 
+        {slide.id === 'live-calls' && <div className={s.callsSlide}>
+          <p className={s.eyebrow}>Audio and video calls between people</p>
+          <h1>Live calls.<br /><em>P2P, with a fallback.</em></h1>
+          <div className={s.callDetails}>
+            <div>
+              <h2>STUN helps us connect</h2>
+              <p>Google’s public STUN server helps each phone discover its public internet address and port.</p>
+              <code>stun:stun.l.google.com:19302</code>
+              <p>No registration, Google account or API key required. Used on both iOS and Android.</p>
+            </div>
+            <div>
+              <h2>TURN when P2P is blocked</h2>
+              <p>WebRTC sends encrypted voice and video directly when possible. STUN does not carry the conversation.</p>
+              <p>If the network blocks a direct connection, Cloudflare TURN relays the encrypted media.</p>
+              <p><strong>1,000 GB free each month</strong><br />US$0.05 per additional GB.</p>
+            </div>
+          </div>
+          <div className={s.callPath} aria-label="Your phone exchanges encrypted audio and video directly with the other person's phone">
+            <strong>Your phone</strong><span><span>Direct P2P when possible</span><span aria-hidden="true">⟷</span></span><strong>Their phone</strong>
+          </div>
+          <p className={s.callFallback}>If blocked: your phone ↔ <strong>Cloudflare TURN</strong> ↔ their phone</p>
+          <p className={s.callSources}>Sources: <a href="https://webrtc.org/getting-started/peer-connections" target="_blank" rel="noreferrer">WebRTC connection guide</a> · <a href="https://www.rfc-editor.org/rfc/rfc8827.html#section-5.5" target="_blank" rel="noreferrer">WebRTC security standard</a> · <a href="https://developers.cloudflare.com/realtime/sfu/platform/pricing/" target="_blank" rel="noreferrer">Cloudflare pricing</a></p>
+        </div>}
+
         {slide.id === 'mcp' && <div className={s.mcpSlide}>
           <div className={s.mcpStory}>
             <p className={s.eyebrow}>An admin interface beyond the dashboard</p>
