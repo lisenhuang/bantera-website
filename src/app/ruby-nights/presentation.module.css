@@ -227,3 +227,9 @@
 .speedButton:hover { border-color: var(--accent); color: var(--accent); }
 .playbackBar > span { color: var(--muted); font-size: 11px; }
 @media (max-width: 760px) { .playbackBar { gap: 8px; } .playbackBar > span { font-size: 10px; } }
+
+.callScreensSlide { display: grid; grid-template-columns: .85fr 1.15fr; align-items: center; gap: 5%; }
+.callScreensSlide h1 { font-size: clamp(38px, 4.8vw, 76px); }
+.callScreens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.callScreens .appFigure img { height: auto; width: auto; max-height: min(62vh, 740px); }
+@media (max-width: 760px) { .callScreensSlide { grid-template-columns: 1fr; gap: 28px; } .callScreens { gap: 14px; } .callScreens .appFigure img { width: 100%; max-height: none; } .callScreensSlide .featureNote { margin-top: 18px; } }

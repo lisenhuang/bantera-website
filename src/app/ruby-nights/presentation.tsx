@@ -205,6 +205,18 @@ export default function Presentation() {
           </div><p className={s.storage}>PostgreSQL <span>application data</span><b>·</b> Cloudflare R2 <span>audio storage</span></p>
         </div>}
 
+        {slide.id === 'call-screens' && <div className={s.callScreensSlide}>
+          <div>
+            <p className={s.eyebrow}>Calling with Bantera</p>
+            <h1>From ringing<br /><em>to talking.</em></h1>
+            <p className={s.featureNote}>An incoming call on the lock screen.<br />A conversation with familiar iPhone controls.</p>
+          </div>
+          <div className={s.callScreens}>
+            <figure className={s.appFigure}><Image src="/ruby-nights/incoming-call.png" alt="iPhone lock screen showing an incoming Bantera Audio call from Ethan Huang, with slide to answer and Remind Me controls." width={1206} height={2622} sizes="(max-width: 760px) 40vw, 25vw" /><figcaption>Incoming call</figcaption></figure>
+            <figure className={s.appFigure}><Image src="/ruby-nights/active-call.png" alt="Active Bantera Audio call with Ethan Huang at four seconds, showing speaker, video, mute, more, end and keypad controls." width={1206} height={2622} sizes="(max-width: 760px) 40vw, 25vw" /><figcaption>Active call</figcaption></figure>
+          </div>
+        </div>}
+
         {slide.id === 'live-calls' && <div className={s.callsSlide}>
           <p className={s.eyebrow}>Audio and video calls between people</p>
           <h1>Live calls.<br /><em>P2P, with a fallback.</em></h1>

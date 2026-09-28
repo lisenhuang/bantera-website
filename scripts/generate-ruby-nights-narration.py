@@ -26,7 +26,7 @@ selected = set(sys.argv[1:]) - {'--manifest-only'}
 unknown = selected - {seg['id'] for seg in segments}
 if unknown: raise SystemExit('Unknown segment IDs: '+', '.join(sorted(unknown)))
 for seg in segments:
-    if manifest_only or seg.get('kind') == 'video' or (selected and seg['id'] not in selected): continue
+    if manifest_only or seg.get('kind') in ('video', 'pause') or (selected and seg['id'] not in selected): continue
     dest = output/(seg['id']+'.mp3')
     fingerprint = fingerprint_for(seg)
     stamp = output/(seg['id']+'.sha256')
@@ -67,12 +67,12 @@ for seg in segments:
     stamp.write_text(fingerprint)
     print('Generated:',seg['id'],dest.stat().st_size,'bytes',flush=True)
 # Public manifest contains only text, URLs, durations and cues, never credentials.
-missing = [seg['id'] for seg in segments if seg.get('kind') != 'video' and not (output/(seg['id']+'.mp3')).exists()]
+missing = [seg['id'] for seg in segments if seg.get('kind') not in ('video', 'pause') and not (output/(seg['id']+'.mp3')).exists()]
 if missing: print('Remaining recordings: '+', '.join(missing), flush=True)
 manifest=[]
 for seg in segments:
     item={k:v for k,v in seg.items() if k not in ('direction','effect')}
-    if seg.get('kind')!='video':
+    if seg.get('kind') not in ('video', 'pause'):
         dest=output/(seg['id']+'.mp3')
         stamp=output/(seg['id']+'.sha256')
         fingerprint=fingerprint_for(seg)

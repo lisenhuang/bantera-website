@@ -100,6 +100,13 @@ export function useAutoplay({ root, go, reveal, notify }: {
         notify('Narration for this slide is still being prepared. Please continue manually.');
         return;
       }
+      if (step.kind === 'pause') {
+        current.current = null;
+        waiting.current = true;
+        setCaption(step.text ?? 'Viewing screenshots');
+        scheduleNext(token, (step.duration ?? 8) * 1000);
+        return;
+      }
       setCaption(step.kind === 'video' ? 'Playing the app demo' : 'Playing audio');
 
       const attach = (element: HTMLMediaElement) => {

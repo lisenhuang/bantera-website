@@ -98,6 +98,13 @@
     "text": "Behind that experience are three separate codebases. First, the website uses Next JS. It includes the homepage, shared practice pages, and administration. The backend uses dot net. It handles things such as accounts, AI generation, and content. And the mobile app is built with Flutter for iOS and Android. That is where people listen, speak, and practise. Postgres stores the application data, and Cloudflare R two stores the audio files. Each part has its own job, but they work together to create the experience you just saw. I enjoy seeing those different pieces come together around something I want to use myself."
   },
   {
+    "id": "call-screens",
+    "slideId": "call-screens",
+    "kind": "pause",
+    "text": "Incoming and active calls on iPhone",
+    "duration": 8
+  },
+  {
     "id": "live-calls",
     "slideId": "live-calls",
     "text": "People can also practise together through live audio and video calls. STUN stands for Session Traversal Utilities for NAT. It helps each phone discover its public internet address and port. Bantera uses Cloudflare's public STUN server on both iOS and Android, without registration or an API key. Our backend exchanges the connection details. WebRTC then sends encrypted voice and video directly between the phones when possible. But some networks block a direct connection. In that case, we use Cloudflare's TURN server as a fallback. TURN stands for Traversal Using Relays around NAT. NAT means Network Address Translation. TURN carries the encrypted media between the phones, while STUN only helps with discovery. Cloudflare includes one thousand gigabytes of outgoing traffic free each month, shared across its TURN and SFU services. Beyond that allowance, it costs five US cents per gigabyte. Direct peer-to-peer calls do not use the relay allowance."
