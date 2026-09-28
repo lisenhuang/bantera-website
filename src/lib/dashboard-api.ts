@@ -486,6 +486,28 @@ export async function getAiSettings(token: string): Promise<AiSettings> {
   return adminFetch<AiSettings>('/api/admin/ai-settings', token);
 }
 
+export type CallSettings = {
+  iceTransportPolicy: 'all' | 'relay';
+  turnConfigured: boolean;
+  updatedAt: string | null;
+};
+
+export async function getCallSettings(token: string): Promise<CallSettings> {
+  return adminFetch<CallSettings>('/api/admin/call-settings', token);
+}
+
+export async function updateCallSettings(token: string, iceTransportPolicy: CallSettings['iceTransportPolicy']) {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/call-settings`, {
+    method: 'PUT',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ iceTransportPolicy }),
+  });
+  if (res.ok) return { ok: true as const };
+  const error = (await res.json().catch(() => null)) as { message?: string } | null;
+  return { ok: false as const, status: res.status, message: error?.message ?? 'Could not save call settings.' };
+}
+
 /** Null clears an override (back to the default). Returns the backend's message on failure. */
 export async function updateAiSettings(
   token: string,
