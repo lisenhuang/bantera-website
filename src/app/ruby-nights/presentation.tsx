@@ -212,9 +212,9 @@ export default function Presentation() {
             <div>
               <h2>STUN helps us connect</h2>
               <p className={s.callExpansion}>Session Traversal Utilities for NAT</p>
-              <p>Google’s public STUN server helps each phone discover its public internet address and port.</p>
-              <code>stun:stun.l.google.com:19302</code>
-              <p>No registration, Google account or API key required. Used on both iOS and Android.</p>
+              <p>Cloudflare’s public STUN server helps each phone discover its public internet address and port.</p>
+              <code>stun:stun.cloudflare.com:3478</code>
+              <p>No registration, Cloudflare account or API key required. Used on both iOS and Android.</p>
             </div>
             <div>
               <h2>TURN when P2P is blocked</h2>
@@ -228,7 +228,7 @@ export default function Presentation() {
             <strong>Your phone</strong><span><span>Direct P2P when possible</span><span aria-hidden="true">⟷</span></span><strong>Their phone</strong>
           </div>
           <p className={s.callFallback}>If blocked: your phone ↔ <strong>Cloudflare TURN</strong> ↔ their phone</p>
-          <p className={s.callSources}>Sources: <a href="https://webrtc.org/getting-started/peer-connections" target="_blank" rel="noreferrer">WebRTC connection guide</a> · <a href="https://www.rfc-editor.org/rfc/rfc8827.html#section-5.5" target="_blank" rel="noreferrer">WebRTC security standard</a> · <a href="https://developers.cloudflare.com/realtime/sfu/platform/pricing/" target="_blank" rel="noreferrer">Cloudflare pricing</a></p>
+          <p className={s.callSources}>Sources: <a href="https://developers.cloudflare.com/realtime/turn/faq/" target="_blank" rel="noreferrer">Cloudflare STUN</a> · <a href="https://webrtc.org/getting-started/peer-connections" target="_blank" rel="noreferrer">WebRTC connection guide</a> · <a href="https://www.rfc-editor.org/rfc/rfc8827.html#section-5.5" target="_blank" rel="noreferrer">WebRTC security standard</a> · <a href="https://developers.cloudflare.com/realtime/sfu/platform/pricing/" target="_blank" rel="noreferrer">Cloudflare pricing</a></p>
         </div>}
 
         {slide.id === 'mcp' && <div className={s.mcpSlide}>
