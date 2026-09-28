@@ -30,3 +30,11 @@ they're overwritten on every Android publish. The `/download` page imports `andr
 to show the current Android version and links to `/bantera.apk`; the JSON manifest is used by the
 Android app's update checker. To ship a new Android build, run
 that script in the `app` repo, then commit all three generated files here.
+
+## Deployment must be performed by a human
+
+- **Agents must not deploy.** When changes are ready, explicitly ask a human to perform the deployment and provide the required steps, environment variables, migration notes, and smoke checks.
+- Agents may prepare code, run local builds/tests, configure deployment environment files when authorized, and commit/push when explicitly requested. Preparing or pushing changes is not permission to deploy them.
+- Do not run deployment scripts, trigger deployment workflows, apply production migrations, restart or recreate live services/containers, or promote a release. Leave those actions to the human.
+- Before pushing, check whether the push would trigger an automatic deployment. If it would, stop before pushing and ask the human to arrange a non-deploying push or perform the release themselves.
+- Keep running services unchanged while preparing a release, and clearly state what is ready and what the human still needs to deploy. Local development and test servers are not deployments.
