@@ -5,6 +5,7 @@
 .callDetails > div { padding-top: 20px; }
 .callDetails h2 { font-size: clamp(20px, 2vw, 28px); font-weight: 500; letter-spacing: -.03em; margin: 0 0 12px; }
 .callDetails p { font-size: clamp(16px, 1.45vw, 21px); line-height: 1.5; margin: 10px 0; }
+.callDetails .callExpansion { font-size: clamp(14px, 1.3vw, 18px); color: var(--accent); margin: 0 0 12px; }
 .callDetails code { display: block; color: var(--accent); font-size: clamp(13px, 1.4vw, 19px); overflow-wrap: anywhere; margin: 14px 0; }
 .callPath { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); padding-top: 20px; margin-top: 18px; }
 .callPath > strong { font-size: clamp(19px, 2vw, 28px); font-weight: 500; }
@@ -13,7 +14,7 @@
 .callFallback { text-align: center; color: var(--muted); font-size: clamp(13px, 1.4vw, 19px); margin: 12px 0 0; line-height: 1.4; }
 .callSources { font-size: 11px; color: var(--muted); margin: 16px 0 0; }
 .callSources a { color: inherit; text-underline-offset: 3px; }
-@media (min-width: 761px) and (max-height: 740px) { .slide .callsSlide h1 { font-size: 42px; } .callsSlide .eyebrow { margin-bottom: 12px; } .callDetails { margin-top: 20px; gap: 36px; } .callDetails > div { padding-top: 14px; } .callDetails h2 { font-size: 23px; margin-bottom: 8px; } .callDetails p { font-size: 16px; margin: 8px 0; } .callDetails code { margin: 10px 0; } .callPath { padding-top: 12px; margin-top: 12px; } .callSources { margin-top: 10px; } }
+@media (min-width: 761px) and (max-height: 740px) { .slide .callsSlide h1 { font-size: 42px; } .callsSlide .eyebrow { margin-bottom: 12px; } .callDetails { margin-top: 12px; gap: 36px; } .callDetails > div { padding-top: 8px; } .callDetails h2 { font-size: 23px; margin-bottom: 8px; } .callDetails p { font-size: 16px; margin: 8px 0; } .callDetails code { margin: 10px 0; } .callPath { padding-top: 12px; margin-top: 8px; } .callSources { margin-top: 10px; } }
 @media (max-width: 760px) { .callDetails { grid-template-columns: 1fr; gap: 8px; margin-top: 22px; } .callDetails h2 { font-size: 23px; } .callDetails p { font-size: 17px; } .callPath { gap: 12px; } .callPath > strong { font-size: 16px; } .callPath > span { font-size: 11px; text-align: center; } .callSources { line-height: 1.6; } }
 .deck button { cursor: pointer; }
 .deck button:disabled { cursor: default; opacity: .25; }

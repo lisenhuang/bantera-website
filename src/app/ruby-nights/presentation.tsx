@@ -211,15 +211,17 @@ export default function Presentation() {
           <div className={s.callDetails}>
             <div>
               <h2>STUN helps us connect</h2>
+              <p className={s.callExpansion}>Session Traversal Utilities for NAT</p>
               <p>Google’s public STUN server helps each phone discover its public internet address and port.</p>
               <code>stun:stun.l.google.com:19302</code>
               <p>No registration, Google account or API key required. Used on both iOS and Android.</p>
             </div>
             <div>
               <h2>TURN when P2P is blocked</h2>
+              <p className={s.callExpansion}>Traversal Using Relays around NAT</p>
               <p>WebRTC sends encrypted voice and video directly when possible. STUN does not carry the conversation.</p>
               <p>If the network blocks a direct connection, Cloudflare TURN relays the encrypted media.</p>
-              <p><strong>1,000 GB free each month</strong><br />US$0.05 per additional GB.</p>
+              <p><strong>1,000 GB/month free</strong> · US$0.05/GB after.</p>
             </div>
           </div>
           <div className={s.callPath} aria-label="Your phone exchanges encrypted audio and video directly with the other person's phone">
