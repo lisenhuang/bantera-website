@@ -605,3 +605,17 @@ export async function listAiPipelineEvents(
   if (params.code) qs.set('code', params.code);
   return adminFetch<AdminPagedResult<AiPipelineEvent>>(`/api/admin/ai-pipeline/events?${qs}`, token);
 }
+
+export type WebsiteCount = { label: string; events: number; sessions: number };
+export type WebsiteAnalyticsReport = {
+  rangeDays: number; asOf: string; ingestionConfigured: boolean; sessions: number;
+  events: WebsiteCount[]; daily: { date: string; events: number; sessions: number }[];
+  sources: (WebsiteCount & { evidence: string; plays: number; downloads: number })[];
+  pages: WebsiteCount[]; landings: WebsiteCount[]; languages: WebsiteCount[]; devices: WebsiteCount[];
+  campaigns: (WebsiteCount & { source: string; medium: string })[];
+  recent: { id: string; sessionId: string; receivedAt: string; name: string; path: string; source: string; evidence: string; language: string }[];
+};
+export function getWebsiteAnalytics(token: string, days: number, source = '', language = '') {
+  const q = new URLSearchParams({ days: String(days), source, language });
+  return adminFetch<WebsiteAnalyticsReport>(`/api/admin/website-analytics?${q}`, token);
+}

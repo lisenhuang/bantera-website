@@ -37,7 +37,7 @@ export default function OpengraphImage() {
           Learn languages by actually speaking
         </div>
         <div style={{ fontSize: 34, color: "#a3a3a3", marginTop: 36 }}>
-          Audio-first language learning · iOS
+          Speaking & listening · iOS, Android & web
         </div>
       </div>
     ),

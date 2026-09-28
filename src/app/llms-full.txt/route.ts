@@ -40,7 +40,8 @@ type CatalogueSection = { heading: string; lessons: BanteraPublicAudio[] };
  * pages cannot be practised.
  */
 async function loadCatalogue(): Promise<CatalogueSection[]> {
-  const languages: BanteraLearningLanguage[] = await getLearningLanguages();
+  const allLanguages: BanteraLearningLanguage[] = await getLearningLanguages();
+  const languages = allLanguages.filter((l, i) => allLanguages.findIndex(x => x.identifier.split('-')[0] === l.identifier.split('-')[0]) === i);
   const results = await Promise.allSettled(
     languages.map((language) => listPublicAudios({ languageCode: language.identifier, limit: LESSONS_PER_LANGUAGE })),
   );
@@ -86,7 +87,7 @@ export async function GET() {
 
 ## Key facts
 
-- Platform: iOS app on the App Store (${APP_STORE_URL}). A free web app for listening practice runs at ${SITE_URL}/webapp.
+- Platform: Android APK (${SITE_URL}/download), iOS app on the App Store (${APP_STORE_URL}). A free web app for listening practice runs at ${SITE_URL}/webapp.
 - Languages: ${SUPPORTED_LANGUAGES.join(', ')}.
 - Method: play real spoken content one cue at a time, repeat it, record yourself, and see an AI transcription of your recording compared with the original.
 - Community: voice-only language exchange with native speakers — private chats, groups, and voice comments.

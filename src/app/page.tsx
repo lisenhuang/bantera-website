@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { JsonLd } from '@/components/json-ld';
+import { LANGUAGE_GUIDES } from '@/lib/language-guides';
 
 export const metadata: Metadata = {
-  title: 'Bantera — Learn Languages by Actually Speaking',
+  title: 'Bantera | Speaking & Listening Practice in 30+ Languages',
   description:
-    'Bantera is an audio-first language learning app. Listen to real spoken content, practise speaking, record yourself for AI pronunciation feedback, and find language exchange partners who speak what you want to learn.',
+    'Build speaking and listening skills in Spanish, French, Mandarin, English and more. Replay short audio cues, shadow the speaker, and record your own voice.',
   alternates: { canonical: '/' },
 };
 
@@ -20,12 +21,12 @@ const appLd = {
   name: 'Bantera',
   applicationCategory: 'EducationalApplication',
   applicationSubCategory: 'Language Learning',
-  operatingSystem: 'iOS',
+  operatingSystem: ['iOS', 'Android'],
   url: 'https://bantera.app',
-  downloadUrl: 'https://apps.apple.com/app/id6761799720',
-  installUrl: 'https://apps.apple.com/app/id6761799720',
+  downloadUrl: ['https://apps.apple.com/app/id6761799720', 'https://bantera.app/bantera.apk'],
+  installUrl: 'https://bantera.app/download',
   description:
-    'Audio-first language learning app. Listen to real spoken content cue-by-cue, hide or reveal subtitles and translations, record yourself for AI transcription and pronunciation comparison, and find language exchange partners.',
+    'Audio-first language learning app. Listen to real spoken content cue-by-cue, hide or reveal subtitles and translations, record yourself for AI transcription and recording comparison, and find language exchange partners.',
   inLanguage: ['en', 'zh', 'ja', 'ko', 'es', 'fr', 'de', 'pt', 'it', 'ar'],
   author: { '@type': 'Person', name: 'Lisen Huang' },
   publisher: { '@id': 'https://bantera.app/#organization' },
@@ -81,7 +82,7 @@ const HOW_IT_WORKS = [
   {
     step: '03',
     title: 'Record & compare',
-    body: 'Repeat each cue in your own voice and see exactly how close your pronunciation is.',
+    body: 'Repeat each cue in your own voice and listen to your recording beside the original.',
     accent: 'from-violet-400 to-indigo-500',
   },
   {
@@ -92,7 +93,7 @@ const HOW_IT_WORKS = [
   },
 ];
 
-const LANGUAGES = ['🇺🇸 English', '🇨🇳 Mandarin', '🇯🇵 Japanese', '🇰🇷 Korean', '🇪🇸 Spanish', '🇫🇷 French', '🇩🇪 German', '🇧🇷 Portuguese', '🇮🇹 Italian', '🇸🇦 Arabic'];
+
 
 export default function HomePage() {
   return (
@@ -104,6 +105,7 @@ export default function HomePage() {
         <div className="flex items-center gap-2">
           <span className="text-xl font-black tracking-tight text-gray-900 dark:text-white">Bantera</span>
         </div>
+        <Link href="/learn" className="text-sm font-semibold">Speaking & listening by language</Link>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -191,13 +193,13 @@ export default function HomePage() {
       {/* ── Language pills ───────────────────────────────────── */}
       <div className="bg-gray-950 border-t border-white/5 py-6 overflow-hidden">
         <div className="flex gap-3 animate-none">
-          <div className="flex gap-3 min-w-max mx-auto flex-wrap justify-center px-6">
-            {LANGUAGES.map((lang) => (
-              <span key={lang} className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400">
-                {lang}
-              </span>
+          <div className="flex gap-3 max-w-5xl mx-auto flex-wrap justify-center px-6">
+            {LANGUAGE_GUIDES.map((lang) => (
+              <Link href={`/learn/${lang.slug}`} key={lang.slug} className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400">
+                {lang.flag} {lang.name}
+              </Link>
             ))}
-            <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-500 italic">and more…</span>
+            <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-500 italic"><Link href="/learn">and more languages →</Link></span>
           </div>
         </div>
       </div>

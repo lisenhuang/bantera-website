@@ -8,7 +8,7 @@ import {
 } from "@/lib/bantera-api";
 
 export const metadata: Metadata = {
-  title: "Public Audio | Bantera",
+  title: "Language Listening & Speaking Audio Practice | Bantera",
   description:
     "Choose a language, browse Bantera public audio, and practise listening cue by cue in the browser.",
   alternates: { canonical: "/webapp" },
@@ -46,7 +46,7 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
   const { languageCode } = await searchParams;
   const [languages, audios] = await Promise.all([
     getLearningLanguages(),
-    languageCode ? listPublicAudios({ languageCode }) : Promise.resolve([]),
+    languageCode ? listPublicAudios({ languageCode }).catch(() => []) : Promise.resolve([]),
   ]);
   const selectedLanguage = languages.find((l) => l.identifier === languageCode) ?? null;
 
@@ -84,6 +84,7 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
           </div>
         </div>
 
+        <p className="mb-6"><Link href="/learn" className="font-semibold text-amber-800 underline">Explore speaking and listening guides by language</Link></p>
         <section className="rounded-[2.2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
@@ -93,9 +94,7 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
               Pick a language to load public audio
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
-              This dropdown matches the backend&apos;s current hard-coded
-              languages. Bantera won&apos;t load the public audio list until you
-              choose one.
+              Choose the language you want to hear and speak. Public lesson availability varies by language.
             </p>
           </div>
 

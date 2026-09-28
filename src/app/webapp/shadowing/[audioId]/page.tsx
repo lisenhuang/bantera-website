@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const audio = await getPublicAudio(audioId);
   if (!audio) return { title: "Audio Not Found | Bantera" };
   const title = `Shadow: ${audioTitle(audio.originalFileName)} | Bantera`;
-  const description = `Practice shadowing "${audioTitle(audio.originalFileName)}" cue by cue with word-level highlighting in your browser.`;
+  const description = `${audio.transcriptLanguage} speaking and listening practice: shadow "${audioTitle(audio.originalFileName)}" cue by cue with word-level highlighting in your browser.`;
   return {
     title,
     description,
@@ -108,9 +108,21 @@ export default async function ShadowingPage({ params }: PageProps) {
           <ShadowingPlayer audio={audio} />
         </div>
 
+        <section className="mt-8 space-y-4 text-sm leading-7 text-slate-600" data-learning-language={audio.transcriptLanguageCode}>
+          <h2 className="text-lg font-bold text-slate-900">{audio.transcriptLanguage} listening and speaking practice</h2>
+          <p>Listen to a short cue without reading. Reveal the words, replay anything you missed,
+            then repeat the phrase aloud. In the Bantera mobile app, record yourself to compare your voice with the original.</p>
+          {audio.isAiGenerated && <p>This lesson uses AI-generated audio. Check unfamiliar expressions and treat the transcript as learning support.</p>}
+          <details className="rounded-xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer font-semibold">Read the lesson transcript</summary>
+            <p lang={audio.transcriptLanguageCode} className="mt-4 whitespace-pre-line">{audio.transcriptText}</p>
+          </details>
+          <Link href="/learn" className="inline-block font-semibold text-amber-800 underline">Speaking and listening guides for more languages</Link>
+        </section>
+
         {/* Footer hint */}
         <p className="mt-8 text-center text-xs text-slate-400">
-          Want translation, recording and progress sync?{" "}
+          Keep practising and find language exchange partners.{" "}
           <Link href="/download" className="font-semibold text-amber-600 hover:underline">
             Get the Bantera app →
           </Link>

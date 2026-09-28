@@ -247,3 +247,10 @@ Private — all rights reserved.
 ---
 
 *README last updated: 2026-04-30*
+
+## Website discovery and analytics
+
+The website includes a multilingual speaking/listening directory at `/learn`, ten authored
+language guides, and first-party visitor reports at `/dashboard/website`. See
+[discovery and analytics deployment notes](docs/discovery-and-analytics.md) for the required
+server-only ingest key, consent model, data limits and post-deploy checks.

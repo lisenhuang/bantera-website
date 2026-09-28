@@ -15,13 +15,30 @@ export default function PrivacyPage() {
     <SiteLegalChrome activePage="privacy">
       <main className="max-w-3xl mx-auto px-6 py-12 pb-24">
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-          Last updated: April 8, 2026
+          Last updated: September 29, 2026
         </p>
         <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white mb-8">
           Privacy Policy
         </h1>
 
         <div className="space-y-8 text-gray-700 dark:text-gray-300 text-[15px] leading-relaxed">
+          <section id="website-analytics" className="space-y-3">
+            <h2 className="text-lg font-bold">Optional website analytics</h2>
+            <p>With your permission, Bantera records public page paths, referral domains,
+              campaign tags, the language of practice pages, broad device type, lesson playback,
+              and clicks to the App Store or Android APK. We use this to understand how learners
+              find and use the website. This records clicks, not confirmed app installations.</p>
+            <p>A random session identifier is stored in this browser tab and expires after 30 minutes
+              of inactivity or 24 hours. Your allow or decline choice is saved on this device for
+              180 days. Change it with “Analytics preferences” at the bottom of public pages.
+              Do Not Track and Global Privacy Control disable this collection.</p>
+            <p>These analytics records are kept on Bantera’s backend for up to 91 days, with daily
+              deletion of records older than 90 days. They contain no account identifiers,
+              recordings, form text, full referral URLs, raw IP addresses, search queries, or AI
+              conversation prompts. They are not linked to your mobile app activity.
+              Hosting and security logs are separate from this optional analytics feature.</p>
+          </section>
+
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
               Introduction

@@ -20,7 +20,7 @@ export function GET() {
 
 Bantera is built around speaking, not tapping: you play real audio one cue (sentence) at a time, hide or reveal subtitles and translations, repeat it, record yourself, and compare your pronunciation with the original. It also connects learners with native-speaker exchange partners through voice messages.
 
-- Platform: iOS app (${APP_STORE_URL}), plus a free browser web app for listening practice at ${SITE_URL}/webapp
+- Platform: Android APK (${SITE_URL}/download), iOS app (${APP_STORE_URL}), plus a free browser web app for listening practice at ${SITE_URL}/webapp
 - Languages: ${SUPPORTED_LANGUAGES.join(', ')}
 - Developer: Lisen Huang — contact ${CONTACT_EMAIL} — X: ${X_URL}
 

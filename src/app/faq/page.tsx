@@ -7,7 +7,7 @@ import { SiteLegalChrome } from "@/components/site-legal-chrome";
 export const metadata: Metadata = {
   title: "FAQ — Bantera",
   description:
-    "Frequently asked questions about Bantera: supported languages, how speaking practice and AI pronunciation feedback work, language exchange, and platform availability.",
+    "Frequently asked questions about Bantera: supported languages, how speaking practice and recording comparison work, language exchange, and platform availability.",
   alternates: { canonical: "/faq" },
 };
 

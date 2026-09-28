@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { logoutAction } from '../login/actions';
 
 const NAV_ITEMS = [
+  { href: '/dashboard/website', label: 'Website analytics', exact: false, icon: <span aria-hidden>↗</span> },
   {
     href: '/dashboard',
     label: 'Overview',

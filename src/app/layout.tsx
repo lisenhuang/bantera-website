@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { WebsiteAnalytics } from "@/components/analytics/website-analytics";
 import { JsonLd } from "@/components/json-ld";
 import { WebMcpSiteTools } from "@/components/webmcp/site-tools";
 
@@ -22,9 +24,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://bantera.app"),
   // Plain string (no template): each page already ships a self-contained,
   // brand-bearing title. This is the fallback for any page without its own.
-  title: "Bantera — Learn Languages by Actually Speaking",
+  title: "Bantera | Speaking & Listening Practice in 30+ Languages",
   description:
-    "Bantera is an audio-first iOS language learning app. Listen to real spoken content cue-by-cue, record yourself for AI pronunciation feedback, and find language exchange partners.",
+    "Practise listening, speaking and shadowing in 30+ languages. Repeat short audio cues, record and compare your voice. Available on iOS, Android and the web.",
   applicationName: "Bantera",
   authors: [{ name: "Lisen Huang" }],
   alternates: { canonical: "/" },
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
     siteName: "Bantera",
     locale: "en_US",
     url: "https://bantera.app",
-    title: "Bantera — Learn Languages by Actually Speaking",
+    title: "Bantera | Speaking & Listening Practice in 30+ Languages",
     description:
       "Audio-first language learning. Listen cue-by-cue, record and compare pronunciation with AI, and find language exchange partners.",
     // og:image is supplied by the app/opengraph-image.tsx file convention.
@@ -43,8 +45,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@BanteraApp",
     creator: "@BanteraApp",
-    title: "Bantera — Learn Languages by Actually Speaking",
-    description: "Audio-first language learning on iOS.",
+    title: "Bantera | Speaking & Listening Practice in 30+ Languages",
+    description: "Speaking and listening practice on iOS, Android and the web.",
     // twitter:image falls back to the og:image from opengraph-image.tsx.
   },
 };
@@ -96,6 +98,7 @@ export default function RootLayout({
         <JsonLd data={webSiteLd} />
         <WebMcpSiteTools />
         {children}
+        <Suspense fallback={null}><WebsiteAnalytics /></Suspense>
       </body>
     </html>
   );

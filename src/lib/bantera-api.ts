@@ -110,6 +110,7 @@ function normalizePublicAudio(item: BanteraPublicAudio): BanteraPublicAudio {
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     cache: "no-store",
+    signal: AbortSignal.timeout(8000),
   });
 
   if (!response.ok) {

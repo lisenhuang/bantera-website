@@ -1,5 +1,6 @@
 "use client";
 
+import { trackWebsiteEvent } from "@/lib/website-analytics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useWebMcpTools } from "@/components/webmcp/use-webmcp-tools";
@@ -243,6 +244,36 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
   const [isInShadowingGap, setIsInShadowingGap] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    const media = audioRef.current;
+    if (!media) return;
+    let heardMs = 0;
+    let lastTick: number | null = null;
+    let reported = false;
+    const tick = () => {
+      const now = performance.now();
+      if (!media.paused && !media.seeking && !media.muted && media.volume > 0) {
+        if (lastTick !== null) heardMs += Math.min(1000, now - lastTick);
+        lastTick = now;
+        if (!reported && heardMs >= 30_000) {
+          reported = true;
+          trackWebsiteEvent('lesson_listened_30s', audio.transcriptLanguageCode);
+        }
+      } else lastTick = null;
+    };
+    const resetTick = () => { lastTick = null; };
+    media.addEventListener('timeupdate', tick);
+    media.addEventListener('pause', resetTick);
+    media.addEventListener('seeking', resetTick);
+    media.addEventListener('waiting', resetTick);
+    return () => {
+      media.removeEventListener('timeupdate', tick);
+      media.removeEventListener('pause', resetTick);
+      media.removeEventListener('seeking', resetTick);
+      media.removeEventListener('waiting', resetTick);
+    };
+  }, [audio.id, audio.transcriptLanguageCode]);
+
   const progressBarRef = useRef<HTMLDivElement>(null);
 
   // Refs for synchronous access inside rAF/timeout callbacks
@@ -651,7 +682,7 @@ export function ShadowingPlayer({ audio }: { audio: BanteraPublicAudio }) {
 
   return (
     <>
-      <audio ref={audioRef} src={audioSrc} preload="auto" playsInline className="hidden" />
+      <audio onPlay={() => trackWebsiteEvent('lesson_play', audio.transcriptLanguageCode)} ref={audioRef} src={audioSrc} preload="auto" playsInline className="hidden" />
 
       {modalFeature && (
         <GetAppModal feature={modalFeature} onClose={() => setModalFeature(null)} />

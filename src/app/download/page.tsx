@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import DownloadPageClient from './DownloadPageClient';
 
 export const metadata: Metadata = {
-  title: 'Download Bantera — App Store',
+  title: 'Download Bantera for iOS & Android',
   description:
     'Download Bantera, the audio-first language speaking and listening practice app. Listen to real conversations, practise speaking, and connect with language exchange partners.',
   alternates: { canonical: '/download' },
