@@ -124,11 +124,13 @@ export async function listPublicAudios({
   limit = 24,
   offset = 0,
   languageCode,
+  languageGroup,
   search,
 }: {
   limit?: number;
   offset?: number;
   languageCode?: string;
+  languageGroup?: string;
   search?: string;
 } = {}): Promise<BanteraPublicAudio[]> {
   const params = new URLSearchParams();
@@ -137,6 +139,9 @@ export async function listPublicAudios({
   params.set("offset", String(offset));
   if (languageCode?.trim()) {
     params.set("languageCode", languageCode.trim());
+  }
+  if (languageGroup?.trim()) {
+    params.set("languageGroup", languageGroup.trim());
   }
   if (search?.trim()) {
     params.set("search", search.trim());

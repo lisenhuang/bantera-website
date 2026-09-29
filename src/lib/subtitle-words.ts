@@ -83,9 +83,9 @@ export function tokenizeSubtitle(text: string): Omit<SubtitleToken, "unit">[] {
 }
 
 /**
- * Maps the audio's word timing onto one cue's text. Units are per-character `parts`
- * when present, otherwise whole words (an older Chinese run then highlights all of its
- * characters together). Matching walks forward in order; a unit that is not found is
+ * Maps the returned word timing onto one cue's text without subdividing words.
+ * Multi-character words highlight together; separately returned characters remain
+ * separate units. Matching walks forward in order; a unit that is not found is
  * skipped without losing the place.
  */
 export function mapCueWords(
@@ -99,7 +99,6 @@ export function mapCueWords(
 
   const keys = tokens.map((t) => wordKey(t.text));
   const candidates = wordTiming
-    .flatMap((w) => (w.parts?.length ? w.parts : [w]))
     .filter((u) => u.endMs > u.startMs && u.startMs >= cue.startMs - 300 && u.startMs < cue.endMs + 500);
 
   let cursor = 0;

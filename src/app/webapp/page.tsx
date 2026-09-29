@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { audioLanguageGroupCode, groupAudioLanguages } from "@/lib/audio-language-groups";
 
 import {
   audioTitle,
@@ -44,11 +45,13 @@ function formatRelativeDate(value: string) {
 
 export default async function WebappPage({ searchParams }: WebappPageProps) {
   const { languageCode } = await searchParams;
-  const [languages, audios] = await Promise.all([
-    getLearningLanguages(),
-    languageCode ? listPublicAudios({ languageCode }).catch(() => []) : Promise.resolve([]),
-  ]);
-  const selectedLanguage = languages.find((l) => l.identifier === languageCode) ?? null;
+  const languages = groupAudioLanguages(await getLearningLanguages());
+  // Old links with an accent code select the corresponding browsing group.
+  const selectedCode = languageCode ? audioLanguageGroupCode(languageCode) : null;
+  const selectedLanguage = languages.find((language) => language.identifier === selectedCode) ?? null;
+  const audios = selectedLanguage
+    ? await listPublicAudios({ languageGroup: selectedLanguage.identifier }).catch(() => [])
+    : [];
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fef3c7,_#fff_38%,_#f8fafc_100%)] text-slate-950">
@@ -103,7 +106,7 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
           <form
             className="mt-8"
             toolname="load_public_audio"
-            tooldescription="Shows the free public audio lessons for one practice language on this page. Choose a language code from the options."
+            tooldescription="Shows the free public audio lessons for one language group, including its accents. Choose a language from the options."
             toolautosubmit=""
           >
             <label
@@ -116,7 +119,7 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
               <select
                 id="languageCode"
                 name="languageCode"
-                toolparamdescription="The practice language to load lessons for, e.g. en-US or es-MX."
+                toolparamdescription="The language group to load lessons for, e.g. en, es, yue, zh-cn or zh-tw."
                 defaultValue={selectedLanguage?.identifier ?? ""}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium text-slate-950 outline-none transition focus:border-amber-400 focus:bg-white"
               >
