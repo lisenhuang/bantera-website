@@ -22,6 +22,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Only start editing once the local branch is up to date with the remote.
 - If the rebase conflicts or uncommitted local changes block it, stop and report to the user — do not force, reset, or stash without being asked.
 
+## Language choices
+
+- Never offer Taiwan Chinese (`zh-TW`, including script/underscore variants) as a website language choice. `getLearningLanguages` filters the shared website catalogue, covering browsing, WebMCP language discovery, and catalogue-based selectors. Do not fold Taiwan into the Mainland Chinese group or rewrite existing lesson/profile identifiers.
+
 ## Android download (generated files — do not hand-edit)
 
 `public/bantera.apk`, `public/android-release.json`, and `src/lib/android-release.ts` are **generated** by the Flutter app's

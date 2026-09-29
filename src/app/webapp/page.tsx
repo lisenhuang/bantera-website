@@ -119,7 +119,7 @@ export default async function WebappPage({ searchParams }: WebappPageProps) {
               <select
                 id="languageCode"
                 name="languageCode"
-                toolparamdescription="The language group to load lessons for, e.g. en, es, yue, zh-cn or zh-tw."
+                toolparamdescription="The language group to load lessons for, e.g. en, es, yue or zh-cn."
                 defaultValue={selectedLanguage?.identifier ?? ""}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium text-slate-950 outline-none transition focus:border-amber-400 focus:bg-white"
               >

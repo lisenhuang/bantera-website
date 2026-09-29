@@ -164,7 +164,13 @@ export type BanteraLearningLanguage = {
 
 export async function getLearningLanguages(): Promise<BanteraLearningLanguage[]> {
   try {
-    return await fetchJson<BanteraLearningLanguage[]>("/api/public/learning-languages");
+    const languages = await fetchJson<BanteraLearningLanguage[]>("/api/public/learning-languages");
+    // Website language choices never offer the Taiwan accent. Keep its stored
+    // lesson/profile identifiers intact rather than folding them into Mainland.
+    return languages.filter((language) => {
+      const parts = language.identifier.trim().replaceAll("_", "-").toLowerCase().split("-");
+      return !(parts[0] === "zh" && parts.slice(1).includes("tw"));
+    });
   } catch {
     return [];
   }

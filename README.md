@@ -138,13 +138,16 @@ It is separate from the backend MCP server and does not grant admin or publishin
 | Public pages | `get_site_overview`, `get_faq` | Read product facts and optionally filter FAQ answers. |
 | Public pages | `list_practice_languages`, `find_lessons` | Read the practice language catalogue and search public lessons by language code, optional title search, and result limit. |
 | Public pages | `open_lesson`, `open_page` | Navigate to a lesson or an allowlisted public page. |
-| Audio browser | `load_public_audio` | Declarative GET form that selects a browsing language group, combining accents while keeping Mainland and Taiwan Chinese separate. |
+| Audio browser | `load_public_audio` | Declarative GET form that selects a browsing language group and combines accents; the Taiwan accent is never offered as a website language choice. |
 | Open lesson | `get_lesson`, `get_lesson_transcript` | Read lesson details, current playback state, and timed cues in the selected cue mode. |
 | Open lesson | `play_cue`, `pause_playback`, `set_playback_speed` | Play one indexed cue, pause audio, or choose 0.5×, 0.75×, 1×, or 1.25× speed. |
 | Open lesson | `set_transcript_visible`, `set_cue_mode` | Show or hide text; switch long/short cues when short cues are available. |
 
 The imperative search tools currently use catalogue language codes such as `en-US`;
-the declarative browsing form uses group codes such as `en`, `yue`, `zh-cn`, and `zh-tw`.
+the declarative browsing form uses group codes such as `en`, `yue`, and `zh-cn`.
+The shared website catalogue omits Taiwan Chinese (`zh-TW`, including script/underscore
+variants), so browsing, WebMCP's language list, and catalogue-based selectors do not offer
+that accent. Existing lesson URLs and stored language identifiers remain intact.
 Search tools call same-origin read-only `/api/public/languages` and `/api/public/lessons`
 routes, which fetch public data from the backend. They do not expose credentials or
 private lessons.

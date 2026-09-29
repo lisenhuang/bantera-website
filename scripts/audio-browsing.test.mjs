@@ -2,6 +2,25 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { mapCueWords, activeUnitAt } from "../src/lib/subtitle-words.ts";
 import { groupAudioLanguages, audioLanguageGroupCode } from "../src/lib/audio-language-groups.ts";
+import { getLearningLanguages } from "../src/lib/bantera-api.ts";
+
+test("website catalogue hides every Taiwan accent spelling from browsing and WebMCP choices", async () => {
+  const originalFetch = globalThis.fetch;
+  const rows = [
+    ["zh-TW", "Taiwan"], ["ZH_tw", "Taiwan"], ["zh-Hant-TW", "Taiwan"],
+    ["zh_Hant_TW", "Taiwan"], ["zh-CN", "Chinese (Mainland China)"],
+    ["zh-HK", "Cantonese (Hong Kong)"], ["en-NZ", "English (New Zealand)"],
+  ].map(([identifier, displayName]) => ({ identifier, displayName, flagEmoji: "🌐" }));
+  globalThis.fetch = async () => Response.json(rows);
+  try {
+    const languages = await getLearningLanguages();
+    assert.deepEqual(languages.map((language) => language.identifier), ["zh-CN", "zh-HK", "en-NZ"]);
+    assert.deepEqual(groupAudioLanguages(languages).map((group) => group.identifier), ["zh-cn", "yue", "en"]);
+    assert.equal(rows.length, 7, "source catalogue and stored identifiers remain intact");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test("a returned CJK word highlights together without using character parts", () => {
   const result = mapCueWords("文化保育。", [
