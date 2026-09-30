@@ -24,7 +24,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Language choices
 
-- Never offer Taiwan Chinese (`zh-TW`, including script/underscore variants) as a website language choice. `getLearningLanguages` filters the shared website catalogue, covering browsing, WebMCP language discovery, and catalogue-based selectors. Do not fold Taiwan into the Mainland Chinese group or rewrite existing lesson/profile identifiers.
+- Hide Taiwan Chinese (`zh-TW`, including script/underscore variants) when the visitor's IP country is mainland China or their primary browser/system language is Simplified Chinese. Keep it hidden when the country is unknown. `getLearningLanguages` filters the shared website catalogue using request context, covering browsing and WebMCP language discovery. Do not fold Taiwan into the Mainland Chinese group or rewrite existing lesson/profile identifiers.
 
 ## Android download (generated files — do not hand-edit)
 

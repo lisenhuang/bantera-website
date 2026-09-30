@@ -75,7 +75,10 @@ function SiteTools() {
       inputSchema: NO_INPUT,
       annotations: { readOnlyHint: true },
       execute: async () => {
-        const res = await fetch('/api/public/languages');
+        const res = await fetch('/api/public/languages', {
+          cache: 'no-store',
+          headers: { 'X-Bantera-System-Language': navigator.language },
+        });
         if (!res.ok) throw new ToolInputError('Languages are unavailable right now.');
         return res.json();
       },

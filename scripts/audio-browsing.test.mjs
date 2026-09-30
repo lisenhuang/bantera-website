@@ -3,8 +3,12 @@ import assert from "node:assert/strict";
 import { mapCueWords, activeUnitAt } from "../src/lib/subtitle-words.ts";
 import { groupAudioLanguages, audioLanguageGroupCode } from "../src/lib/audio-language-groups.ts";
 import { getLearningLanguages } from "../src/lib/bantera-api.ts";
+import {
+  isTaiwanChinese, usesSimplifiedChinese, shouldHideTaiwan,
+  primaryRequestLanguage, languageChoiceContextFromHeaders,
+} from "../src/lib/language-choice-policy.ts";
 
-test("website catalogue hides every Taiwan accent spelling from browsing and WebMCP choices", async () => {
+test("website catalogue filters Taiwan by country OR Simplified Chinese without changing source identifiers", async () => {
   const originalFetch = globalThis.fetch;
   const rows = [
     ["zh-TW", "Taiwan"], ["ZH_tw", "Taiwan"], ["zh-Hant-TW", "Taiwan"],
@@ -13,13 +17,62 @@ test("website catalogue hides every Taiwan accent spelling from browsing and Web
   ].map(([identifier, displayName]) => ({ identifier, displayName, flagEmoji: "🌐" }));
   globalThis.fetch = async () => Response.json(rows);
   try {
-    const languages = await getLearningLanguages();
-    assert.deepEqual(languages.map((language) => language.identifier), ["zh-CN", "zh-HK", "en-NZ"]);
-    assert.deepEqual(groupAudioLanguages(languages).map((group) => group.identifier), ["zh-cn", "yue", "en"]);
+    for (const context of [
+      {}, { countryCode: "CN", systemLanguage: "en-NZ" },
+      { countryCode: "NZ", systemLanguage: "zh-CN" },
+      { countryCode: "NZ", systemLanguage: "zh-Hans" },
+      { countryCode: "HK", systemLanguage: "zh-SG" },
+    ]) {
+      const languages = await getLearningLanguages(context);
+      assert.deepEqual(languages.map((language) => language.identifier), ["zh-CN", "zh-HK", "en-NZ"]);
+      assert.deepEqual(groupAudioLanguages(languages).map((group) => group.identifier), ["zh-cn", "yue", "en"]);
+    }
+    for (const context of [
+      { countryCode: "NZ", systemLanguage: "en-NZ" },
+      { countryCode: "TW", systemLanguage: "zh-Hant-TW" },
+      { countryCode: "HK", systemLanguage: "zh-HK" },
+      { countryCode: "MO", systemLanguage: "zh-MO" },
+    ]) {
+      const languages = await getLearningLanguages(context);
+      assert.deepEqual(languages, rows);
+      assert.ok(groupAudioLanguages(languages).some((group) => group.identifier === "zh-tw"));
+    }
     assert.equal(rows.length, 7, "source catalogue and stored identifiers remain intact");
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("Chinese locale scripts, regions, casing and underscores resolve correctly", () => {
+  for (const language of ["zh", "zh-CN", "zh-SG", "zh-Hans", "zh_Hans_TW", "ZH_cn"]) {
+    assert.equal(usesSimplifiedChinese(language), true, language);
+  }
+  for (const language of ["zh-TW", "zh-HK", "zh-MO", "zh-Hant", "zh-Hant-CN", "en", "invalid_locale_tag", null]) {
+    assert.equal(usesSimplifiedChinese(language), false, language);
+  }
+  for (const identifier of ["zh-TW", "ZH_tw", "zh-Hant-TW", " zh_Hans_TW "]) {
+    assert.equal(isTaiwanChinese(identifier), true, identifier);
+  }
+  assert.equal(isTaiwanChinese("zh-Hant-HK"), false);
+});
+
+test("unknown countries stay hidden and mainland China wins over a Traditional Chinese language", () => {
+  for (const countryCode of [null, "", "XX", "T1", "China", "CN", " cn "]) {
+    assert.equal(shouldHideTaiwan({ countryCode, systemLanguage: "zh-TW" }), true);
+  }
+  assert.equal(shouldHideTaiwan({ countryCode: " nz ", systemLanguage: "en" }), false);
+});
+
+test("request language uses primary preference, ignores disabled languages and respects browser language override", () => {
+  assert.equal(primaryRequestLanguage("en-NZ,zh-CN;q=0.8"), "en-NZ");
+  assert.equal(primaryRequestLanguage("en;q=0.5, zh-Hans;q=0.9"), "zh-Hans");
+  assert.equal(primaryRequestLanguage("zh-CN;q=0,en;q=0.8"), "en");
+  assert.equal(primaryRequestLanguage(null), null);
+  assert.equal(primaryRequestLanguage("*"), null);
+  const headers = new Headers({ "CF-IPCountry": "NZ", "Accept-Language": "en-NZ,zh-CN;q=0.8" });
+  assert.equal(shouldHideTaiwan(languageChoiceContextFromHeaders(headers)), false);
+  headers.set("X-Bantera-System-Language", "zh-Hans");
+  assert.equal(shouldHideTaiwan(languageChoiceContextFromHeaders(headers)), true);
 });
 
 test("a returned CJK word highlights together without using character parts", () => {

@@ -138,16 +138,27 @@ It is separate from the backend MCP server and does not grant admin or publishin
 | Public pages | `get_site_overview`, `get_faq` | Read product facts and optionally filter FAQ answers. |
 | Public pages | `list_practice_languages`, `find_lessons` | Read the practice language catalogue and search public lessons by language code, optional title search, and result limit. |
 | Public pages | `open_lesson`, `open_page` | Navigate to a lesson or an allowlisted public page. |
-| Audio browser | `load_public_audio` | Declarative GET form that selects a browsing language group and combines accents; the Taiwan accent is never offered as a website language choice. |
+| Audio browser | `load_public_audio` | Declarative GET form that selects a browsing language group and combines accents; Taiwan visibility depends on the visitor's country and system language. |
 | Open lesson | `get_lesson`, `get_lesson_transcript` | Read lesson details, current playback state, and timed cues in the selected cue mode. |
 | Open lesson | `play_cue`, `pause_playback`, `set_playback_speed` | Play one indexed cue, pause audio, or choose 0.5×, 0.75×, 1×, or 1.25× speed. |
 | Open lesson | `set_transcript_visible`, `set_cue_mode` | Show or hide text; switch long/short cues when short cues are available. |
 
 The imperative search tools currently use catalogue language codes such as `en-US`;
 the declarative browsing form uses group codes such as `en`, `yue`, and `zh-cn`.
-The shared website catalogue omits Taiwan Chinese (`zh-TW`, including script/underscore
-variants), so browsing, WebMCP's language list, and catalogue-based selectors do not offer
-that accent. Existing lesson URLs and stored language identifiers remain intact.
+The shared website catalogue hides Taiwan Chinese (`zh-TW`, including script/underscore
+variants) for mainland China IPs or a primary Simplified Chinese browser/system language.
+It stays hidden when the IP country is unknown. Browsing reads Cloudflare's `CF-IPCountry`
+and the primary `Accept-Language` preference, then checks `navigator.language` before
+showing Taiwan after hydration. WebMCP sends that browser language to the language-list
+route, which uses private, uncached responses. Existing lesson URLs and stored language
+identifiers remain intact.
+
+For human deployment, enable Cloudflare IP Geolocation for `bantera.app` and ensure the
+origin receives `CF-IPCountry`; no new environment variables or migrations are needed.
+After deploying the website, verify Taiwan is hidden for CN + English, NZ + `zh-CN` and
+NZ + `zh-Hans`, and shown for NZ + English or `zh-Hant-TW`. Also check a Taiwan query URL
+and WebMCP's language list. Missing/unknown country must hide Taiwan, and HK/MO IPs with
+a Traditional Chinese system language must retain it.
 Search tools call same-origin read-only `/api/public/languages` and `/api/public/lessons`
 routes, which fetch public data from the backend. They do not expose credentials or
 private lessons.

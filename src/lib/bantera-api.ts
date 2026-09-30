@@ -1,3 +1,5 @@
+import { isTaiwanChinese, shouldHideTaiwan, type LanguageChoiceContext } from "./language-choice-policy.ts";
+
 export type BanteraTranscriptCue = {
   index: number;
   startMs: number;
@@ -162,15 +164,13 @@ export type BanteraLearningLanguage = {
   flagEmoji: string;
 };
 
-export async function getLearningLanguages(): Promise<BanteraLearningLanguage[]> {
+export async function getLearningLanguages(context: LanguageChoiceContext = {}): Promise<BanteraLearningLanguage[]> {
   try {
     const languages = await fetchJson<BanteraLearningLanguage[]>("/api/public/learning-languages");
-    // Website language choices never offer the Taiwan accent. Keep its stored
-    // lesson/profile identifiers intact rather than folding them into Mainland.
-    return languages.filter((language) => {
-      const parts = language.identifier.trim().replaceAll("_", "-").toLowerCase().split("-");
-      return !(parts[0] === "zh" && parts.slice(1).includes("tw"));
-    });
+    // Only filter choices; preserve stored lesson/profile language identifiers.
+    return shouldHideTaiwan(context)
+      ? languages.filter((language) => !isTaiwanChinese(language.identifier))
+      : languages;
   } catch {
     return [];
   }
