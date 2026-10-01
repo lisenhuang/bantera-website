@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getApiBaseUrl } from '@/lib/bantera-api';
 import { getAccessToken, listOAuthGrants, type OAuthGrant } from '@/lib/dashboard-api';
@@ -5,6 +6,10 @@ import { ConnectInstructions } from './connect-instructions';
 import RevokeButton from './revoke-button';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'MCPs',
+};
 
 const SCOPE_LABELS: Record<string, string> = {
   'mcp:read': 'Read',
@@ -30,7 +35,7 @@ export default async function ConnectionsPage() {
 
       <section>
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Connected applications</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">MCPs</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Applications you have authorized to access Bantera admin data. Revoking takes effect
             the next time the application refreshes its access, within an hour.

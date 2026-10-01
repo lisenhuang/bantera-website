@@ -79,7 +79,7 @@ const NAV_ITEMS = [
   },
   {
     href: '/dashboard/connections',
-    label: 'Connected Apps',
+    label: 'MCPs',
     exact: false,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
