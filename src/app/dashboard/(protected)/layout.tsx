@@ -48,6 +48,12 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/dashboard/bantera-ai',
+    label: 'Bantera AI',
+    exact: false,
+    icon: <span aria-hidden="true" className="w-5 text-center">✦</span>,
+  },
+  {
     href: '/dashboard/calls',
     label: 'Calls',
     exact: false,

@@ -619,3 +619,15 @@ export function getWebsiteAnalytics(token: string, days: number, source = '', la
   const q = new URLSearchParams({ days: String(days), source, language });
   return adminFetch<WebsiteAnalyticsReport>(`/api/admin/website-analytics?${q}`, token);
 }
+
+export type BanteraAiSettings = { model: string; defaultModel: string; liveModels: string[]; maxCallSeconds: number };
+export async function getBanteraAiSettings(token: string): Promise<BanteraAiSettings> {
+  return adminFetch<BanteraAiSettings>('/api/admin/bantera-ai', token);
+}
+export async function updateBanteraAiSettings(token: string, model: string) {
+  const response = await fetch(`${getApiBaseUrl()}/api/admin/bantera-ai`, {
+    method: 'PUT', cache: 'no-store', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model }),
+  });
+  return { ok: response.ok, status: response.status };
+}
