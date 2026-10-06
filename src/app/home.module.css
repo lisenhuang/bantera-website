@@ -1,0 +1,16 @@
+/* Keep the primary actions in view even on small phones and in landscape. */
+@media (max-width: 360px) {
+  .hero h1 { font-size: 32px; }
+}
+@media (max-height: 560px) and (min-width: 640px) {
+  .hero { padding-top: 76px; padding-bottom: 20px; }
+  .hero > div:last-child { width: 100%; }
+  .hero > div:last-child > * { margin-bottom: 10px; }
+  .hero h1 { font-size: 32px; }
+  .hero p { font-size: 13px; max-width: 580px; }
+  .hero p > span:first-child { display: inline; }
+  .hero p > span:last-child { display: none; }
+  .hero > div:last-child > div:last-child { padding-top: 0; }
+  .hero > div:last-child > div:last-child a { padding: 12px 20px; font-size: 14px; }
+  .hero > div:last-child > div:last-child > div { display: none; }
+}

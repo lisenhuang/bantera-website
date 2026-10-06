@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import DownloadPageClient from './DownloadPageClient';
+import { APP_STORE_URL } from '@/lib/site-content';
+import { getDownloadPlatform } from '@/lib/download-platform';
 
 export const metadata: Metadata = {
   title: 'Download Bantera for iOS & Android',
@@ -10,7 +12,6 @@ export const metadata: Metadata = {
   alternates: { canonical: '/download' },
 };
 
-const APP_STORE_URL = 'https://apps.apple.com/app/id6761799720';
 const APPLE_UA = /iPhone|iPad|iPod|Macintosh/;
 
 export default async function DownloadPage({
@@ -19,13 +20,13 @@ export default async function DownloadPage({
   searchParams: Promise<{ to?: string }>;
 }) {
   const { to } = await searchParams;
+  const ua = (await headers()).get('user-agent') ?? '';
 
   if (to === 'appstore') {
-    const ua = (await headers()).get('user-agent') ?? '';
     if (APPLE_UA.test(ua)) {
       redirect(APP_STORE_URL);
     }
   }
 
-  return <DownloadPageClient />;
+  return <DownloadPageClient initialPlatform={getDownloadPlatform(ua)} />;
 }

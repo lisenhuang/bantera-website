@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { JsonLd } from '@/components/json-ld';
 import { LANGUAGE_GUIDES } from '@/lib/language-guides';
+import { DOWNLOAD_URL } from '@/lib/site-content';
+import styles from './home.module.css';
 
 export const metadata: Metadata = {
   title: 'Bantera | Speaking & Listening Practice in 30+ Languages',
@@ -101,15 +103,15 @@ export default function HomePage() {
       <JsonLd data={appLd} />
 
       {/* ── Nav ──────────────────────────────────────────────── */}
-      <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-white/10">
+      <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between gap-4 px-6 md:px-12 py-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-xl font-black tracking-tight text-gray-900 dark:text-white">Bantera</span>
         </div>
-        <Link href="/learn" className="text-sm font-semibold">Speaking & listening by language</Link>
+        <Link href="/learn" className="text-right text-xs sm:text-sm font-semibold">Speaking & listening by language</Link>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-slate-900 overflow-hidden pt-20">
+      <section className={`${styles.hero} relative min-h-svh flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-slate-900 overflow-hidden pt-24 pb-8 sm:pt-24 sm:pb-12`}>
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-orange-500/10 blur-3xl" />
@@ -130,13 +132,13 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 text-sm text-gray-300">
+        <div className="relative z-10 max-w-4xl mx-auto px-5 text-center space-y-5 sm:px-6 sm:space-y-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 text-xs sm:text-sm text-gray-300">
             <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
             Audio-first language learning
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white leading-[1.05]">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight text-white leading-[1.05]">
             Learn languages
             <br />
             <span className="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300 bg-clip-text text-transparent">
@@ -144,35 +146,39 @@ export default function HomePage() {
             </span>
           </h1>
 
-          <p className="max-w-2xl mx-auto text-xl text-gray-400 leading-relaxed">
-            Bantera helps you improve listening and speaking through real conversations —
+          <p className="max-w-2xl mx-auto text-base sm:text-xl text-gray-400 leading-relaxed">
+            <span className="sm:hidden">Listen to real conversations. Repeat, record, and connect with language exchange partners in 30+ languages.</span>
+            <span className="hidden sm:inline">Bantera helps you improve listening and speaking through real conversations —
             not flashcards or grammar drills. Listen, repeat, record, and exchange with
-            native speakers who are learning your language.
+            native speakers who are learning your language.</span>
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4">
+          <div className="grid grid-cols-2 sm:flex sm:flex-row items-center justify-center gap-3 sm:gap-6 pt-2 sm:pt-4">
             <Link
               href="https://apps.apple.com/app/id6761799720"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-white text-gray-900 font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_rgba(255,255,255,0.3)]"
+              className="inline-flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-8 py-4 rounded-2xl sm:rounded-full bg-white text-gray-900 font-bold text-sm sm:text-lg hover:scale-105 transition-transform shadow-[0_0_40px_rgba(255,255,255,0.3)]"
             >
-              <svg viewBox="0 0 384 512" className="w-6 h-6 fill-current"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
-              Download on the App Store
+              <svg viewBox="0 0 384 512" className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 fill-current"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+              <span><span className="sm:hidden">App Store</span><span className="hidden sm:inline">Download on the App Store</span></span>
             </Link>
 
             <a
               href="/bantera.apk"
               download
-              className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-green-600 text-white font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_rgba(34,197,94,0.3)]"
+              className="inline-flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-8 py-4 rounded-2xl sm:rounded-full bg-green-600 text-white font-bold text-sm sm:text-lg hover:scale-105 transition-transform shadow-[0_0_40px_rgba(34,197,94,0.3)]"
             >
-              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67c-.19-.29-.57-.38-.86-.22-.3.16-.42.54-.26.85L6.4 9.48A10.78 10.78 0 0 0 1 18h22a10.78 10.78 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>
-              Download for Android
+              <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 fill-current"><path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67c-.19-.29-.57-.38-.86-.22-.3.16-.42.54-.26.85L6.4 9.48A10.78 10.78 0 0 0 1 18h22a10.78 10.78 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>
+              <span><span className="sm:hidden">Android</span><span className="hidden sm:inline">Download for Android</span></span>
             </a>
 
             <div className="hidden sm:flex flex-col items-center p-2 bg-white rounded-2xl shadow-lg border border-white/20">
               <QRCodeSVG 
-                value="https://apps.apple.com/app/id6761799720" 
+                value={DOWNLOAD_URL}
+                title="Scan to download Bantera for iOS or Android"
+                level="H"
+                marginSize={4}
                 size={90} 
                 className="rounded-lg"
                 imageSettings={{
@@ -418,7 +424,10 @@ export default function HomePage() {
           </a>
           <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm border border-gray-100">
             <QRCodeSVG 
-              value="https://apps.apple.com/app/id6761799720" 
+              value={DOWNLOAD_URL}
+              title="Scan to download Bantera for iOS or Android"
+              level="H"
+              marginSize={4}
               size={100} 
               className="rounded-lg"
               imageSettings={{

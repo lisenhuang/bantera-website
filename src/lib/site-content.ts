@@ -3,6 +3,7 @@
 // stay consistent. Grounded in product facts, without unverified pricing or rating claims.
 
 export const SITE_URL = 'https://bantera.app';
+export const DOWNLOAD_URL = `${SITE_URL}/download`;
 export const APP_STORE_ID = '6761799720';
 export const APP_STORE_URL = `https://apps.apple.com/app/id${APP_STORE_ID}`;
 export const CONTACT_EMAIL = 'contact@bantera.app';

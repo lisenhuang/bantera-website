@@ -78,9 +78,11 @@ export function WebsiteAnalytics() {
       if (url.hostname === 'apps.apple.com') send('download_ios');
       if (url.origin === location.origin && url.pathname === '/bantera.apk') send('download_android');
     };
+    const preferences = () => setEditing(true);
+    window.addEventListener('bantera:analytics-preferences', preferences);
     document.addEventListener('click', click);
     window.addEventListener('bantera:analytics-event', custom);
-    return () => { clearTimeout(timer); document.removeEventListener('click', click); window.removeEventListener('bantera:analytics-event', custom); };
+    return () => { window.removeEventListener('bantera:analytics-preferences', preferences); clearTimeout(timer); document.removeEventListener('click', click); window.removeEventListener('bantera:analytics-event', custom); };
   }, []);
   useEffect(() => {
     if (consent !== 'yes') return;
@@ -97,12 +99,12 @@ export function WebsiteAnalytics() {
   }
   if (!publicAnalyticsPath(pathname) || consent === 'loading') return null;
   return <>
-    {(consent === null || editing) && <aside aria-label="Website analytics preference" className="fixed bottom-4 left-4 right-4 z-[60] mx-auto max-w-lg rounded-2xl border border-gray-300 bg-white p-5 text-sm text-gray-900 shadow-xl">
+    {(consent === null || editing) && <aside aria-label="Website analytics preference" className={`fixed left-4 right-4 z-[60] mx-auto max-w-lg overflow-y-auto rounded-2xl border border-gray-300 bg-white p-5 text-sm text-gray-900 shadow-xl ${pathname === "/download" || pathname === "/" ? "top-20 max-h-[calc(100dvh-16rem)]" : "bottom-4 max-h-[80dvh]"}`}>
       <p className="font-semibold">Help improve language practice</p>
       <p className="mt-2">Allow Bantera to measure public page visits, referral sources, lesson playback and download clicks? No recordings or account details are included. <Link href="/privacy#website-analytics" className="underline">Privacy details</Link></p>
       <div className="mt-4 flex gap-3"><button className="rounded-lg border px-4 py-2" onClick={() => choose('no')}>Decline</button><button className="rounded-lg bg-gray-900 px-4 py-2 text-white disabled:opacity-50" disabled={blocked()} onClick={() => choose('yes')}>Allow analytics</button></div>
       {blocked() && <p className="mt-2">Your browser privacy preference disables analytics.</p>}
     </aside>}
-    <button className="mx-auto my-4 rounded px-3 py-2 text-xs text-gray-500 underline" onClick={() => setEditing(true)}>Analytics preferences</button>
+    {pathname !== "/download" && <button className="mx-auto my-4 rounded px-3 py-2 text-xs text-gray-500 underline" onClick={() => setEditing(true)}>Analytics preferences</button>}
   </>;
 }
