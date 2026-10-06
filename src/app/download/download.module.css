@@ -26,9 +26,7 @@
 .header { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 96px; border-bottom: 1px solid var(--line); }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 23px; font-weight: 750; letter-spacing: -1px; }
 .brand img { border-radius: 10px; }
-.headerActions { display: flex; align-items: center; gap: 22px; }
-.headerActions > a { font-size: 13px; font-weight: 550; }
-.headerActions > a:hover, .footer a:hover, .release a:hover { color: var(--accent); }
+.footer a:hover, .release a:hover { color: var(--accent); }
 .theme { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 50%; cursor: pointer; }
 .main { flex: 1; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(330px, 1fr); align-items: center; gap: clamp(40px, 7vw, 110px); padding: 56px 0; }
 .story { min-width: 0; }
@@ -98,8 +96,6 @@
   .page:not([data-handheld='true']) { padding: 0 22px; }
   .main { grid-template-columns: 1fr; max-width: 500px; width: 100%; margin: auto; gap: 32px; padding: 36px 0; }
   .header { min-height: 72px; }
-  .headerActions { gap: 12px; }
-  .headerActions > a { font-size: 11px; }
   .brand { font-size: 20px; }
   .brand img { width: 30px; height: 30px; }
   .theme { width: 34px; height: 34px; }

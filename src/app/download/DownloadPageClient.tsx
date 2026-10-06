@@ -93,12 +93,9 @@ export default function DownloadPageClient({ initialPlatform }: { initialPlatfor
           <Image src="/icon.png" alt="" width={36} height={36} priority />
           <span>Bantera</span>
         </Link>
-        <div className={styles.headerActions}>
-          <Link href="/webapp">Try in your browser <span aria-hidden="true">↗</span></Link>
-          <button onClick={() => document.documentElement.classList.toggle('dark')} aria-label={isDark ? 'Use light theme' : 'Use dark theme'} className={styles.theme}>
-            {isDark ? <SunIcon /> : <MoonIcon />}
-          </button>
-        </div>
+        <button onClick={() => document.documentElement.classList.toggle('dark')} aria-label={isDark ? 'Use light theme' : 'Use dark theme'} className={styles.theme}>
+          {isDark ? <SunIcon /> : <MoonIcon />}
+        </button>
       </header>
 
       <main className={styles.main}>
