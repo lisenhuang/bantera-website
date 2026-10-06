@@ -71,6 +71,32 @@ product (**GEO**, generative engine optimization), and browser agents using the 
 practice experience through **WebMCP**. The features below are implemented in this
 codebase; deployment, crawler access, and browser compatibility determine availability.
 
+### Safari Smart App Banner
+
+The root layout sets Next.js `metadata.itunes.appId` from `APP_STORE_ID` in
+`src/lib/site-content.ts`. Every page inherits it, producing:
+
+```html
+<meta name="apple-itunes-app" content="app-id=6761799720" />
+```
+
+Safari on compatible iPhones and iPads offers an App Store action when Bantera is
+not installed and opens the app when it is installed. Safari supplies the app's
+name, icon, and action. It controls visibility, including device compatibility,
+storefront availability, and remembered dismissal. This is native Safari UI,
+not a banner rendered by the website in other browsers.
+
+The optional `app-argument` is omitted: this banner opens Bantera without promising
+a specific lesson or screen. Page-specific deep linking would require corresponding
+app URL handling.
+
+After a human deploys the website, check the homepage and a nested page in Safari
+on a real iPhone and iPad, both with and without Bantera installed. Apple says the
+banner does not appear in the iOS simulator. No new environment variables or
+backend migrations are needed.
+
+Reference: [Apple's Smart App Banner documentation](https://developer.apple.com/documentation/webkit/promoting-apps-with-smart-app-banners).
+
 ### SEO: searchable pages and structured content
 
 - **Page metadata and sharing previews:** the root layout supplies a title, description,

@@ -5,6 +5,7 @@ import "./globals.css";
 import { WebsiteAnalytics } from "@/components/analytics/website-analytics";
 import { JsonLd } from "@/components/json-ld";
 import { WebMcpSiteTools } from "@/components/webmcp/site-tools";
+import { APP_STORE_ID, APP_STORE_URL } from "@/lib/site-content";
 
 // Chrome/Edge WebMCP origin-trial token for bantera.app. Without it WebMCP only works for
 // visitors who enabled the browser flag; with it, for everyone on a supported browser.
@@ -28,6 +29,8 @@ export const metadata: Metadata = {
   description:
     "Practise listening, speaking and shadowing in 30+ languages. Repeat short audio cues, record and compare your voice. Available on iOS, Android and the web.",
   applicationName: "Bantera",
+  // Inherited by every page; Safari handles the installed/open and App Store states.
+  itunes: { appId: APP_STORE_ID },
   authors: [{ name: "Lisen Huang" }],
   alternates: { canonical: "/" },
   icons: { icon: "/icon.png", apple: "/icon.png", shortcut: "/favicon.ico" },
@@ -62,7 +65,7 @@ const organizationLd = {
   founder: { "@type": "Person", name: "Lisen Huang" },
   sameAs: [
     "https://x.com/BanteraApp",
-    "https://apps.apple.com/app/id6761799720",
+    APP_STORE_URL,
   ],
 };
 
