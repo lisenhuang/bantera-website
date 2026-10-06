@@ -412,3 +412,7 @@ The website includes a multilingual speaking/listening directory at `/learn`, te
 language guides, and first-party visitor reports at `/dashboard/website`. See
 [discovery and analytics deployment notes](docs/discovery-and-analytics.md) for the required
 server-only ingest key, consent model, data limits and post-deploy checks.
+
+## Oracle AU deployment
+
+The website, backend and PostgreSQL run on Oracle AU (Melbourne). Follow the [deployment and rollback runbook](docs/oracle-au-deployment.md), including Cloudflare Tunnel routing and public-domain verification. Deploy only on an explicit request; do not run the legacy script that replaces the website and restarts the shared tunnel.

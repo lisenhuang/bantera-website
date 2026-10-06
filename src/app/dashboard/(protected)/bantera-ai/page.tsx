@@ -9,7 +9,7 @@ export default async function BanteraAiPage() {
   try { settings = await getBanteraAiSettings(token); } catch { /* Fail closed when backend is unavailable. */ }
   return <div className="max-w-3xl space-y-6">
     <header><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bantera AI</h1>
-      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">The always-online language practice partner in DMs.</p></header>
+      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">The always-online language practice partner, shown first under Online.</p></header>
     <section aria-label="Bantera AI model" className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-gray-900 sm:p-8">
       {settings ? <SettingsForm settings={settings} /> : <p role="alert" className="text-sm text-red-600 dark:text-red-400">Live models could not be loaded. Confirm the updated backend and Gemini keys are configured, then refresh.</p>}
     </section>
