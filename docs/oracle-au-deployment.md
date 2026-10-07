@@ -131,3 +131,25 @@ python3 /home/ubuntu/releases/bantera-20261007-1/deploy.py rollback
 This restores `cloudflared-20261006-1` and the previous active release record,
 without restoring or discarding database writes. Promotion already verified a
 stable public-domain window and would have rolled back automatically on failure.
+
+## Latest release: 7 October 2026
+
+Release **`bantera-20261007-6`** completed at **10:11:10 UTC** with website
+**0.1.59** and backend **1.0.168**. The admin AI page explains voice-message
+reminders, explicit call requests and temporary reminder audio retention.
+The active website is `bantera-website-20261007-6` (loopback 13005), behind
+`cloudflared-20261007-6` (readiness 12006). The exact public release marker,
+home, download and dashboard login passed; all 128 monitored public-domain
+samples returned HTTP 200. Existing published apps remain compatible, with
+an additive backend migration and no new environment variables.
+
+The verified database backup, source manifests and runtime snapshots are in
+`/home/ubuntu/releases/bantera-20261007-6`. Roll back using:
+
+```bash
+python3 /home/ubuntu/releases/bantera-20261007-6/deploy.py rollback
+```
+
+This restores release 5's connector, backend **1.0.166** and website **0.1.58**
+without restoring the database. See the backend runbook for worker compatibility
+and migration details. Deployment did not create commits or push branches.

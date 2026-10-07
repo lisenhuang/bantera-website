@@ -19,8 +19,10 @@ export default async function BanteraAiPage() {
         <li>Uses the learner’s language and regional accent, with a greeting at the start of each call.</li>
         <li>Audio calls stay in chat, last up to nine minutes, and enter a farewell at 8:30 before hanging up.</li>
         <li>Transcripts come from Live audio. iOS translations run on the device.</li>
-        <li>AI history stays on the device; relevant context is sent to Gemini. Read-only tools can inspect the learner’s practice data.</li>
-        <li>Explicitly requested callbacks store scheduling metadata on the server. iPhone delivery requires working APNs VoIP credentials, call notifications and connectivity.</li>
+        <li>Received AI history stays on the device; relevant context is sent to Gemini. Read-only tools can inspect the learner’s practice data.</li>
+        <li>Reminder requests default to a voice message with an ordinary notification. Only explicit requests to call use an incoming audio call through CallKit.</li>
+        <li>Reminder times, notes and delivery status are stored on the server. Voice reminder audio is held temporarily until received or cancelled, for up to seven days.</li>
+        <li>The app’s Reminders menu shows the time, delivery type and status, with cancellation for upcoming reminders. Calls require APNs VoIP credentials; messages use standard APNs notifications.</li>
       </ul>
     </section>
   </div>;
