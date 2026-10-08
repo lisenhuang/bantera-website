@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { JsonLd } from '@/components/json-ld';
+import { GooglePlayIcon } from '@/components/google-play-icon';
 import { LANGUAGE_GUIDES } from '@/lib/language-guides';
-import { DOWNLOAD_URL } from '@/lib/site-content';
+import { DOWNLOAD_URL, GOOGLE_PLAY_URL } from '@/lib/site-content';
 import styles from './home.module.css';
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ const appLd = {
   applicationSubCategory: 'Language Learning',
   operatingSystem: ['iOS', 'Android'],
   url: 'https://bantera.app',
-  downloadUrl: ['https://apps.apple.com/app/id6761799720', 'https://bantera.app/bantera.apk'],
+  downloadUrl: ['https://apps.apple.com/app/id6761799720', GOOGLE_PLAY_URL],
   installUrl: 'https://bantera.app/download',
   description:
     'Audio-first language learning app. Listen to real spoken content cue-by-cue, hide or reveal subtitles and translations, record yourself for AI transcription and recording comparison, and find language exchange partners.',
@@ -165,12 +166,11 @@ export default function HomePage() {
             </Link>
 
             <a
-              href="/bantera.apk"
-              download
+              href={GOOGLE_PLAY_URL}
               className="inline-flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-8 py-4 rounded-2xl sm:rounded-full bg-green-600 text-white font-bold text-sm sm:text-lg hover:scale-105 transition-transform shadow-[0_0_40px_rgba(34,197,94,0.3)]"
             >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 fill-current"><path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67c-.19-.29-.57-.38-.86-.22-.3.16-.42.54-.26.85L6.4 9.48A10.78 10.78 0 0 0 1 18h22a10.78 10.78 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>
-              <span><span className="sm:hidden">Android</span><span className="hidden sm:inline">Download for Android</span></span>
+              <GooglePlayIcon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
+              <span><span className="sm:hidden">Google Play</span><span className="hidden sm:inline">Get it on Google Play</span></span>
             </a>
 
             <div className="hidden sm:flex flex-col items-center p-2 bg-white rounded-2xl shadow-lg border border-white/20">
@@ -415,12 +415,11 @@ export default function HomePage() {
           </Link>
 
           <a
-            href="/bantera.apk"
-            download
+            href={GOOGLE_PLAY_URL}
             className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-green-600 text-white font-bold text-lg hover:scale-105 transition-transform shadow-xl"
           >
-            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67c-.19-.29-.57-.38-.86-.22-.3.16-.42.54-.26.85L6.4 9.48A10.78 10.78 0 0 0 1 18h22a10.78 10.78 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>
-            Download for Android
+            <GooglePlayIcon className="w-6 h-6" />
+            Get it on Google Play
           </a>
           <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm border border-gray-100">
             <QRCodeSVG 

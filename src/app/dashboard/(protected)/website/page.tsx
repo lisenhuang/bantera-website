@@ -5,7 +5,7 @@ import { getAccessToken, getWebsiteAnalytics, type WebsiteCount } from '@/lib/da
 export const metadata: Metadata = { title: 'Website Analytics | Bantera Admin', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
 const card = 'rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5';
-const names: Record<string, string> = { page_view: 'Page views', lesson_play: 'Lesson playback started', lesson_listened_30s: 'Listened for 30 seconds', download_ios: 'App Store clicks', download_android: 'Android APK clicks' };
+const names: Record<string, string> = { page_view: 'Page views', lesson_play: 'Lesson playback started', lesson_listened_30s: 'Listened for 30 seconds', download_ios: 'App Store clicks', download_android: 'Android download clicks' };
 function Counts({ title, rows }: { title: string; rows: WebsiteCount[] }) {
   return <section className={card}><h2 className="font-semibold">{title}</h2><div className="mt-4 overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left text-gray-500"><th scope="col">Name</th><th scope="col" className="text-right">Sessions</th><th scope="col" className="text-right">Events</th></tr></thead><tbody>{rows.map(r => <tr key={r.label} className="border-t border-gray-100 dark:border-white/10"><th scope="row" className="max-w-64 break-words py-3 text-left font-normal">{names[r.label] || r.label}</th><td className="text-right tabular-nums">{r.sessions}</td><td className="text-right tabular-nums">{r.events}</td></tr>)}</tbody></table>{rows.length === 0 && <p className="py-5 text-sm text-gray-500">No recorded activity in this range.</p>}</div></section>;
 }

@@ -153,3 +153,74 @@ python3 /home/ubuntu/releases/bantera-20261007-6/deploy.py rollback
 This restores release 5's connector, backend **1.0.166** and website **0.1.58**
 without restoring the database. See the backend runbook for worker compatibility
 and migration details. Deployment did not create commits or push branches.
+
+## Android APK website release, 8 October 2026, 16:53 NZDT
+
+Release **`bantera-20261008-9`** succeeded at **2026-10-08 03:53:32 UTC**.
+Website **0.1.60** runs in `bantera-website-20261008-9`, loopback **13006**,
+through `cloudflared-20261008-9` (readiness **12015**). Backend **1.4.1** is
+retained in `bantera-api-20261008-8`; no database or backend change was needed.
+
+The signed arm64 Android APK **2.5.2**, Flutter build **332** (split APK Android
+version code **2332**), is published at `https://bantera.app/bantera.apk`.
+Its signing certificate matches the previous public download. Both the download
+page and `android-release.json` show the new release. The staged and public APK
+SHA-256 hashes match the locally built file:
+
+```
+b713c68cc0ca30629698ac438398a83b17f4019603fd2a699e17096227235c0a
+```
+
+The website production build and staging checks passed. All **158/158** sampled
+public API/website HTTP requests returned 200 during the handover and stability
+window. The deployment controller verified the full public APK checksum before
+accepting the release. Existing WebSocket continuity is not established by HTTP
+checks. Source archive hashes, working-tree provenance and private runtime
+snapshots remain in `/home/ubuntu/releases/bantera-20261008-9`.
+
+Rollback:
+
+```bash
+python3 /home/ubuntu/releases/bantera-20261008-9/deploy.py rollback
+```
+
+Rollback restores connector `cloudflared-20261008-8` and the previous website,
+retains backend 1.4.1 and current database writes, then stops only the candidate
+website. No Git commit/push, store submission or physical-device launch was
+performed for this Android website publication.
+
+## Google Play buttons and APK removal, 8 October 2026, 21:23 NZDT
+
+Release **`bantera-20261008-10`** succeeded at **2026-10-08 08:23:16 UTC**.
+Website **0.1.61** runs in `bantera-website-20261008-10` on loopback **13007**,
+via `cloudflared-20261008-10` (readiness **12016**). Backend **1.4.1** stays
+in `bantera-api-20261008-8`; there are no backend, database or configuration changes.
+
+Both homepage Android buttons and the `/download` Android button now point to
+`https://play.google.com/store/apps/details?id=com.lisenhuang.bantera`.
+The APK, its obsolete JSON download manifest and unused TypeScript release metadata
+were removed from the local website working tree and the deployed build.
+Public `/bantera.apk` and `/android-release.json` return **404**. This does not
+rewrite Git history or remove rollback snapshots. Historical APK publishing
+instructions above describe earlier releases; current primary distribution uses
+Google Play.
+
+The reviewed local snapshot includes the new Google Play icon, copy and analytics
+changes. Focused ESLint checks and the production build passed. Staging and public
+checks verify the exact Google Play anchor count (two on home, one on download),
+absence of APK button links, and 404 responses for the removed files. All
+**156/156** sampled public website/API HTTP checks returned 200. These availability
+samples are distinct from the intentional APK/manifest 404 checks and do not prove
+uninterrupted existing WebSocket connections.
+
+The release directory contains source provenance, archive SHA-256, explicit
+pre-build file-removal transformations, private runtime snapshots and rollout logs.
+Rollback is available with:
+
+```bash
+python3 /home/ubuntu/releases/bantera-20261008-10/deploy.py rollback
+```
+
+It restores the previous website/connector and its old APK download, preserves
+backend 1.4.1 and all database writes, then stops the candidate website. Source
+changes and file deletions remain uncommitted; this deployment did not push Git.

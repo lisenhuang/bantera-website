@@ -7,6 +7,7 @@ import {
 } from '@/lib/bantera-api';
 import {
   APP_STORE_URL,
+  GOOGLE_PLAY_URL,
   CONTACT_EMAIL,
   FAQS,
   SITE_PAGES,
@@ -87,7 +88,7 @@ export async function GET() {
 
 ## Key facts
 
-- Platform: Android APK (${SITE_URL}/download), iOS app on the App Store (${APP_STORE_URL}). A free web app for listening practice runs at ${SITE_URL}/webapp.
+- Platform: Android app on Google Play (${GOOGLE_PLAY_URL}), iOS app on the App Store (${APP_STORE_URL}). A free web app for listening practice runs at ${SITE_URL}/webapp.
 - Languages: ${SUPPORTED_LANGUAGES.join(', ')}.
 - Method: play real spoken content one cue at a time, repeat it, record yourself, and see an AI transcription of your recording compared with the original.
 - Community: voice-only language exchange with native speakers — private chats, groups, and voice comments.

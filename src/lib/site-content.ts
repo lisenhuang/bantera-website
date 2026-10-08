@@ -4,6 +4,7 @@
 
 export const SITE_URL = 'https://bantera.app';
 export const DOWNLOAD_URL = `${SITE_URL}/download`;
+export const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.lisenhuang.bantera';
 export const APP_STORE_ID = '6761799720';
 export const APP_STORE_URL = `https://apps.apple.com/app/id${APP_STORE_ID}`;
 export const CONTACT_EMAIL = 'contact@bantera.app';
@@ -28,7 +29,7 @@ export const SITE_PAGES: readonly SitePage[] = [
   { path: '/', title: 'Home', description: 'What Bantera is and how it helps you learn a language by speaking.' },
   { path: '/webapp', title: 'Web app — public audio', description: 'Pick a language and browse public audio lessons you can practise in the browser.' },
   { path: '/webapp/studio', title: 'Dialogue Studio', description: 'Generate multi-speaker practice dialogue and audio in the browser.' },
-  { path: '/download', title: 'Download', description: 'Get Bantera for iOS from the App Store or download the Android APK.' },
+  { path: '/download', title: 'Download', description: 'Get Bantera for iOS from the App Store or Android from Google Play.' },
   { path: '/faq', title: 'FAQ', description: 'Answers about languages, pronunciation feedback, language exchange, and availability.' },
   { path: '/support', title: 'Support', description: 'How to get help or contact the Bantera team.' },
   { path: '/privacy', title: 'Privacy policy', description: 'What data Bantera collects and how it is used.' },
@@ -64,7 +65,7 @@ export const FAQS: readonly { q: string; a: string }[] = [
   },
   {
     q: 'Is Bantera available on Android?',
-    a: 'Yes. Download the Android APK directly from bantera.app/download. Bantera is also available for iOS on the App Store, and public audio practice works in your browser at bantera.app/webapp.',
+    a: 'Yes. Get Bantera for Android on Google Play via bantera.app/download. Bantera is also available for iOS on the App Store, and public audio practice works in your browser at bantera.app/webapp.',
   },
   {
     q: 'Does Bantera use AI?',

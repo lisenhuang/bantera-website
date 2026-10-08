@@ -26,7 +26,7 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-bold">Optional website analytics</h2>
             <p>With your permission, Bantera records public page paths, referral domains,
               campaign tags, the language of practice pages, broad device type, lesson playback,
-              and clicks to the App Store or Android APK. We use this to understand how learners
+              and clicks to the App Store or Google Play. We use this to understand how learners
               find and use the website. This records clicks, not confirmed app installations.</p>
             <p>A random session identifier is stored in this browser tab and expires after 30 minutes
               of inactivity or 24 hours. Your allow or decline choice is saved on this device for

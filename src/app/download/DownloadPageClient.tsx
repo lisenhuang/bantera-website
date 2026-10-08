@@ -2,10 +2,10 @@
 
 import { useSyncExternalStore } from 'react';
 import Image from 'next/image';
+import { GooglePlayIcon } from '@/components/google-play-icon';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { androidRelease } from '@/lib/android-release';
-import { APP_STORE_URL, DOWNLOAD_URL } from '@/lib/site-content';
+import { APP_STORE_URL, DOWNLOAD_URL, GOOGLE_PLAY_URL } from '@/lib/site-content';
 import { getDownloadPlatform, type DownloadPlatform } from '@/lib/download-platform';
 import styles from './download.module.css';
 
@@ -54,13 +54,6 @@ function AppleIcon() {
   );
 }
 
-function AndroidIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="w-5 h-5 fill-current">
-      <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67c-.19-.29-.57-.38-.86-.22-.3.16-.42.54-.26.85L6.4 9.48A10.78 10.78 0 0 0 1 18h22a10.78 10.78 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" />
-    </svg>
-  );
-}
 
 
 const waveHeights = [18, 30, 22, 44, 58, 36, 24, 48, 68, 42, 28, 52, 74, 50, 32, 60, 42, 24, 46, 64, 36, 22, 48, 30, 18];
@@ -130,11 +123,11 @@ export default function DownloadPageClient({ initialPlatform }: { initialPlatfor
               <a href={APP_STORE_URL} className={styles.storeButton} data-recommended={platform === 'ios' || platform === 'ipad'} aria-label="Download Bantera on the App Store for iPhone and iPad">
                 <AppleIcon /><span><small>Download on the</small><strong>App Store</strong></span>
               </a>
-              <a href="/bantera.apk" download className={styles.storeButton} data-recommended={platform === 'android'} aria-label={`Download Bantera Android APK version ${androidRelease.version}`}>
-                <AndroidIcon /><span><small>Download APK for</small><strong>Android</strong></span>
+              <a href={GOOGLE_PLAY_URL} className={styles.storeButton} data-recommended={platform === 'android'} aria-label="Get Bantera on Google Play for Android">
+                <GooglePlayIcon className="w-5 h-5" /><span><small>Get it on</small><strong>Google Play</strong></span>
               </a>
             </div>
-            <p className={styles.release}>Android {androidRelease.version} · Android 7.0+ <span>·</span> <Link href="/privacy">Privacy</Link><span>·</span><button onClick={() => window.dispatchEvent(new Event('bantera:analytics-preferences'))}>Analytics</button></p>
+            <p className={styles.release}>Android on Google Play <span>·</span> <Link href="/privacy">Privacy</Link><span>·</span><button onClick={() => window.dispatchEvent(new Event('bantera:analytics-preferences'))}>Analytics</button></p>
           </div>
         </section>
       </main>

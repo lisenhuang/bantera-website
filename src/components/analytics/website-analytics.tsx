@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { GOOGLE_PLAY_URL } from '@/lib/site-content';
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { campaignToken, publicAnalyticsPath, type WebsiteEventName } from '@/lib/website-analytics';
@@ -76,7 +77,7 @@ export function WebsiteAnalytics() {
       if (!a) return;
       const url = new URL(a.href);
       if (url.hostname === 'apps.apple.com') send('download_ios');
-      if (url.origin === location.origin && url.pathname === '/bantera.apk') send('download_android');
+      if (url.href === GOOGLE_PLAY_URL || (url.origin === location.origin && url.pathname === '/bantera.apk')) send('download_android');
     };
     const preferences = () => setEditing(true);
     window.addEventListener('bantera:analytics-preferences', preferences);
