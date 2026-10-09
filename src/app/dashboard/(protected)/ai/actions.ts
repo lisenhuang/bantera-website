@@ -31,11 +31,19 @@ export async function saveModelSettingsAction(_prev: ModelSettingsState, form: F
     return value === '' ? null : value;
   };
 
+  const timeoutValue = pick('gptTimeoutSeconds');
+  const gptTimeoutSeconds = timeoutValue === null ? undefined : Number(timeoutValue);
+  if (gptTimeoutSeconds !== undefined && (!Number.isInteger(gptTimeoutSeconds) || gptTimeoutSeconds < 30 || gptTimeoutSeconds > 300))
+    return { error: 'GPT response timeout must be a whole number from 30 to 300 seconds.' };
   const result = await updateAiSettings(token, {
+    gptTimeoutSeconds,
     textModel: pick('textModel'),
     audioModel: pick('audioModel'),
     fallbackTextModel: pick('fallbackTextModel'),
     fallbackAudioModel: pick('fallbackAudioModel'),
+    textReasoning: pick('textReasoning'), fallbackTextReasoning: pick('fallbackTextReasoning'),
+    searchModel: pick('searchModel'), fallbackSearchModel: pick('fallbackSearchModel'),
+    searchReasoning: pick('searchReasoning'), fallbackSearchReasoning: pick('fallbackSearchReasoning'),
   });
   if (!result.ok) {
     if (result.status === 401) redirect('/dashboard/login');
@@ -76,4 +84,20 @@ export async function saveAlignmentSettingsAction(_prev: AlignmentSettingsState,
 
   revalidatePath('/dashboard/ai');
   return { ok: true };
+}
+
+export type SearchTestState = { result?: import('@/lib/dashboard-api').AiSearchTestResult; error?: string; query?: string };
+
+export async function testWebSearchAction(_prev: SearchTestState, form: FormData): Promise<SearchTestState> {
+  const token = await getAccessToken();
+  if (!token) redirect('/dashboard/login');
+  const query = String(form.get('query') ?? '').trim();
+  if (query.length < 3 || query.length > 1000) return { error: 'Enter a search query between 3 and 1,000 characters.' };
+  const { testAiWebSearch } = await import('@/lib/dashboard-api');
+  const response = await testAiWebSearch(token, query);
+  if (!response.ok) {
+    if (response.status === 401) redirect('/dashboard/login');
+    return { error: response.message, query };
+  }
+  return { result: response.result, query };
 }

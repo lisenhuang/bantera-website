@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { chatGptRequest, type ChatGptStatus } from '@/lib/chatgpt-connection';
+import { ChatGptConnectionPanel } from './chatgpt-connection-panel';
 import { redirect } from 'next/navigation';
 import {
   getAccessToken,
@@ -13,6 +15,7 @@ import {
   type GeminiKeyHealth,
 } from '@/lib/dashboard-api';
 import { ColumnChart } from '../_components/charts';
+import { SearchTestPanel } from './search-test-panel';
 import { ModelSettingsForm } from './model-settings-form';
 import { PlaybackSettingsForm } from './playback-settings-form';
 import { AlignmentSettingsForm } from './alignment-settings-form';
@@ -159,7 +162,7 @@ function EventRow({ event }: { event: AiPipelineEvent }) {
 }
 
 export default async function AiPipelinePage({ searchParams }: {
-  searchParams: Promise<{ days?: string; severity?: string; stage?: string; code?: string; page?: string }>;
+  searchParams: Promise<{ days?: string; severity?: string; stage?: string; code?: string; page?: string; chatgpt?: string }>;
 }) {
   const token = await getAccessToken();
   if (!token) redirect('/dashboard/login');
@@ -173,7 +176,7 @@ export default async function AiPipelinePage({ searchParams }: {
     page: Math.max(0, Number.parseInt(sp.page ?? '0', 10) || 0),
   };
 
-  const [settings, summary, events, keyHealth] = await Promise.all([
+  const [settings, summary, events, keyHealth, chatGpt] = await Promise.all([
     getAiSettings(token).catch(() => null as AiSettings | null),
     getAiPipelineSummary(token, filters.days).catch(() => null as AiPipelineSummary | null),
     listAiPipelineEvents(token, {
@@ -185,6 +188,7 @@ export default async function AiPipelinePage({ searchParams }: {
       offset: filters.page * PAGE_SIZE,
     }).catch(() => null),
     getGeminiKeyHealth(token).catch(() => null as GeminiKeyHealth | null),
+    chatGptRequest<ChatGptStatus>(token).catch(() => null),
   ]);
   if (!settings && !summary && !events) redirect('/dashboard/login');
 
@@ -216,18 +220,22 @@ export default async function AiPipelinePage({ searchParams }: {
         </nav>
       </div>
 
+      <Card title="Connected AI accounts" subtitle="Manage the backend's provider connections.">
+        <ChatGptConnectionPanel status={chatGpt} callback={sp.chatgpt} />
+      </Card>
+
       {/* Models */}
       <Card title="Models"
         subtitle={settings?.modelListAvailable === false
           ? 'Gemini could not be reached to list models, so saving is disabled. Reload to try again.'
-          : 'Choices are listed live from Gemini each time this page loads.'}>
+          : 'Choices are fetched from Gemini and your connected ChatGPT account when this page loads.'}>
         {settings ? (
           <div className="space-y-5">
             <ModelSettingsForm settings={settings} />
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl bg-gray-50 dark:bg-white/5 p-4 text-xs">
               <div>
                 <dt className="text-gray-500 dark:text-gray-400">Web search (latest news, custom topics)</dt>
-                <dd className="mt-0.5 text-gray-900 dark:text-white"><code>{settings.fixedModels.webSearchModel}</code>, using only keys starting with <code>{settings.fixedModels.webSearchKeyPrefix}</code></dd>
+                <dd className="mt-0.5 text-gray-900 dark:text-white"><code>{settings.fixedModels.webSearchModel}</code>. Gemini searches use keys starting with <code>{settings.fixedModels.webSearchKeyPrefix}</code>; GPT searches use the connected subscription.</dd>
               </div>
               <div>
                 <dt className="text-gray-500 dark:text-gray-400">Transcription with word timestamps</dt>
@@ -239,6 +247,10 @@ export default async function AiPipelinePage({ searchParams }: {
           <p className="text-sm text-red-600 dark:text-red-400">Could not load the model settings.</p>
         )}
       </Card>
+
+      {settings && <Card title="Test web search" subtitle="Check the response, search evidence and source links before relying on a model.">
+        <SearchTestPanel model={settings.fixedModels.webSearchModel} />
+      </Card>}
 
       {keyHealth && (
         <Card title="Gemini key health" subtitle="Current key availability across all AI audio steps.">

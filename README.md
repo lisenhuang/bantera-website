@@ -416,3 +416,33 @@ server-only ingest key, consent model, data limits and post-deploy checks.
 ## Oracle AU deployment
 
 The website, backend and PostgreSQL run on Oracle AU (Melbourne). Follow the [deployment and rollback runbook](docs/oracle-au-deployment.md), including Cloudflare Tunnel routing and public-domain verification. Deploy only on an explicit request; do not run the legacy script that replaces the website and restarts the shared tunnel.
+
+## Bantera AI admin reasoning
+
+`/dashboard/bantera-ai` loads supported reasoning options and saved choices from the backend. Changing the Live model immediately changes the available levels (or token budgets); fixed and unverified models use their default. Save AI settings applies the model, voice and reasoning together to new messages, calls and reminders. Choices are remembered separately for each model. Deploy backend 1.6.0 or later first; no app update or new environment variables are required for this control.
+
+The AI dashboard includes **Test web search** for the configured lesson-generation search provider. It displays query, response time, verified/unverified/failure status, sources and a diagnostic reference. Requires backend 1.8.0; a missing endpoint is shown explicitly. Provider suggestion HTML is isolated in a sandboxed iframe. Tests do not change saved settings or create lessons. The separate ChatGPT panel supports device-code login and subscription model tests.
+
+### Admin ChatGPT provider connection
+
+Version **0.5.0** uses backend **1.10.0** device-code OAuth. On `/dashboard/ai`,
+click **Continue with ChatGPT**, copy the one-time code and open OpenAI's sign-in
+page. The dashboard checks approval automatically; Cancel stops the attempt.
+Enable device-code login in ChatGPT settings when requested by OpenAI. A hosted
+OpenAI client registration or callback URL is not needed for this flow.
+
+After connecting, **Load available models** fetches your account's live catalogue.
+Reasoning choices follow the selected model's metadata. **Test response** sends
+an actual backend request using the subscription, with optional built-in web
+search and source links. Success requires a completed response; search is marked
+verified only with provider tool-call evidence. Tests do not change saved
+production model settings; existing Gemini routes stay active. No credentials
+reach client JavaScript. See the backend README for persistent encrypted storage.
+
+### Primary and fallback providers (0.6.0)
+
+`/dashboard/ai` includes independent text/search primary and fallback selectors with GPT and Gemini groups. GPT reasoning options update with the selected model and come from the connected account catalogue. Save first, then use **Test web search** to test the saved route; results identify the actual provider/model and whether fallback was used. Completed streamed search events are accepted as evidence even if the final response payload omits them. Connecting an account or running a test does not silently replace saved models. Requires backend 1.11.0. AI chat device searches and Live voice model settings stay separate.
+
+The dashboard search selectors offer only Gemini 2.5 Flash (`gemini-2.5-flash`) for Gemini, alongside the connected account’s GPT options. Backend Gemini searches use only `AIzaSy` keys, including fallback searches. These settings apply to backend lesson generation and dashboard tests; app AI chat web searches continue to use DuckDuckGo directly on the device.
+
+GPT attempts use a saved `ai.gptTimeoutSeconds` setting (default 180; admin range 30–300 seconds), shared by GPT text, search, and subscription tests. Missing update fields preserve the saved value; null restores the default. No migration or environment variable is needed. Each fallback gets its own attempt budget, while caller cancellation, the 20-second conversation-summary budget, and the 10-minute overall lesson limit remain authoritative. Gemini request limits and on-device app search are unchanged.

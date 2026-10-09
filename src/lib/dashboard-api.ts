@@ -422,12 +422,23 @@ export async function revokeOAuthGrant(token: string, familyId: string): Promise
 
 export type AiModelOverride = { value: string; updatedAt: string; updatedByUserId: string | null } | null;
 
+export type TextModelOption = { id: string; name: string; provider: string; reasoningLevels: string[]; defaultReasoning?: string | null };
 export type AiSettings = {
+  gptTimeoutSeconds?: number;
+  textReasoning?: string | null;
+  fallbackTextReasoning?: string | null;
+  searchModel?: string | null;
+  fallbackSearchModel?: string | null;
+  searchReasoning?: string | null;
+  fallbackSearchReasoning?: string | null;
+  textModelOptions?: TextModelOption[];
+  searchModelOptions?: TextModelOption[];
+  gptModelListAvailable?: boolean;
   textModel: string;
   audioModel: string;
   fallbackTextModel?: string | null;
   fallbackAudioModel?: string | null;
-  defaults: { textModel: string; audioModel: string };
+  defaults: { textModel: string; audioModel: string; searchModel?: string };
   overrides: { textModel: AiModelOverride; audioModel: AiModelOverride; fallbackTextModel?: AiModelOverride; fallbackAudioModel?: AiModelOverride };
   fixedModels: { webSearchModel: string; webSearchKeyPrefix: string; transcribeModel: string };
   /** Live from Gemini's model list on every load. */
@@ -511,7 +522,8 @@ export async function updateCallSettings(token: string, iceTransportPolicy: Call
 /** Null clears an override (back to the default). Returns the backend's message on failure. */
 export async function updateAiSettings(
   token: string,
-  body: { textModel: string | null; audioModel: string | null; fallbackTextModel: string | null; fallbackAudioModel: string | null },
+  body: { textModel: string | null; audioModel: string | null; fallbackTextModel: string | null; fallbackAudioModel: string | null;
+    gptTimeoutSeconds?: number | null; textReasoning?: string | null; fallbackTextReasoning?: string | null; searchModel?: string | null; fallbackSearchModel?: string | null; searchReasoning?: string | null; fallbackSearchReasoning?: string | null },
 ): Promise<{ ok: true; settings: AiSettings } | { ok: false; status: number; message: string }> {
   const res = await fetch(`${getApiBaseUrl()}/api/admin/ai-settings`, {
     method: 'PUT',
@@ -620,14 +632,49 @@ export function getWebsiteAnalytics(token: string, days: number, source = '', la
   return adminFetch<WebsiteAnalyticsReport>(`/api/admin/website-analytics?${q}`, token);
 }
 
-export type BanteraAiSettings = { model: string; defaultModel: string; liveModels: string[]; maxCallSeconds: number; voice?: string; defaultVoice?: string; voices?: { name: string; style: string; gender: string }[] };
+export type AiReasoningCapability = { mode: 'level' | 'budget' | 'fixed' | 'unknown'; description: string; options: { value: string; label: string }[] };
+export type BanteraAiSettings = { reasoning?: string; reasoningByModel?: Record<string, string>; reasoningCapabilities?: Record<string, AiReasoningCapability>; model: string; defaultModel: string; liveModels: string[]; maxCallSeconds: number; voice?: string; defaultVoice?: string; voices?: { name: string; style: string; gender: string }[] };
 export async function getBanteraAiSettings(token: string): Promise<BanteraAiSettings> {
   return adminFetch<BanteraAiSettings>('/api/admin/bantera-ai', token);
 }
-export async function updateBanteraAiSettings(token: string, model: string, voice: string) {
+export async function updateBanteraAiSettings(token: string, model: string, voice: string, reasoning?: string) {
   const response = await fetch(`${getApiBaseUrl()}/api/admin/bantera-ai`, {
     method: 'PUT', cache: 'no-store', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, voice }),
+    body: JSON.stringify({ model, voice, reasoning }),
   });
   return { ok: response.ok, status: response.status };
+}
+
+export type AiSearchTestResult = {
+  success: boolean;
+  code: string;
+  message: string;
+  provider: string;
+  model: string;
+  testId: string;
+  durationMs: number;
+  answer?: string;
+  sources?: { title: string; url: string }[];
+  queries?: string[];
+  suggestionsHtml?: string | null;
+  usedFallback?: boolean;
+};
+
+export async function testAiWebSearch(token: string, query: string): Promise<
+  { ok: true; result: AiSearchTestResult } | { ok: false; status: number; message: string }
+> {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/api/admin/ai-settings/search-test`, {
+      method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(660000),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ query }),
+    });
+    if (response.ok) return { ok: true, result: await response.json() as AiSearchTestResult };
+    return { ok: false, status: response.status, message: response.status === 429
+      ? 'Too many tests. Wait a minute and try again.'
+      : response.status === 404 ? 'The backend search-test update has not been deployed yet.'
+      : 'Could not run the search test. Check your access and try again.' };
+  } catch {
+    return { ok: false, status: 0, message: 'The search test could not be reached or timed out. Try again.' };
+  }
 }
