@@ -101,3 +101,29 @@ export async function testWebSearchAction(_prev: SearchTestState, form: FormData
   }
   return { result: response.result, query };
 }
+
+export type PaidFallbackState = { settings?: import('@/lib/dashboard-api').PaidFallbackStatus; error?: string };
+export async function savePaidFallbackAction(_prev: PaidFallbackState, form: FormData): Promise<PaidFallbackState> {
+  const token = await getAccessToken();
+  if (!token) redirect('/dashboard/login');
+  const { updatePaidFallback } = await import('@/lib/dashboard-api');
+  const result = await updatePaidFallback(token, {
+    apiKey: String(form.get('apiKey') ?? '').trim() || null,
+    removeKey: form.get('removeKey') === 'on',
+    allowedUserIds: form.getAll('allowedUserIds').map(String),
+    paidOnlyUserIds: form.getAll('paidOnlyUserIds').map(String),
+  });
+  if (!result.ok) {
+    if (result.status === 401) redirect('/dashboard/login');
+    return { error: result.message };
+  }
+  revalidatePath('/dashboard/ai');
+  return { settings: result.settings };
+}
+export async function findPaidFallbackUsers(_prev: { users?: import('@/lib/dashboard-api').PaidFallbackUser[]; error?: string }, form: FormData) {
+  const token = await getAccessToken();
+  if (!token) redirect('/dashboard/login');
+  const { searchPaidFallbackUsers } = await import('@/lib/dashboard-api');
+  try { return { users: await searchPaidFallbackUsers(token, String(form.get('query') ?? '').trim()) }; }
+  catch { return { error: 'Could not search users. Please try again.' }; }
+}

@@ -446,3 +446,13 @@ reach client JavaScript. See the backend README for persistent encrypted storage
 The dashboard search selectors offer only Gemini 2.5 Flash (`gemini-2.5-flash`) for Gemini, alongside the connected account’s GPT options. Backend Gemini searches use only `AIzaSy` keys, including fallback searches. These settings apply to backend lesson generation and dashboard tests; app AI chat web searches continue to use DuckDuckGo directly on the device.
 
 GPT attempts use a saved `ai.gptTimeoutSeconds` setting (default 180; admin range 30–300 seconds), shared by GPT text, search, and subscription tests. Missing update fields preserve the saved value; null restores the default. No migration or environment variable is needed. Each fallback gets its own attempt budget, while caller cancellation, the 20-second conversation-summary budget, and the 10-minute overall lesson limit remain authoritative. Gemini request limits and on-device app search are unchanged.
+
+## Paid Gemini key access
+
+The AI dashboard provides a separate paid Gemini key and an explicit per-user access list. Everyone uses regular keys by default. Selected users can use either **Regular keys, then paid fallback** or **Paid key only (testing)**. Fallback mode tries eligible regular keys first; paid-only mode never falls back to regular keys. Removing a user revokes future paid attempts; already connected calls are not terminated.
+
+This routing covers Gemini dialogue generation, audio/TTS, transcription and word timings, voice-message replies, and Live calls. Job requests use the job owner's identity; Live requests use the authenticated caller. Missing identity cannot use the paid key. Existing model selection remains independent. On-device app search remains on the device.
+
+The paid key and user policy are stored together as an encrypted `app_settings` value, using the existing 32-byte `ChatGptConnection__EncryptionKey`. All backend containers must retain that same encryption key. No database migration is required. Admin responses expose only a masked hint; keys never reach mobile clients. Saving a key does not enable billing at Google: use a key from the intended paid Google project. The access list starts empty.
+
+Paid-key entry accepts legacy AIza keys and longer AQ. authorization keys (up to 4096 characters). Invalid saves identify key-format versus user-selection errors and keep the typed key in the password field for correction; successful saves clear the field and display only a masked saved-key hint. Backend 1.15.1 widens `app_settings.Value` to PostgreSQL text so encrypted credentials and access lists are not constrained by the old 2000-character column.

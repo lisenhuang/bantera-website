@@ -678,3 +678,31 @@ export async function testAiWebSearch(token: string, query: string): Promise<
     return { ok: false, status: 0, message: 'The search test could not be reached or timed out. Try again.' };
   }
 }
+
+export type PaidFallbackUser = { id: string; name: string | null; email: string | null; mode: 'fallback' | 'paid_only' };
+export type PaidFallbackStatus = { storageReady: boolean; configured: boolean; hint: string | null; users: PaidFallbackUser[] };
+export async function getPaidFallback(token: string): Promise<PaidFallbackStatus> {
+  return adminFetch('/api/admin/ai-settings/paid-fallback', token);
+}
+export async function searchPaidFallbackUsers(token: string, query: string): Promise<PaidFallbackUser[]> {
+  return adminFetch(`/api/admin/ai-settings/paid-fallback/users?q=${encodeURIComponent(query)}`, token);
+}
+export async function updatePaidFallback(token: string, body: { apiKey: string | null; removeKey: boolean; allowedUserIds: string[]; paidOnlyUserIds: string[] }) {
+  const response = await fetch(`${getApiBaseUrl()}/api/admin/ai-settings/paid-fallback`, {
+    method: 'PUT', cache: 'no-store',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({})) as { code?: string };
+    const messages: Record<string, string> = {
+      invalid_key_format: 'Paste the complete Gemini API key without quotes or spaces. Both AIza and AQ. keys are accepted.',
+      invalid_users: 'Choose the users allowed to use the paid key.',
+      invalid_user: 'A selected user is no longer active. Remove them and try again.',
+      conflicting_key_changes: 'Choose either replacing the key or removing it.',
+      storage_unavailable: 'Secure key storage is unavailable on the server.',
+    };
+    return { ok: false as const, status: response.status, message: messages[error.code ?? ''] ?? 'Could not save paid fallback settings. Please try again.' };
+  }
+  return { ok: true as const, settings: await response.json() as PaidFallbackStatus };
+}

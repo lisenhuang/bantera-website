@@ -1,3 +1,5 @@
+import { PaidFallbackPanel } from './paid-fallback-panel';
+import { getPaidFallback } from '@/lib/dashboard-api';
 import Link from 'next/link';
 import { chatGptRequest, type ChatGptStatus } from '@/lib/chatgpt-connection';
 import { ChatGptConnectionPanel } from './chatgpt-connection-panel';
@@ -176,7 +178,7 @@ export default async function AiPipelinePage({ searchParams }: {
     page: Math.max(0, Number.parseInt(sp.page ?? '0', 10) || 0),
   };
 
-  const [settings, summary, events, keyHealth, chatGpt] = await Promise.all([
+  const [settings, summary, events, keyHealth, chatGpt, paidFallback] = await Promise.all([
     getAiSettings(token).catch(() => null as AiSettings | null),
     getAiPipelineSummary(token, filters.days).catch(() => null as AiPipelineSummary | null),
     listAiPipelineEvents(token, {
@@ -189,6 +191,7 @@ export default async function AiPipelinePage({ searchParams }: {
     }).catch(() => null),
     getGeminiKeyHealth(token).catch(() => null as GeminiKeyHealth | null),
     chatGptRequest<ChatGptStatus>(token).catch(() => null),
+    getPaidFallback(token).catch(() => null),
   ]);
   if (!settings && !summary && !events) redirect('/dashboard/login');
 
@@ -251,6 +254,10 @@ export default async function AiPipelinePage({ searchParams }: {
       {settings && <Card title="Test web search" subtitle="Check the response, search evidence and source links before relying on a model.">
         <SearchTestPanel model={settings.fixedModels.webSearchModel} />
       </Card>}
+
+      <Card title="Paid Gemini fallback" subtitle="An optional last-resort key, restricted to selected users.">
+        {paidFallback ? <PaidFallbackPanel initial={paidFallback} /> : <p className="text-sm text-red-600">Could not load paid fallback settings. Reload to try again.</p>}
+      </Card>
 
       {keyHealth && (
         <Card title="Gemini key health" subtitle="Current key availability across all AI audio steps.">
