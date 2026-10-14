@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import type { PaidFallbackStatus, PaidFallbackUser } from '@/lib/dashboard-api';
-import { findPaidFallbackUsers, savePaidFallbackAction, type PaidFallbackState } from './actions';
+import { findPaidFallbackUsers, savePaidFallbackAction, type PaidFallbackState } from '../ai/actions';
 
 export function PaidFallbackPanel({ initial }: { initial: PaidFallbackStatus }) {
   const [apiKey, setApiKey] = useState('');
@@ -16,7 +16,7 @@ export function PaidFallbackPanel({ initial }: { initial: PaidFallbackStatus }) 
   const current = state.settings ?? initial;
   const input = 'w-full rounded-xl border border-gray-300 dark:border-white/20 bg-transparent px-3 py-2 text-sm';
   return <div className="space-y-5">
-    <p className="text-sm text-gray-600 dark:text-gray-300">Regular Gemini keys are tried first. Only the users selected below can use this paid key as the final fallback for dialogue text, audio generation, word-timing transcription and AI voice chats. Everyone else uses regular keys only, including admins who are not selected. Paid-key-only mode skips every regular key for a selected test user.</p>
+    <p className="text-sm text-gray-600 dark:text-gray-300">This key applies across Gemini features: lesson text and audio generation, transcription, conversation summaries and voice chats. Only selected users can use it. They can also choose their mode in app Settings. Other providers keep their own credentials; app web and image searches run on the device.</p>
     <div className="rounded-xl bg-gray-50 dark:bg-white/5 p-4 text-sm">
       <strong>{current.configured ? `Paid key saved: ${current.hint}` : 'No paid fallback key saved'}</strong>
       <p className="mt-1 text-gray-500">Stored encrypted on the backend. Google billing is determined by the key’s project; Bantera cannot verify whether a key is paid. Use a separate paid project from your regular keys.</p>
@@ -46,9 +46,10 @@ export function PaidFallbackPanel({ initial }: { initial: PaidFallbackStatus }) 
           {selected.length === 0 && <p className="mt-1 text-sm text-gray-500">Nobody can use the paid key. Add users above, then save.</p>}
           <ul className="mt-2 space-y-2">{selected.map(user => <li key={user.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-50 dark:bg-white/5 p-3 text-sm">
             <input type="hidden" name="allowedUserIds" value={user.id} /><span>{user.name || user.email || user.id}{user.name && user.email ? ` · ${user.email}` : ''}</span>
+            {user.mode === 'regular_only' && <input type="hidden" name="regularOnlyUserIds" value={user.id} />}
             {user.mode === 'paid_only' && <input type="hidden" name="paidOnlyUserIds" value={user.id} />}
             <select aria-label={`Key mode for ${user.name || user.email || user.id}`} value={user.mode} onChange={event => setSelected(selected.map(s => s.id === user.id ? { ...s, mode: event.target.value as PaidFallbackUser['mode'] } : s))} className="max-w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-900 p-2">
-              <option value="fallback">Regular keys, then paid fallback</option><option value="paid_only">Paid key only (testing)</option>
+              <option value="regular_only">Regular keys only</option><option value="fallback">Regular keys, then paid fallback</option><option value="paid_only">Paid key only</option>
             </select>
             <button type="button" onClick={() => setSelected(selected.filter(s => s.id !== user.id))} className="text-red-600">Remove</button>
           </li>)}</ul>

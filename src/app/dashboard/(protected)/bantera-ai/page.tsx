@@ -1,17 +1,25 @@
 import { redirect } from 'next/navigation';
-import { getAccessToken, getBanteraAiSettings } from '@/lib/dashboard-api';
+import { getAccessToken, getBanteraAiSettings, getPaidFallback } from '@/lib/dashboard-api';
+import { PaidFallbackPanel } from './paid-fallback-panel';
 import { SettingsForm } from './settings-form';
 export const dynamic = 'force-dynamic';
 export default async function BanteraAiPage() {
   const token = await getAccessToken();
   if (!token) redirect('/dashboard/login');
-  let settings = null;
-  try { settings = await getBanteraAiSettings(token); } catch { /* Fail closed when backend is unavailable. */ }
+  const [settings, paidFallback] = await Promise.all([
+    getBanteraAiSettings(token).catch(() => null),
+    getPaidFallback(token).catch(() => null),
+  ]);
   return <div className="max-w-3xl space-y-6">
     <header><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bantera AI</h1>
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">The always-online language practice partner, shown first under Online.</p></header>
     <section aria-label="Bantera AI model" className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-gray-900 sm:p-8">
       {settings ? <SettingsForm settings={settings} /> : <p role="alert" className="text-sm text-red-600 dark:text-red-400">Live models could not be loaded. Confirm the updated backend and Gemini keys are configured, then refresh.</p>}
+    </section>
+    <section aria-labelledby="paid-fallback-title" className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-gray-900 sm:p-8">
+      <h2 id="paid-fallback-title" className="mb-2 text-lg font-semibold">Paid Gemini key</h2>
+      <p className="mb-5 text-sm text-gray-500">Control access and key preferences across Gemini AI features.</p>
+      {paidFallback ? <PaidFallbackPanel initial={paidFallback} /> : <p role="alert" className="text-sm text-red-600">Could not load paid key settings. Refresh to try again.</p>}
     </section>
     <section className="rounded-2xl bg-gray-50 p-6 text-sm leading-6 text-gray-600 dark:bg-white/5 dark:text-gray-300">
       <h2 className="font-semibold text-gray-900 dark:text-white">Conversation behaviour</h2>

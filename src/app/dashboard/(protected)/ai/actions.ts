@@ -112,12 +112,14 @@ export async function savePaidFallbackAction(_prev: PaidFallbackState, form: For
     removeKey: form.get('removeKey') === 'on',
     allowedUserIds: form.getAll('allowedUserIds').map(String),
     paidOnlyUserIds: form.getAll('paidOnlyUserIds').map(String),
+    regularOnlyUserIds: form.getAll('regularOnlyUserIds').map(String),
   });
   if (!result.ok) {
     if (result.status === 401) redirect('/dashboard/login');
     return { error: result.message };
   }
   revalidatePath('/dashboard/ai');
+  revalidatePath('/dashboard/bantera-ai');
   return { settings: result.settings };
 }
 export async function findPaidFallbackUsers(_prev: { users?: import('@/lib/dashboard-api').PaidFallbackUser[]; error?: string }, form: FormData) {

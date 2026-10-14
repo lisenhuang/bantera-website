@@ -679,7 +679,7 @@ export async function testAiWebSearch(token: string, query: string): Promise<
   }
 }
 
-export type PaidFallbackUser = { id: string; name: string | null; email: string | null; mode: 'fallback' | 'paid_only' };
+export type PaidFallbackUser = { id: string; name: string | null; email: string | null; mode: 'regular_only' | 'fallback' | 'paid_only' };
 export type PaidFallbackStatus = { storageReady: boolean; configured: boolean; hint: string | null; users: PaidFallbackUser[] };
 export async function getPaidFallback(token: string): Promise<PaidFallbackStatus> {
   return adminFetch('/api/admin/ai-settings/paid-fallback', token);
@@ -687,7 +687,7 @@ export async function getPaidFallback(token: string): Promise<PaidFallbackStatus
 export async function searchPaidFallbackUsers(token: string, query: string): Promise<PaidFallbackUser[]> {
   return adminFetch(`/api/admin/ai-settings/paid-fallback/users?q=${encodeURIComponent(query)}`, token);
 }
-export async function updatePaidFallback(token: string, body: { apiKey: string | null; removeKey: boolean; allowedUserIds: string[]; paidOnlyUserIds: string[] }) {
+export async function updatePaidFallback(token: string, body: { apiKey: string | null; removeKey: boolean; allowedUserIds: string[]; paidOnlyUserIds: string[]; regularOnlyUserIds: string[] }) {
   const response = await fetch(`${getApiBaseUrl()}/api/admin/ai-settings/paid-fallback`, {
     method: 'PUT', cache: 'no-store',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
