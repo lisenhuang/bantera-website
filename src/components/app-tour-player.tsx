@@ -19,7 +19,7 @@ export function AppTourPlayer() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[360px] md:max-w-[min(360px,calc((100svh-220px)*9/16))]">
+    <div className="mx-auto w-full max-w-[360px] md:max-w-[clamp(240px,calc((100svh-220px)*9/16),360px)]">
       <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-[#f5f2fc] shadow-2xl shadow-black/30">
         <video
           ref={videoRef}
