@@ -10,7 +10,7 @@
   .hero p { font-size: 13px; max-width: 580px; }
   .hero p > span:first-child { display: inline; }
   .hero p > span:last-child { display: none; }
-  .hero > div:last-child > div:last-child { padding-top: 0; }
-  .hero > div:last-child > div:last-child a { padding: 12px 20px; font-size: 14px; }
-  .hero > div:last-child > div:last-child > div { display: none; }
+  .heroActions { padding-top: 0; }
+  .heroActions a { padding: 12px 20px; font-size: 14px; }
+  .heroActions > div { display: none; }
 }
