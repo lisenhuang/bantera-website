@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
 import {
   listModelsAction,
   generateDialogueAction,
@@ -686,18 +686,25 @@ function StudioScreen({ apiKey, onChangeKey }: { apiKey: string; onChangeKey: ()
 // ─────────────────────────────────────────────────────────────────
 // MAIN PAGE — key gate
 // ─────────────────────────────────────────────────────────────────
-export default function WebappStudioPage() {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [showSetup, setShowSetup] = useState(false);
+function subscribeToStudioKey(onChange: () => void) {
+  window.addEventListener('storage', onChange);
+  window.addEventListener('bantera-studio-key-change', onChange);
+  return () => {
+    window.removeEventListener('storage', onChange);
+    window.removeEventListener('bantera-studio-key-change', onChange);
+  };
+}
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_API);
-    setApiKey(saved ?? '');
-  }, []);
+function readStudioKey() { return localStorage.getItem(STORAGE_KEY_API) ?? ''; }
+function serverStudioKey() { return null; }
+
+export default function WebappStudioPage() {
+  const apiKey = useSyncExternalStore(subscribeToStudioKey, readStudioKey, serverStudioKey);
+  const [showSetup, setShowSetup] = useState(false);
 
   function handleSave(key: string) {
     localStorage.setItem(STORAGE_KEY_API, key);
-    setApiKey(key);
+    window.dispatchEvent(new Event('bantera-studio-key-change'));
     setShowSetup(false);
   }
   function handleChangeKey() {

@@ -112,10 +112,8 @@ function MessagesContent() {
   const [result, setResult] = useState<AdminPagedResult<AdminMessageListItem> | null>(null);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
-
-  function load() {
-    setError(null);
+  useEffect(() => {
+    const controller = new AbortController();
     const params = new URLSearchParams();
     if (threadType) params.set('threadType', threadType);
     if (from) params.set('from', from);
@@ -123,18 +121,22 @@ function MessagesContent() {
     params.set('limit', String(LIMIT));
     params.set('offset', String(offset));
 
-    startTransition(() => {
-      fetch(`/api/dashboard/messages?${params.toString()}`)
-        .then((r) => {
-          if (!r.ok) throw new Error('Failed');
-          return r.json() as Promise<AdminPagedResult<AdminMessageListItem>>;
-        })
-        .then((data) => { setResult(data); setDeletedIds(new Set()); })
-        .catch(() => setError('Failed to load voice messages.'));
-    });
-  }
-
-  useEffect(() => { load(); }, [threadType, from, to, offset]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetch(`/api/dashboard/messages?${params.toString()}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed');
+        return response.json() as Promise<AdminPagedResult<AdminMessageListItem>>;
+      })
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setError(null);
+        setResult(data);
+        setDeletedIds(new Set());
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setError('Failed to load voice messages.');
+      });
+    return () => controller.abort();
+  }, [threadType, from, to, offset]);
 
   const totalPages = result ? Math.ceil(result.total / LIMIT) : 1;
 

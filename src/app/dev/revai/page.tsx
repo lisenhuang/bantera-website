@@ -226,7 +226,7 @@ export default function RevAIPage() {
   useEffect(() => () => { if (localWavObjectUrl.current) URL.revokeObjectURL(localWavObjectUrl.current); }, []);
 
   useEffect(() => {
-    if (!loading) { setElapsed(0); return; }
+    if (!loading) return;
     const id = setInterval(() => setElapsed((s) => s + 1), 1000);
     return () => clearInterval(id);
   }, [loading]);
@@ -318,6 +318,7 @@ export default function RevAIPage() {
 
   async function handleSubmit() {
     stopPlayback();
+    setElapsed(0);
     setLoading(true);
     setError(null);
     setRawJson(null);
@@ -330,6 +331,7 @@ export default function RevAIPage() {
     });
     setLogs(res.logs);
     setLoading(false);
+    setElapsed(0);
     if (res.success) {
       setRawJson(res.json);
       try {

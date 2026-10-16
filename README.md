@@ -1,5 +1,9 @@
 # 🌐 Bantera — Website & Admin Dashboard
 
+[![CI](https://github.com/lisenhuang/bantera-website/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lisenhuang/bantera-website/actions/workflows/ci.yml)
+[![Contributing](https://img.shields.io/badge/Contributing-guide-blue)](CONTRIBUTING.md)
+[![Security policy](https://img.shields.io/badge/Security-reporting-blue)](SECURITY.md)
+
 > **Introduction site, web practice platform, and admin dashboard** for the Bantera language learning app.
 
 [![App Store](https://img.shields.io/badge/App_Store-Download-blue?logo=apple&logoColor=white)](https://apps.apple.com/app/id6761799720)
@@ -8,13 +12,27 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss)
 
+## Engineering quality
+
+Maintained by [@lisenhuang](https://github.com/lisenhuang), with reproducible local checks, regression tests, and documented review expectations.
+
+CI uses Node 24 and the pnpm version in `package.json`, installs the frozen lockfile, runs ESLint and strict TypeScript checks, executes the Node regression tests, uploads JUnit results, and creates a production Next.js build. Tests cover language filtering, word highlighting and model-call timeline behavior. Existing ESLint warnings remain visible; lint errors fail CI. These checks do not replace browser interaction or live API testing.
+
+| Repository | Latest `main` CI |
+| --- | --- |
+| [app](https://github.com/lisenhuang/bantera-app) | [![CI](https://github.com/lisenhuang/bantera-app/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lisenhuang/bantera-app/actions/workflows/ci.yml) |
+| [backend](https://github.com/lisenhuang/bantera-backend) | [![CI](https://github.com/lisenhuang/bantera-backend/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lisenhuang/bantera-backend/actions/workflows/ci.yml) |
+| [website](https://github.com/lisenhuang/bantera-website) | [![CI](https://github.com/lisenhuang/bantera-website/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lisenhuang/bantera-website/actions/workflows/ci.yml) |
+
+The badges show real workflow results, including failures. Test reports are retained for 14 days. [Contribution guidance](CONTRIBUTING.md), [maintainer ownership](.github/CODEOWNERS), [dependency update configuration](.github/dependabot.yml), and [private security reporting](SECURITY.md) describe how changes are maintained. CI does not deploy production releases.
+
 ---
 
 ## 🔗 Related Repositories
 
 | Repo | Description |
 |---|---|
-| [**bantera**](https://github.com/lisenhuang/bantera) | Flutter iOS app |
+| [**bantera**](https://github.com/lisenhuang/bantera-app) | Flutter iOS app |
 | [**bantera-backend**](https://github.com/lisenhuang/bantera-backend) | .NET REST API backend |
 | **This repo** | Next.js website + admin dashboard (you are here) |
 

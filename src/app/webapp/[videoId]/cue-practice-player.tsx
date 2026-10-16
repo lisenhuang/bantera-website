@@ -68,8 +68,10 @@ export function CuePracticePlayer({ audio }: CuePracticePlayerProps) {
       return;
     }
 
-    setIsAudioReady(false);
-    setPlaybackError(null);
+    const handlePreparing = () => {
+      setIsAudioReady(false);
+      setPlaybackError(null);
+    };
 
     const handleReady = () => {
       setIsAudioReady(true);
@@ -84,6 +86,8 @@ export function CuePracticePlayer({ audio }: CuePracticePlayerProps) {
       );
     };
 
+    element.addEventListener("loadstart", handlePreparing);
+    element.addEventListener("emptied", handlePreparing);
     element.addEventListener("loadedmetadata", handleReady);
     element.addEventListener("loadeddata", handleReady);
     element.addEventListener("canplay", handleReady);
@@ -93,11 +97,9 @@ export function CuePracticePlayer({ audio }: CuePracticePlayerProps) {
     element.addEventListener("error", handleError);
     element.load();
 
-    if (element.readyState >= HTMLMediaElement.HAVE_METADATA) {
-      setIsAudioReady(true);
-    }
-
     return () => {
+      element.removeEventListener("loadstart", handlePreparing);
+      element.removeEventListener("emptied", handlePreparing);
       element.removeEventListener("loadedmetadata", handleReady);
       element.removeEventListener("loadeddata", handleReady);
       element.removeEventListener("canplay", handleReady);
