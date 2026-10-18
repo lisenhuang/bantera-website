@@ -15,7 +15,7 @@ export default function PrivacyPage() {
     <SiteLegalChrome activePage="privacy">
       <main className="max-w-3xl mx-auto px-6 py-12 pb-24">
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-          Last updated: September 29, 2026
+          Last updated: October 18, 2026
         </p>
         <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white mb-8">
           Privacy Policy
@@ -120,6 +120,89 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
+          <section id="ai-services" className="space-y-3 scroll-mt-24">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              AI services and your permission
+            </h2>
+            <p>
+              Bantera uses Google for AI conversations, lessons, speech generation,
+              conversation summaries, transcript correction, and reminders. We use
+              Cloudflare for AI-generated avatars and lesson cover images. In app
+              version 2.18.5 and later, we explain the data and recipients and ask
+              you to choose “Agree and continue” before enabling these transfers.
+              Microphone or photo access alone does not grant permission to share
+              content with an AI provider.
+            </p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>
+                <strong>Google:</strong> Depending on the feature, we send voice
+                audio, transcripts, images you attach to AI chat, prompts and lesson
+                scenarios, relevant chat history and summaries, your name, native
+                and learning languages, learning level, practice activity, saved
+                lessons and phrases, requested vocabulary, local time and time zone,
+                and reminder details. These inputs come from your submissions,
+                profile, preferences, and relevant learning records on your device
+                or in your Bantera account. Google processes them to understand your
+                input and generate personalised replies, summaries, lessons, and speech.
+              </li>
+              <li>
+                <strong>Cloudflare:</strong> Avatar generation sends your name,
+                selected avatar gender, and language preferences as a text prompt.
+                Lesson cover generation sends the lesson title and language.
+                Cloudflare processes these prompts to generate images. This does
+                not require sending your existing profile photo to its image model.
+              </li>
+            </ul>
+            <p>
+              These AI requests pass through Bantera’s servers. We send the data
+              relevant to the requested feature, not every category for every request.
+              When you use web or image search within AI chat, search queries may
+              also be sent from your device to Microsoft Bing, DuckDuckGo, or Wikimedia
+              Commons. Retrieved results may be sent to Google to help answer you.
+              Those services and image hosts receive ordinary connection information,
+              such as your IP address, when your device contacts them.
+            </p>
+            <p>
+              Choose “Not now” to continue using features that do not need AI.
+              Permission is saved for your account on this device, separately from
+              chat history. You can review the disclosure and turn off future AI
+              sharing in Settings &gt; AI data sharing. Turning it off stops new AI
+              requests from this device and ends active AI conversations. Requests
+              already sent may finish. Previously scheduled reminders can continue;
+              use the reminders control on that settings page to cancel them.
+              Turning off sharing does not delete data already sent or change
+              permissions on another device.
+            </p>
+            <p>
+              Received AI conversation history and its saved summary are stored on
+              your device. Relevant portions are transmitted again when needed for
+              a new reply or summary. Reminder schedules and notes are stored on
+              Bantera’s server; generated voice reminder audio is stored until
+              received or cancelled, for up to seven days. Generated lessons and
+              images are stored with your account. You can clear AI chat history,
+              cancel reminders, delete supported content, or request deletion through
+              the contact details below.
+            </p>
+            <p>
+              We require third parties that process personal data for Bantera to
+              provide the same or an equivalent level of protection described in this
+              policy, including appropriate security, confidentiality, and limits on
+              use and retention. Provider processing is also subject to their
+              applicable service terms. Google’s retention and service-improvement
+              practices depend on the service tier: its unpaid services may use
+              submitted content and responses to improve products and may involve
+              human review; its paid services do not use prompts or responses for
+              product improvement, but may retain them for safety and legal purposes.
+              Do not include sensitive or confidential information in AI requests.
+              Cloudflare states that Workers AI does not use customer content to
+              train models; limited operational, security, and legal retention can
+              still apply. See{' '}
+              <a href="https://ai.google.dev/gemini-api/terms" className="underline underline-offset-2">Google’s AI service terms</a>,{' '}
+              <a href="https://policies.google.com/privacy" className="underline underline-offset-2">Google’s Privacy Policy</a>, and{' '}
+              <a href="https://developers.cloudflare.com/workers-ai/platform/data-usage/" className="underline underline-offset-2">Cloudflare’s AI data practices</a>.
+            </p>
+          </section>
+
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
               Legal bases (where applicable)
@@ -201,8 +284,9 @@ export default function PrivacyPage() {
             <p>
               We may update this Privacy Policy from time to time. We will post
               the updated version on this page and change the &ldquo;Last
-              updated&rdquo; date. Continued use of Bantera after changes means
-              you accept the updated policy, to the extent permitted by law.
+              updated&rdquo; date. Where a change requires new permission for
+              personal-data sharing, we will ask for that permission before the
+              new sharing begins. Continued use alone is not consent to AI sharing.
             </p>
           </section>
 
