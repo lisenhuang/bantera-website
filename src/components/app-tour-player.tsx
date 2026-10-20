@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 
-const VIDEO_URL = '/videos/bantera-app-tour-20261015.mp4';
+const VIDEO_URL = '/videos/bantera-app-tour-20261020.mp4';
 
 export function AppTourPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -19,24 +19,25 @@ export function AppTourPlayer() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[360px] md:max-w-[clamp(240px,calc((100svh-220px)*9/16),360px)]">
-      <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-[#f5f2fc] shadow-2xl shadow-black/30">
+    <div className="mx-auto w-full">
+      <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-[#12101f] sm:rounded-3xl shadow-2xl shadow-black/30">
         <video
           ref={videoRef}
           id="app-tour-video"
           aria-label="Bantera app tour with English narration"
           aria-describedby="app-tour-help"
-          width={1080}
-          height={1920}
+          width={1920}
+          height={1080}
           controls
           playsInline
           preload="none"
-          poster="/videos/bantera-app-tour-20261015.webp"
-          className="block aspect-[9/16] h-auto w-full"
+          poster="/videos/bantera-app-tour-20261020.webp"
+          className="block aspect-video h-auto w-full"
           onPlay={() => { setStarted(true); setFailed(false); }}
           onError={() => setFailed(true)}
         >
           <source src={VIDEO_URL} type="video/mp4" />
+          <track src="/videos/bantera-app-tour-20261020.vtt" kind="captions" srcLang="en" label="English" />
           Your browser cannot play this video. <a href={VIDEO_URL}>Open the app tour</a>.
         </video>
         {!started && !failed && (
@@ -44,10 +45,10 @@ export function AppTourPlayer() {
             type="button"
             onClick={play}
             aria-label="Play the Bantera app tour with sound"
-            className="absolute inset-x-6 top-1/2 flex -translate-y-1/2 items-center justify-center gap-3 rounded-2xl bg-gray-950/95 px-5 py-5 text-sm font-bold text-white shadow-xl transition-colors hover:bg-orange-600 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-orange-400"
+            className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 whitespace-nowrap items-center justify-center gap-3 rounded-2xl bg-gray-950/95 px-5 py-4 sm:px-7 sm:py-5 text-sm font-bold text-white shadow-xl transition-colors hover:bg-orange-600 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-orange-400"
           >
             <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6 fill-current"><path d="M8 5v14l11-7z" /></svg>
-            Play tour <span className="font-normal text-white/70">2:42</span>
+            Play tour <span className="font-normal text-white/70">4:49</span>
           </button>
         )}
       </div>

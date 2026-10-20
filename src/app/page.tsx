@@ -99,45 +99,6 @@ const HOW_IT_WORKS = [
 
 
 
-const TOUR_TRANSCRIPT = [
-  {
-    "title": "Meet Bantera",
-    "text": "Meet Bantera, a place to build your listening and speaking skills, one conversation at a time. Start on your home screen. Today's widget shows two thousand words listened to, and one thousand, two hundred and thirty words spoken. Tap to jump straight into Bantera AI."
-  },
-  {
-    "title": "Find your next lesson",
-    "text": "In Discover, explore audio lessons about everyday life, work, and current topics. Search titles or transcripts, choose an accent, and filter by difficulty. Open a lesson to see its length, word count, transcript, and creator, then start practising."
-  },
-  {
-    "title": "Listen, repeat, improve",
-    "text": "Practise one phrase at a time, with words highlighted as the audio plays. Reveal the transcript when you need it, translate a phrase, or adjust playback speed. Shadowing mode lets you repeat cues and add pauses for speaking. Use Record to practise your own voice and compare it with the original. Save useful phrases and return to your recordings later."
-  },
-  {
-    "title": "Make practice personal",
-    "text": "Want a lesson that fits your day? Choose Generate with AI. Set your level, pick a scenario such as a coffee shop or job interview, or enter your own topic. Choose the duration and review the community-sharing requirement before generating your lesson."
-  },
-  {
-    "title": "Your AI conversation partner",
-    "text": "Bantera AI supports voice messages and live audio conversations, so you can practise speaking naturally. Ask for explanations, translations, or help exploring a topic, including web and image results. Keep useful words in Vocabulary, with meanings, examples, and review reminders. You can also ask the AI to send a reminder, or arrange a call, and manage those requests here."
-  },
-  {
-    "title": "Practise with people",
-    "text": "In Chats, join a language group or find another learner. Exchange voice messages in a direct conversation, with transcription and translation support. When you want to talk live, choose an audio or video call. Conversation controls help you manage notifications and blocked contacts."
-  },
-  {
-    "title": "See your progress grow",
-    "text": "Your profile brings practice history, saved lessons, and saved phrases together. Pick up where you left off, set daily listening and speaking goals, and schedule a reminder. Track today's words, weekly totals, and long-term progress with activity charts. You can also share an achievement card. The sample account here has already listened to two thousand words and spoken over twelve hundred today."
-  },
-  {
-    "title": "Make Bantera yours",
-    "text": "Personalise Bantera with your native and learning languages, including regional accents. Choose your display language and a light, dark, or system theme. Settings also brings together notifications, permissions, account controls, and ways to share the app."
-  },
-  {
-    "title": "Small moments. Daily progress.",
-    "text": "Discover a lesson. Practise a conversation. Build a daily habit. That's Bantera. Your next conversation starts here."
-  }
-];
-
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white font-sans antialiased transition-colors duration-300">
@@ -235,45 +196,37 @@ export default function HomePage() {
 
           <a href="#app-tour" className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-gray-200 underline decoration-white/30 underline-offset-4 hover:text-orange-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-400">
             <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-current"><path d="M8 5v14l11-7z" /></svg>
-            Watch the app tour <span className="font-normal text-gray-400">· 2:42</span>
+            Watch the app tour <span className="font-normal text-gray-400">· 4:49</span>
           </a>
         </div>
       </section>
 
       <section id="app-tour" aria-labelledby="app-tour-heading" className="scroll-mt-20 border-t border-white/10 bg-gray-950 px-5 py-16 sm:px-6 sm:py-24">
-        <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.1fr_1fr] md:gap-16">
-          <div>
+        <div className="mx-auto max-w-6xl space-y-8 sm:space-y-10">
+          <div className="mx-auto max-w-2xl text-center">
             <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-orange-400">See Bantera in action</p>
             <h2 id="app-tour-heading" className="text-3xl font-black leading-tight tracking-tight text-white sm:text-5xl">
               Your next conversation<br className="hidden sm:block" /> starts here.
             </h2>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-400 sm:text-lg">
-              Take a quick look inside Bantera. From your first lesson to your daily progress, see how listening and speaking fit into everyday life.
+            <p className="mt-5 text-base leading-relaxed text-gray-400 sm:text-lg">
+              From short Practice exercises to AI conversations and daily goals, see how listening and speaking fit into everyday life.
             </p>
-            <ul className="mt-7 hidden space-y-4 text-sm leading-relaxed text-gray-300 md:block">
-              {[
-                ['01', 'Listen, repeat, and record', 'Discover lessons and practise one phrase at a time.'],
-                ['02', 'Keep the conversation going', 'Explore Bantera AI and language exchange.'],
-                ['03', 'See your progress every day', 'Follow your listening and speaking goals, right from your home screen.'],
-              ].map(([number, title, description]) => (
-                <li key={number} className="flex gap-4">
-                  <span className="mt-0.5 font-mono text-xs text-orange-400" aria-hidden="true">{number}</span>
-                  <div><p className="font-semibold text-white">{title}</p><p className="mt-1 text-gray-400">{description}</p></div>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-7 text-xs text-gray-500">2 min 42 sec · English narration · iPhone app walkthrough</p>
+            <p className="mt-5 text-xs text-gray-500">4 min 49 sec · English narration · iPhone app walkthrough</p>
           </div>
           <AppTourPlayer />
-        </div>
-        <details className="mx-auto mt-10 max-w-5xl rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-gray-300">
-          <summary className="cursor-pointer rounded font-semibold text-gray-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-400">Read the video transcript</summary>
-          <div className="mt-5 max-w-3xl space-y-5 leading-relaxed">
-            {TOUR_TRANSCRIPT.map(({ title, text }) => (
-              <div key={title}><h3 className="mb-1 font-semibold text-white">{title}</h3><p>{text}</p></div>
+          <ul className="grid gap-6 text-sm leading-relaxed text-gray-300 sm:grid-cols-3 sm:gap-8">
+            {[
+              ['01', 'Listen, choose, and speak', 'Hear a short cue and say the reply that fits.'],
+              ['02', 'Keep the conversation going', 'Explore Bantera AI and language exchange.'],
+              ['03', 'See your progress every day', 'Follow your listening and speaking goals and celebrate each milestone.'],
+            ].map(([number, title, description]) => (
+              <li key={number} className="flex gap-4">
+                <span className="mt-0.5 font-mono text-xs text-orange-400" aria-hidden="true">{number}</span>
+                <div><p className="font-semibold text-white">{title}</p><p className="mt-1 text-gray-400">{description}</p></div>
+              </li>
             ))}
-          </div>
-        </details>
+          </ul>
+        </div>
       </section>
 
       {/* ── Language pills ───────────────────────────────────── */}
