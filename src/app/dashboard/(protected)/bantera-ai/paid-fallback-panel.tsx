@@ -6,9 +6,13 @@ import { findPaidFallbackUsers, savePaidFallbackAction, type PaidFallbackState }
 
 export function PaidFallbackPanel({ initial }: { initial: PaidFallbackStatus }) {
   const [apiKey, setApiKey] = useState('');
+  const [practiceAudioFallback, setPracticeAudioFallback] = useState(initial.practiceAudioFallback ?? false);
   const [state, save, saving] = useActionState<PaidFallbackState, FormData>(async (previous, form) => {
     const result = await savePaidFallbackAction(previous, form);
-    if (result.settings) setApiKey('');
+    if (result.settings) {
+      setApiKey('');
+      setPracticeAudioFallback(result.settings.practiceAudioFallback ?? false);
+    }
     return result;
   }, {});
   const [search, find, searching] = useActionState<{ users?: PaidFallbackUser[]; error?: string }, FormData>(findPaidFallbackUsers, {});
@@ -16,7 +20,7 @@ export function PaidFallbackPanel({ initial }: { initial: PaidFallbackStatus }) 
   const current = state.settings ?? initial;
   const input = 'w-full rounded-xl border border-gray-300 dark:border-white/20 bg-transparent px-3 py-2 text-sm';
   return <div className="space-y-5">
-    <p className="text-sm text-gray-600 dark:text-gray-300">This key applies across Gemini features: lesson text and audio generation, transcription, conversation summaries and voice chats. Only selected users can use it. They can also choose their mode in app Settings. Other providers keep their own credentials; app web and image searches run on the device.</p>
+    <p className="text-sm text-gray-600 dark:text-gray-300">This key applies across Gemini features: lesson text and audio generation, transcription, conversation summaries and voice chats. User features require access below. Shared Practice audio has a separate fallback option. They can also choose their mode in app Settings. Other providers keep their own credentials; app web and image searches run on the device.</p>
     <div className="rounded-xl bg-gray-50 dark:bg-white/5 p-4 text-sm">
       <strong>{current.configured ? `Paid key saved: ${current.hint}` : 'No paid fallback key saved'}</strong>
       <p className="mt-1 text-gray-500">Stored encrypted on the backend. Google billing is determined by the key’s project; Bantera cannot verify whether a key is paid. Use a separate paid project from your regular keys.</p>
@@ -42,8 +46,16 @@ export function PaidFallbackPanel({ initial }: { initial: PaidFallbackStatus }) 
           <input id="paid-key" name="apiKey" type="password" autoComplete="new-password" maxLength={4096} value={apiKey} onChange={event => setApiKey(event.target.value)} className={`${input} mt-2`} placeholder={current.configured ? 'Leave blank to keep the saved key' : 'Paste your paid project’s API key'} />
           <p className="mt-1 text-xs text-gray-500">Accepts AIza and AQ. keys. After saving, the status above shows a masked key.</p>
         </div>
+        <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-400/25 dark:bg-violet-400/5">
+          <label className="flex cursor-pointer items-start gap-3" htmlFor="practice-audio-fallback">
+            <input id="practice-audio-fallback" name="practiceAudioFallback" type="checkbox" checked={practiceAudioFallback} onChange={event => setPracticeAudioFallback(event.target.checked)} aria-describedby="practice-audio-fallback-help" className="mt-0.5 size-5 shrink-0 accent-violet-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-600" />
+            <span className="text-sm font-medium">Use the paid Gemini key if all regular keys fail for Practice audio</span>
+          </label>
+          <p id="practice-audio-fallback-help" className="mt-2 pl-8 text-sm text-gray-600 dark:text-gray-300">Applies to shared Practice materials for everyone. Regular keys are tried first for each audio model; keys in cooldown are skipped. Paid usage may incur charges. Save to apply.</p>
+          {!current.configured && <p className="mt-2 pl-8 text-xs text-gray-500">A saved paid key is required before this option can take effect.</p>}
+        </div>
         <div><p className="text-sm font-medium">Allowed users ({selected.length})</p>
-          {selected.length === 0 && <p className="mt-1 text-sm text-gray-500">Nobody can use the paid key. Add users above, then save.</p>}
+          {selected.length === 0 && <p className="mt-1 text-sm text-gray-500">No users have individual access. Shared Practice audio follows the option above.</p>}
           <ul className="mt-2 space-y-2">{selected.map(user => <li key={user.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-50 dark:bg-white/5 p-3 text-sm">
             <input type="hidden" name="allowedUserIds" value={user.id} /><span>{user.name || user.email || user.id}{user.name && user.email ? ` · ${user.email}` : ''}</span>
             {user.mode === 'regular_only' && <input type="hidden" name="regularOnlyUserIds" value={user.id} />}

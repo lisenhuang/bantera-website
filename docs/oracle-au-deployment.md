@@ -224,3 +224,23 @@ python3 /home/ubuntu/releases/bantera-20261008-10/deploy.py rollback
 It restores the previous website/connector and its old APK download, preserves
 backend 1.4.1 and all database writes, then stops the candidate website. Source
 changes and file deletions remain uncommitted; this deployment did not push Git.
+
+## 20 October 2026: Practice audio paid-fallback control
+
+Website **0.12.0**, release **bantera-20261020-6**, deployed with compatible backend
+1.24.1. Completed **2026-10-20 00:04:53 UTC**, with **132/132** public availability
+samples returning 200 and both public version markers verified. Node 24 production
+build, lint, type checking and 12 tests passed. Authenticated public-dashboard
+verification confirmed the labelled checkbox, help text and default-off state.
+The checkbox is in Bantera AI → Paid fallback; changes require Save paid fallback
+settings. It applies to shared Practice audio independently of per-user call modes.
+No key value or setting was changed during verification. Existing saved keys can
+be retained by leaving the replacement-key field blank.
+
+The design uses an accessible labelled checkbox with explanatory copy inside the
+existing settings panel, informed by Carbon's checkbox guidance:
+https://www.carbondesignsystem.com/building-blocks/core/components/checkbox/guidelines
+The deployed working tree also contains the previously prepared AI-consent privacy
+copy. APK distribution files were not changed. No Git commit/push was performed.
+For rollback and full source/candidate provenance, see the backend runbook section
+for this release and `/home/ubuntu/releases/bantera-20261020-6` on Oracle AU.

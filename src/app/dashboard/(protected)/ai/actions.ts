@@ -110,6 +110,7 @@ export async function savePaidFallbackAction(_prev: PaidFallbackState, form: For
   const result = await updatePaidFallback(token, {
     apiKey: String(form.get('apiKey') ?? '').trim() || null,
     removeKey: form.get('removeKey') === 'on',
+    practiceAudioFallback: form.get('practiceAudioFallback') === 'on',
     allowedUserIds: form.getAll('allowedUserIds').map(String),
     paidOnlyUserIds: form.getAll('paidOnlyUserIds').map(String),
     regularOnlyUserIds: form.getAll('regularOnlyUserIds').map(String),
