@@ -1,5 +1,24 @@
 import { cookies } from 'next/headers';
 import { getApiBaseUrl } from './bantera-api';
+import type { RankingFilters } from './word-rankings';
+
+export type WordRankingReport = {
+  asOf: string;
+  period: string;
+  metric: string;
+  fromDate: string | null;
+  throughDate: string;
+  dateReference: string;
+  offset: number;
+  limit: number;
+  hasMore: boolean;
+  users: { rank: number; userId: string; name: string | null; listenedWords: number; spokenWords: number }[];
+};
+
+export async function getWordRankings(token: string, filters: RankingFilters): Promise<WordRankingReport> {
+  const query = new URLSearchParams({ period: filters.period, metric: filters.metric, offset: String(filters.offset), limit: '20' });
+  return adminFetch<WordRankingReport>(`/api/admin/word-rankings?${query}`, token);
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

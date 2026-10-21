@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { getAccessToken, getAdminAnalytics, type AdminAnalytics } from '@/lib/dashboard-api';
 import { LanguagePanels } from './_components/audience-panels';
 import { BarList, ColumnChart, LineChart, PartToWholeBar } from './_components/charts';
+import { WordRankings } from './_components/word-rankings';
+import { rankingHref, type RankingQuery } from '@/lib/word-rankings';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,11 +81,12 @@ function Card({ title, subtitle, children }: { title: string; subtitle?: string;
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<RankingQuery> }) {
   const token = await getAccessToken();
   if (!token) redirect('/dashboard/login');
 
-  const { range } = await searchParams;
+  const query = await searchParams;
+  const { range } = query;
   const days = RANGES.find((r) => String(r.days) === range)?.days ?? 30;
   const rangeLabel = RANGES.find((r) => r.days === days)!.label;
 
@@ -118,6 +121,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           sub={`${kpis.uploads.toLocaleString('en')} uploads · ${kpis.aiAudio.toLocaleString('en')} AI audio`} />
       </div>
 
+      <WordRankings token={token} query={query} />
+
       {/* Trends — the range filter sits above exactly what it scopes */}
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -129,7 +134,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </div>
           <nav aria-label="Date range" className="inline-flex rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-0.5 text-xs font-medium">
             {RANGES.map((r) => (
-              <Link key={r.days} href={`/dashboard?range=${r.days}`} scroll={false}
+              <Link key={r.days} href={rankingHref({ ...query, range: String(r.days) }).replace('#word-rankings', '')} scroll={false}
                 aria-current={r.days === days ? 'page' : undefined}
                 className={`rounded-lg px-3 py-1.5 transition-colors ${
                   r.days === days
