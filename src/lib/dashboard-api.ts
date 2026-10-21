@@ -706,3 +706,30 @@ export async function updatePaidFallback(token: string, body: { apiKey: string |
   }
   return { ok: true as const, settings: await response.json() as PaidFallbackStatus };
 }
+
+export type RegularKeyItem = { id: string; hint: string; source: 'environment' | 'dashboard'; remarks: string; enabled: boolean };
+export type RegularKeyStatus = { storageReady: boolean; items: RegularKeyItem[] };
+export async function getRegularKeys(token: string): Promise<RegularKeyStatus> {
+  return adminFetch('/api/admin/ai-settings/regular-keys', token);
+}
+export async function mutateRegularKey(token: string, method: 'POST' | 'PUT' | 'DELETE', id: string | null, body?: { apiKey?: string; remarks?: string; enabled?: boolean }) {
+  const response = await fetch(`${getApiBaseUrl()}/api/admin/ai-settings/regular-keys${id ? `/${encodeURIComponent(id)}` : ''}`, {
+    method, cache: 'no-store', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({})) as { code?: string };
+    const messages: Record<string, string> = {
+      invalid_key_format: 'Paste the complete Gemini API key without quotes or spaces.',
+      invalid_remarks: 'Remarks must be 1,000 characters or fewer.',
+      duplicate_key: 'This key is already in the pool. Edit its remarks below.',
+      paid_key: 'This is the saved paid fallback key. Manage it in Bantera AI.',
+      pool_full: 'The dashboard supports up to 200 saved keys. Remove an unused key first.',
+      key_not_found: 'This key is no longer available. Refresh the page.',
+      environment_key: 'Environment keys can be disabled here, but must be removed on the server.',
+      storage_unavailable: 'Secure key storage is unavailable on the server.',
+    };
+    return { ok: false as const, status: response.status, message: messages[error.code ?? ''] ?? 'Could not save the change. Please try again.' };
+  }
+  return { ok: true as const };
+}

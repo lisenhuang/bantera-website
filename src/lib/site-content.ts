@@ -52,6 +52,10 @@ export const FAQS: readonly { q: string; a: string }[] = [
     a: 'Flashcards can help you review vocabulary. Bantera focuses on listening to connected speech and saying phrases aloud: replay audio, check the transcript, repeat, and compare recordings. These methods can complement each other.',
   },
   {
+    q: 'What is A0 practice in Bantera?',
+    a: 'A0 is Bantera’s starting-from-zero stage before A1, introduced in mobile app version 3.1.0. It uses single words, short everyday expressions and replayable audio. Meanings appear automatically where device translation is supported. A0 is inspired by Pre-A1 but is not an official CEFR level. Existing learners keep their progress and can select A0 for easier practice. Availability depends on your installed app version.',
+  },
+  {
     q: 'What languages does Bantera support?',
     a: `Bantera’s learning language catalogue includes ${SUPPORTED_LANGUAGES.join(', ')}. Some languages have regional options. Public audio and exchange partner availability vary by language.`,
   },

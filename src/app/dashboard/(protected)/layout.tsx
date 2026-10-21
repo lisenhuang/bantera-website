@@ -73,6 +73,7 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  { href: '/dashboard/gemini-keys', label: 'Gemini keys', exact: false, icon: <svg aria-hidden="true" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a5.25 5.25 0 10-4.65 7.69L8.25 15.75H5.5V18H3v3h3l7.06-7.06a5.25 5.25 0 002.69-8.69z" /><circle cx="17" cy="7" r=".75" /></svg> },
   {
     href: '/dashboard/audio-tests',
     label: 'Audio tests',
