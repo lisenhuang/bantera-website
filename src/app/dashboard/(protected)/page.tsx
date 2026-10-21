@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
+import { SpeakingLeaderboard } from './_components/speaking-leaderboard';
 import { redirect } from 'next/navigation';
 import { getAccessToken, getAdminAnalytics, type AdminAnalytics } from '@/lib/dashboard-api';
 import { LanguagePanels } from './_components/audience-panels';
@@ -121,6 +123,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           sub={`${kpis.uploads.toLocaleString('en')} uploads · ${kpis.aiAudio.toLocaleString('en')} AI audio`} />
       </div>
 
+      <Suspense fallback={<p role="status">Loading speaking leaderboard…</p>}><SpeakingLeaderboard token={token} /></Suspense>
       <WordRankings token={token} query={query} />
 
       {/* Trends — the range filter sits above exactly what it scopes */}

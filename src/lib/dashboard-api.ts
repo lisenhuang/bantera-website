@@ -752,3 +752,14 @@ export async function mutateRegularKey(token: string, method: 'POST' | 'PUT' | '
   }
   return { ok: true as const };
 }
+
+export type SpeakingLeaderboardReport = {
+  fromDate: string; throughDate: string; timeZone: string; asOf: string;
+  limit: number; participants: number; includesLegacyDates: boolean;
+  rows: { key: string; rank: number; name: string | null; avatarUrl: string | null;
+    isMe: boolean; profileHidden: boolean; spokenWords: number;
+    learningLanguage: string | null }[];
+};
+export async function getSpeakingLeaderboard(token: string): Promise<SpeakingLeaderboardReport> {
+  return adminFetch<SpeakingLeaderboardReport>('/api/speaking-leaderboard', token);
+}
