@@ -5,6 +5,8 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import type { AdminUserListItem, AdminPagedResult } from '@/lib/dashboard-api';
 
+import { UserAvatar } from '../_components/user-avatar';
+
 const LIMIT = 20;
 
 const SORT_COLUMNS = [
@@ -76,39 +78,6 @@ function RoleBadge({ role }: { role: string }) {
     }`}>
       {role}
     </span>
-  );
-}
-
-function UserAvatar({
-  avatarUrl,
-  name,
-  size = 32,
-}: {
-  avatarUrl: string | null;
-  name: string | null;
-  size?: number;
-}) {
-  const initial = (name?.trim()[0] ?? '?').toUpperCase();
-  const dim = `${size}px`;
-  if (avatarUrl) {
-    return (
-      <img
-        src={avatarUrl}
-        alt=""
-        width={size}
-        height={size}
-        className="rounded-full object-cover bg-gray-100 dark:bg-white/5"
-        style={{ width: dim, height: dim }}
-      />
-    );
-  }
-  return (
-    <div
-      className="rounded-full bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300 flex items-center justify-center font-medium"
-      style={{ width: dim, height: dim, fontSize: `${Math.max(10, Math.round(size * 0.4))}px` }}
-    >
-      {initial}
-    </div>
   );
 }
 

@@ -1,5 +1,7 @@
 'use client';
 
+import { UserAvatar } from '../../_components/user-avatar';
+
 import { useEffect, useState, useTransition, useActionState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -203,23 +205,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <div className="flex items-center gap-4">
-        {user.avatarUrl ? (
-          <img
-            src={user.avatarUrl}
-            alt=""
-            width={80}
-            height={80}
-            className="rounded-full object-cover bg-gray-100 dark:bg-white/5"
-            style={{ width: '80px', height: '80px' }}
-          />
-        ) : (
-          <div
-            className="rounded-full bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold"
-            style={{ width: '80px', height: '80px', fontSize: '32px' }}
-          >
-            {(user.name?.trim()[0] ?? '?').toUpperCase()}
-          </div>
-        )}
+        <UserAvatar avatarUrl={user.avatarUrl} name={user.name} size={80} />
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{user.name ?? 'Unnamed user'}</h1>
           {user.alwaysOnline && (

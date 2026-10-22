@@ -761,5 +761,13 @@ export type SpeakingLeaderboardReport = {
     learningLanguage: string | null }[];
 };
 export async function getSpeakingLeaderboard(token: string): Promise<SpeakingLeaderboardReport> {
-  return adminFetch<SpeakingLeaderboardReport>('/api/speaking-leaderboard', token);
+  return adminFetch<SpeakingLeaderboardReport>('/api/speaking-leaderboard?days=30', token);
+}
+
+export type AdminBugReport = {
+  id: string; userId: string; userName: string | null; summary: string; details: string;
+  category: string; source: string; consentQuote: string; createdAt: string;
+};
+export async function listBugReports(token: string, offset = 0): Promise<AdminPagedResult<AdminBugReport>> {
+  return adminFetch<AdminPagedResult<AdminBugReport>>(`/api/admin/bug-reports?limit=20&offset=${offset}`, token);
 }
