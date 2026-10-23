@@ -4,8 +4,8 @@ export function AppTourPlayer() {
       <div className="relative aspect-video min-h-[200px] overflow-hidden rounded-2xl border border-white/20 bg-[#12101f] shadow-2xl shadow-black/30 sm:rounded-3xl">
         <iframe
           id="app-tour-video"
-          src="https://www.youtube-nocookie.com/embed/uCUTDIk-WM0?playsinline=1&rel=0"
-          title="Bantera app tour on iPhone Duo"
+          src="https://www.youtube-nocookie.com/embed/6os38Z-LPrw?playsinline=1&rel=0"
+          title="Bantera app tour"
           aria-describedby="app-tour-help"
           width={1920}
           height={1080}

@@ -196,7 +196,7 @@ export default function HomePage() {
 
           <a href="#app-tour" className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-gray-200 underline decoration-white/30 underline-offset-4 hover:text-orange-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-400">
             <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-current"><path d="M8 5v14l11-7z" /></svg>
-            Watch the app tour <span className="font-normal text-gray-400">· 4:49</span>
+            Watch the app tour
           </a>
         </div>
       </section>
@@ -211,7 +211,7 @@ export default function HomePage() {
             <p className="mt-5 text-base leading-relaxed text-gray-400 sm:text-lg">
               From short Practice exercises to AI conversations and daily goals, see how listening and speaking fit into everyday life.
             </p>
-            <p className="mt-5 text-xs text-gray-500">4 min 49 sec · English narration · iPhone app walkthrough</p>
+            <p className="mt-5 text-xs text-gray-500">English narration · iPhone app walkthrough</p>
           </div>
           <AppTourPlayer />
           <ul className="grid gap-6 text-sm leading-relaxed text-gray-300 sm:grid-cols-3 sm:gap-8">
