@@ -40,6 +40,10 @@ export const SITE_PAGES: readonly SitePage[] = [
 // first 1–2). The visible FAQ page and its FAQPage schema both render from this list.
 export const FAQS: readonly { q: string; a: string }[] = [
   {
+    q: 'Can I see pronunciation guides in Practice?',
+    a: 'Bantera app version 3.15.0 and later includes an optional Pronunciation toggle in Practice for Mandarin, Cantonese, Japanese, Korean, Thai, Hindi, Arabic, Hebrew, Russian, Ukrainian and Greek. Romanized readings appear above the original characters or words. Your choice is remembered for each account and learning language. Older exercises may briefly show a preparation message while their readings are generated. These guides support listening practice and may contain AI-generated mistakes; they are not translations.',
+  },
+  {
     q: 'What is Bantera?',
     a: SITE_SUMMARY,
   },
