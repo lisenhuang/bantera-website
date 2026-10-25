@@ -1,3 +1,13 @@
+import type { BanteraLearningLanguage } from './bantera-api';
+
+/** Extend only the private test picker, never the public/profile catalogue. */
+export function audioTestLanguages(languages: BanteraLearningLanguage[]): BanteraLearningLanguage[] {
+  return [
+    ...languages.filter(language => language.identifier !== 'mi-NZ'),
+    { identifier: 'mi-NZ', displayName: 'Māori (New Zealand)', flagEmoji: '🇳🇿' },
+  ];
+}
+
 export type AudioTest = {
   id: string;
   status: 'queued' | 'running' | 'done' | 'failed';

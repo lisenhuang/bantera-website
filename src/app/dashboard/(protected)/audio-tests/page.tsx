@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAccessToken, getAiSettings } from '@/lib/dashboard-api';
 import { getLearningLanguages } from '@/lib/bantera-api';
+import { audioTestLanguages } from '@/lib/audio-tests';
 import AudioTests from './audio-tests';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,6 @@ export default async function AudioTestsPage() {
     defaultModel={settings?.audioModel ?? ''}
     textModel={settings?.textModel ?? null}
     modelListAvailable={settings?.modelListAvailable ?? false}
-    languages={languages}
+    languages={audioTestLanguages(languages)}
   />;
 }
