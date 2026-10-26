@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAiJob } from './use-ai-job';
 import type { ChatGptStatus } from '@/lib/chatgpt-connection';
-import { connectChatGpt, pollChatGpt, cancelChatGpt, disconnectChatGpt, loadChatGptModels, testChatGpt,
+import { connectChatGpt, pollChatGpt, cancelChatGpt, disconnectChatGpt, loadChatGptModels,
   type DeviceLogin, type SubscriptionModel, type SubscriptionTest } from './chatgpt-actions';
 
 const button = 'rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40';
@@ -20,7 +21,9 @@ export function ChatGptConnectionPanel({ status }: { status: ChatGptStatus | nul
   const [reasoning, setReasoning] = useState('');
   const [prompt, setPrompt] = useState('Give me one short English speaking exercise.');
   const [search, setSearch] = useState(false);
-  const [result, setResult] = useState<SubscriptionTest & { requestedSearch: boolean }>();
+  const job = useAiJob<SubscriptionTest>('admin-gpt');
+  const result = job.result;
+  const testPending = pending || job.pending;
   const selected = models.find(m => m.id === model);
 
   useEffect(() => {
@@ -55,7 +58,7 @@ export function ChatGptConnectionPanel({ status }: { status: ChatGptStatus | nul
         catch { setError('Could not start sign-in. Please retry.'); }
       })}>{pending ? 'Please wait…' : status?.connected ? 'Reconnect with ChatGPT' : 'Continue with ChatGPT'}</button>
       {status?.connected && <button className="text-sm text-red-700 underline dark:text-red-300" disabled={pending || !!device} onClick={() => startTransition(async () => {
-        try { const state = await disconnectChatGpt(); setError(state.error ?? ''); setNotice(state.message ?? ''); setModels([]); setModel(''); setResult(undefined); router.refresh(); }
+        try { const state = await disconnectChatGpt(); setError(state.error ?? ''); setNotice(state.message ?? ''); setModels([]); setModel(''); router.refresh(); }
         catch { setError('Could not disconnect. Please retry.'); }
       })}>Disconnect</button>}
       <a href="https://chatgpt.com/codex/settings" target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 underline dark:text-indigo-300">ChatGPT settings</a>
@@ -78,15 +81,11 @@ export function ChatGptConnectionPanel({ status }: { status: ChatGptStatus | nul
       <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-medium">Test subscription models</h3>
         <button disabled={pending || !!device} className="text-sm text-indigo-600 underline dark:text-indigo-300" onClick={() => startTransition(async () => {
           setError('');
-          try { const data = await loadChatGptModels(); setError(data.error ?? ''); setModels(data.models ?? []); setModel(data.models?.[0]?.id ?? ''); setReasoning(''); setResult(undefined); }
+          try { const data = await loadChatGptModels(); setError(data.error ?? ''); setModels(data.models ?? []); setModel(data.models?.[0]?.id ?? ''); setReasoning(''); }
           catch { setError('Could not load models. Please retry.'); }
         })}>{pending ? 'Please wait…' : models.length ? 'Refresh model list' : 'Load available models'}</button></div>
-      {!!models.length && <form className="space-y-3" onSubmit={event => { event.preventDefault(); startTransition(async () => {
-        setError(''); setResult(undefined);
-        try { const data = await testChatGpt(model, reasoning, prompt, search); setError(data.error ?? ''); setResult(data.result ? { ...data.result, requestedSearch: search } : undefined); }
-        catch { setError('The test did not finish. Please retry.'); }
-      }); }}>
-        <div className="grid gap-3 sm:grid-cols-2"><label className="space-y-1 text-sm"><span>Model</span><select className={field} value={model} disabled={pending} onChange={e => { setModel(e.target.value); setReasoning(''); setResult(undefined); }}>
+      {!!models.length && <form className="space-y-3" onSubmit={event => { event.preventDefault(); void job.start({ model, reasoning, prompt, search }); }}>
+        <div className="grid gap-3 sm:grid-cols-2"><label className="space-y-1 text-sm"><span>Model</span><select className={field} value={model} disabled={pending} onChange={e => { setModel(e.target.value); setReasoning(''); }}>
           {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
           <label className="space-y-1 text-sm"><span>Reasoning</span><select className={field} value={reasoning} disabled={pending || !selected?.reasoningLevels.length} onChange={e => setReasoning(e.target.value)}>
             <option value="">Model default{selected?.defaultReasoning ? ` (${selected.defaultReasoning})` : ''}</option>
@@ -94,10 +93,12 @@ export function ChatGptConnectionPanel({ status }: { status: ChatGptStatus | nul
         <label className="block space-y-1 text-sm"><span>Test prompt</span><textarea className={field} value={prompt} onChange={e => setPrompt(e.target.value)} maxLength={2000} required rows={3} disabled={pending} /></label>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={search} onChange={e => setSearch(e.target.checked)} disabled={pending} />Test built-in web search</label>
         <p className="text-xs text-gray-500 dark:text-gray-400">Models and reasoning choices are fetched from your account. Tests use your subscription allowance and do not change production model settings.</p>
-        <button className={button} disabled={pending || !model || !prompt.trim()}>{pending ? 'Waiting for response…' : 'Test response'}</button>
+        <button className={button} disabled={testPending || !model || !prompt.trim()}>{job.pending ? 'Generating…' : 'Test response'}</button>
       </form>}
+      {job.notice && <p role="status" className="text-sm text-indigo-600 dark:text-indigo-300">{job.notice}</p>}
+      {job.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{job.error}</p>}
       {result && <div role="status" className="space-y-3 rounded-xl bg-gray-50 p-4 dark:bg-white/5">
-        <p className="text-sm font-semibold">{result.requestedSearch ? result.searchVerified ? 'Web search verified' : 'Response received; web search not verified' : 'Response received'}</p>
+        <p className="text-sm font-semibold">{search ? result.searchVerified ? 'Web search verified' : 'Response received; web search not verified' : 'Response received'}</p>
         <p className="whitespace-pre-wrap break-words text-sm">{result.answer}</p>
         {!!result.sources.length && <ul className="space-y-1 text-sm">{result.sources.map(s => <li key={s.url}><a className="text-indigo-600 underline dark:text-indigo-300" href={s.url} target="_blank" rel="noopener noreferrer">{s.title || s.url}</a></li>)}</ul>}
       </div>}

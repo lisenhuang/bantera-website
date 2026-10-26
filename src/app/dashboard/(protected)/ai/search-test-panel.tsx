@@ -1,14 +1,14 @@
 'use client';
 
-import { useActionState, useState } from 'react';
-import { testWebSearchAction, type SearchTestState } from './actions';
+import { useState } from 'react';
+import { useAiJob } from './use-ai-job';
+import type { AiSearchTestResult } from '@/lib/dashboard-api';
 
 export function SearchTestPanel({ model }: { model: string }) {
   const [query, setQuery] = useState('What are the latest technology headlines in New Zealand today?');
-  const [state, action, pending] = useActionState<SearchTestState, FormData>(testWebSearchAction, {});
-  const result = state.result;
+  const { start, result, error, notice, pending } = useAiJob<AiSearchTestResult>('admin-search');
   return (
-    <form action={action} className="space-y-4" aria-busy={pending}>
+    <form onSubmit={event => { event.preventDefault(); void start({ query }); }} className="space-y-4" aria-busy={pending}>
       <p className="text-sm text-gray-600 dark:text-gray-300">
         Test the search used for lesson generation. Primary model: <code>{model}</code>. The saved fallback is used if needed.
         Tests use the selected provider’s API quota or ChatGPT subscription allowance.
@@ -25,8 +25,8 @@ export function SearchTestPanel({ model }: { model: string }) {
         <span className="text-xs text-gray-500 dark:text-gray-400">Does not change saved settings.</span>
       </div>
       <div role="status" aria-live="polite">
-        {pending && <p className="text-sm text-indigo-600 dark:text-indigo-300">Waiting for an answer and verifying search sources…</p>}
-        {!pending && state.error && <p className="text-sm text-red-700 dark:text-red-300">{state.error}</p>}
+        {pending && <p className="text-sm text-indigo-600 dark:text-indigo-300">{notice || 'Waiting for an answer and verifying search sources…'}</p>}
+        {!pending && error && <p className="text-sm text-red-700 dark:text-red-300">{error}</p>}
         {!pending && result && (
           <div className="space-y-4 rounded-xl border border-gray-200 dark:border-white/15 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -37,7 +37,7 @@ export function SearchTestPanel({ model }: { model: string }) {
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-300">{result.message}</p>
             {result.usedFallback && <p className="text-sm text-amber-700 dark:text-amber-300">The primary search failed. The configured fallback completed this search.</p>}
-            <p className="text-xs text-gray-500 dark:text-gray-400">Query: {state.query}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Query: {query}</p>
             {result.answer && <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-900 dark:text-white">{result.answer}</p>}
             {!!result.sources?.length && <div>
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Sources</h4>
