@@ -7,11 +7,12 @@ import { AppTourPlayer } from '@/components/app-tour-player';
 import { LANGUAGE_GUIDES } from '@/lib/language-guides';
 import { DOWNLOAD_URL, GOOGLE_PLAY_URL } from '@/lib/site-content';
 import styles from './home.module.css';
+import { PRODUCT_FEATURES } from '@/lib/product-features';
 
 export const metadata: Metadata = {
   title: 'Bantera | Speaking & Listening Practice in 30+ Languages',
   description:
-    'Build speaking and listening skills in Spanish, French, Mandarin, English and more. Replay short audio cues, shadow the speaker, and record your own voice.',
+    'Practise speaking and listening with Bantera AI, short conversations, pronunciation guides and A0–C2 progress. Available for iOS and Android in 30+ languages.',
   alternates: { canonical: '/' },
 };
 
@@ -30,45 +31,15 @@ const appLd = {
   downloadUrl: ['https://apps.apple.com/app/id6761799720', GOOGLE_PLAY_URL],
   installUrl: 'https://bantera.app/download',
   description:
-    'Audio-first language learning app. Listen to real spoken content cue-by-cue, hide or reveal subtitles and translations, record yourself for AI transcription and recording comparison, and find language exchange partners.',
-  inLanguage: ['en', 'zh', 'ja', 'ko', 'es', 'fr', 'de', 'pt', 'it', 'ar'],
+    'Speaking and listening app with short conversational practice, Bantera AI, optional pronunciation guides, translation choices, saved exercises and A0–C2 app progress.',
+  featureList: PRODUCT_FEATURES.map(feature => `${feature.title}: ${feature.body}`),
+  inLanguage: ['en', 'zh-Hans', 'zh-Hant', 'ja', 'ko', 'de', 'es', 'fr', 'id', 'it', 'pl', 'pt', 'ru', 'th', 'tr', 'uk', 'vi'],
   author: { '@type': 'Person', name: 'Lisen Huang' },
   publisher: { '@id': 'https://bantera.app/#organization' },
 };
 
 // ── Feature data ──────────────────────────────────────────────────
-const FEATURES = [
-  {
-    icon: '🎧',
-    title: 'Listen to Real Spoken Content',
-    body: 'Upload or browse audio and video from everyday conversations, podcasts, and interviews. Play content cue-by-cue so nothing slips past you.',
-  },
-  {
-    icon: '👁️',
-    title: 'Subtitles on Your Terms',
-    body: 'Hide subtitles to challenge yourself, reveal them when you need help, and toggle translations any time. You control how much support you get.',
-  },
-  {
-    icon: '🎤',
-    title: 'Record Yourself & Compare',
-    body: 'Record your own voice for any cue. Bantera transcribes your recording and highlights any mismatch with the original — turning every mistake into a lesson.',
-  },
-  {
-    icon: '🔄',
-    title: 'Find Your Language Exchange Partner',
-    body: 'If you speak English and learn Mandarin, Bantera can connect you with someone who speaks Mandarin and learns English. Help each other — and both grow faster.',
-  },
-  {
-    icon: '🔊',
-    title: 'Audio-Only Social',
-    body: 'Send voice messages in private chats and group conversations. Leave voice comments on public content. No typing — just speaking.',
-  },
-  {
-    icon: '📝',
-    title: 'Private Study Notes',
-    body: 'Attach notes to any cue or piece of content. Jot down tricky words, pronunciation reminders, or grammar patterns. Your notes are always private.',
-  },
-];
+const FEATURES = PRODUCT_FEATURES;
 
 const HOW_IT_WORKS = [
   {
@@ -80,19 +51,19 @@ const HOW_IT_WORKS = [
   {
     step: '02',
     title: 'Listen by cue',
-    body: 'Play real spoken content one sentence at a time. Hide or show subtitles as needed.',
+    body: 'Listen to the first cue of a short conversation. Replay it or slow it down when you need to.',
     accent: 'from-pink-400 to-rose-500',
   },
   {
     step: '03',
     title: 'Record & compare',
-    body: 'Repeat each cue in your own voice and listen to your recording beside the original.',
+    body: 'Choose a reply, then tap or hold to say it. Read the transcription and compare your recording.',
     accent: 'from-violet-400 to-indigo-500',
   },
   {
     step: '04',
-    title: 'Connect & exchange',
-    body: 'Chat with exchange partners using audio messages. Hear and be heard.',
+    title: 'Keep the conversation going',
+    body: 'Ask Bantera AI about a word, save the exercise, or try another conversation at your level.',
     accent: 'from-teal-400 to-cyan-500',
   },
 ];
@@ -105,7 +76,7 @@ export default function HomePage() {
       <JsonLd data={appLd} />
 
       {/* ── Nav ──────────────────────────────────────────────── */}
-      <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between gap-4 px-6 md:px-12 py-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-white/10">
+      <nav className="sticky top-0 z-50 flex items-center justify-between gap-4 px-6 md:px-12 py-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-xl font-black tracking-tight text-gray-900 dark:text-white">Bantera</span>
         </div>
@@ -149,10 +120,10 @@ export default function HomePage() {
           </h1>
 
           <p className="max-w-2xl mx-auto text-base sm:text-xl text-gray-400 leading-relaxed">
-            <span className="sm:hidden">Listen to real conversations. Repeat, record, and connect with language exchange partners in 30+ languages.</span>
-            <span className="hidden sm:inline">Bantera helps you improve listening and speaking through real conversations —
-            not flashcards or grammar drills. Listen, repeat, record, and exchange with
-            native speakers who are learning your language.</span>
+            <span className="sm:hidden">Listen, speak and build confidence with short practice exercises and Bantera AI in 30+ languages.</span>
+            <span className="hidden sm:inline">Listen to a short conversation, say your reply, and learn from what you hear.
+            Explore pronunciation guides, practise with Bantera AI, and build a daily
+            speaking habit in more than 30 languages.</span>
           </p>
 
           <div className={`${styles.heroActions} grid grid-cols-2 sm:flex sm:flex-row items-center justify-center gap-3 sm:gap-6 pt-2 sm:pt-4`}>
@@ -272,6 +243,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <div className="bg-gray-50 px-6 pb-12 text-center dark:bg-gray-900"><Link href="/features" className="inline-flex rounded-full bg-violet-700 px-6 py-3 font-semibold text-white">Explore Bantera AI and all features →</Link><p className="mt-4 text-sm text-gray-500">Availability depends on app version, language, device and region.</p></div>
 
       {/* ── How it works ─────────────────────────────────────── */}
       <section className="py-24 px-6 bg-white dark:bg-gray-950">
@@ -423,6 +396,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <section className="bg-violet-50 px-6 py-16 text-center dark:bg-violet-950/30"><h2 className="text-3xl font-bold">Start with a question</h2><p className="mx-auto mt-4 max-w-2xl leading-8 text-gray-600 dark:text-gray-300">Can I practise speaking on my own? How do pronunciation guides work? Can I translate Cantonese into Mandarin? Find clear answers and a practice routine for your language.</p><div className="mt-6 flex flex-wrap justify-center gap-6 font-semibold"><Link href="/faq" className="underline">Common questions</Link><Link href="/learn" className="underline">Learning guides</Link><Link href="/about/en" className="underline">Read in your language</Link></div></section>
 
       {/* ── Final CTA ─────────────────────────────────────────── */}
       <section className="py-28 px-6 bg-white dark:bg-gray-950 text-center flex flex-col items-center">

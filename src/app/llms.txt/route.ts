@@ -1,3 +1,6 @@
+import { LANGUAGE_GUIDES } from '@/lib/language-guides';
+import { INTRODUCTIONS } from '@/lib/localized-introductions';
+import { PRODUCT_FEATURES, PRODUCT_AVAILABILITY } from '@/lib/product-features';
 import {
   APP_STORE_URL,
   GOOGLE_PLAY_URL,
@@ -19,7 +22,11 @@ export function GET() {
 
 > ${SITE_SUMMARY}
 
-Bantera is built around speaking, not tapping: you play real audio one cue (sentence) at a time, hide or reveal subtitles and translations, repeat it, record yourself, and compare your pronunciation with the original. It also connects learners with native-speaker exchange partners through voice messages.
+${PRODUCT_AVAILABILITY}
+
+## Mobile features
+
+${PRODUCT_FEATURES.map(f => `- [${f.title}](${SITE_URL}/features#${f.id}): ${f.body}`).join("\n")}
 
 - Platform: Android app on Google Play (${GOOGLE_PLAY_URL}), iOS app (${APP_STORE_URL}), plus a free browser web app for listening practice at ${SITE_URL}/webapp
 - Languages: ${SUPPORTED_LANGUAGES.join(', ')}
@@ -28,6 +35,14 @@ Bantera is built around speaking, not tapping: you play real audio one cue (sent
 ## Pages
 
 ${SITE_PAGES.map((p) => `- [${p.title}](${SITE_URL}${p.path}): ${p.description}`).join('\n')}
+
+## Learning guides
+
+${LANGUAGE_GUIDES.map(g => `- [${g.name}](${SITE_URL}/learn/${g.slug}): ${g.focus}`).join("\n")}
+
+## Translated introductions
+
+${INTRODUCTIONS.map(i => `- [${i.name}](${SITE_URL}/about/${i.locale})`).join("\n")}
 
 ## Practise in the browser
 

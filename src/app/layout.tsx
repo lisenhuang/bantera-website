@@ -1,3 +1,4 @@
+import { PublicDownloadBanner } from '@/components/public-download-banner';
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -100,6 +101,7 @@ export default function RootLayout({
         <JsonLd data={organizationLd} />
         <JsonLd data={webSiteLd} />
         <WebMcpSiteTools />
+        <PublicDownloadBanner />
         {children}
         <Suspense fallback={null}><WebsiteAnalytics /></Suspense>
       </body>

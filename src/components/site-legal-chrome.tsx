@@ -25,7 +25,9 @@ export function SiteLegalChrome({
         >
           Bantera
         </Link>
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <Link href="/features" className="text-sm font-medium">Features</Link>
+          <Link href="/download" className="text-sm font-semibold text-violet-600 dark:text-violet-400">Get the app</Link>
           <Link href="/faq" className={linkClass("faq")}>
             FAQ
           </Link>

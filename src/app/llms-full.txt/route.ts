@@ -1,3 +1,6 @@
+import { PRODUCT_FEATURES, PRODUCT_AVAILABILITY } from '@/lib/product-features';
+import { LANGUAGE_GUIDES } from '@/lib/language-guides';
+import { INTRODUCTIONS } from '@/lib/localized-introductions';
 import {
   audioTitle,
   getLearningLanguages,
@@ -67,7 +70,7 @@ async function loadCatalogue(): Promise<CatalogueSection[]> {
 }
 
 export async function GET() {
-  const catalogue = await loadCatalogue();
+  const catalogue = await loadCatalogue().catch(() => []);
 
   const lessonsSection = catalogue.length === 0
     ? 'No public lessons are available right now. Browse the current list at ' + `${SITE_URL}/webapp.`
@@ -91,8 +94,20 @@ export async function GET() {
 - Platform: Android app on Google Play (${GOOGLE_PLAY_URL}), iOS app on the App Store (${APP_STORE_URL}). A free web app for listening practice runs at ${SITE_URL}/webapp.
 - Languages: ${SUPPORTED_LANGUAGES.join(', ')}.
 - Method: play real spoken content one cue at a time, repeat it, record yourself, and see an AI transcription of your recording compared with the original.
-- Community: voice-only language exchange with native speakers — private chats, groups, and voice comments.
+- Community: voice-only language exchange with native speakers — private chats, groups, and voice comments where regionally available.
 - Developer: Lisen Huang. Contact: ${CONTACT_EMAIL}.
+
+## Mobile features
+
+${PRODUCT_AVAILABILITY}
+
+${PRODUCT_FEATURES.map(f => `### ${f.title}\n\n${f.body} ${f.detail}`).join("\n\n")}
+
+## Learning languages and translated introductions
+
+${LANGUAGE_GUIDES.map(g => `- [${g.name}](${SITE_URL}/learn/${g.slug}): ${g.focus}`).join("\n")}
+
+${INTRODUCTIONS.map(i => `- [${i.name}](${SITE_URL}/about/${i.locale})`).join("\n")}
 
 ## Frequently asked questions
 
