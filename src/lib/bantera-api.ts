@@ -73,6 +73,14 @@ export const BANTERA_LANGUAGE_OPTIONS: readonly BanteraLanguageOption[] = [
 
 const DEFAULT_API_BASE_URL = "https://api.bantera.app";
 
+/** URLs shared with browsers or external clients must never use the private server origin. */
+export function getPublicApiBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_BANTERA_API_BASE_URL?.trim() ||
+    DEFAULT_API_BASE_URL
+  ).replace(/\/+$/, "");
+}
+
 export function getApiBaseUrl() {
   return (
     process.env.NEXT_PUBLIC_BANTERA_API_BASE_URL?.trim() ||

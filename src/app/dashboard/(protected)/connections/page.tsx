@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getApiBaseUrl } from '@/lib/bantera-api';
+import { getPublicApiBaseUrl } from '@/lib/bantera-api';
 import { getAccessToken, listOAuthGrants, type OAuthGrant } from '@/lib/dashboard-api';
 import { ConnectInstructions } from './connect-instructions';
 import RevokeButton from './revoke-button';
@@ -31,7 +31,7 @@ export default async function ConnectionsPage() {
 
   return (
     <div className="max-w-4xl space-y-8">
-      <ConnectInstructions mcpUrl={`${getApiBaseUrl()}/mcp`} />
+      <ConnectInstructions mcpUrl={`${getPublicApiBaseUrl()}/mcp`} />
 
       <section>
         <div className="mb-6">
