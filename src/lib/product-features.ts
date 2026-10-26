@@ -11,7 +11,7 @@ export const PRODUCT_FEATURES = [
     detail: 'Guides are available for Mandarin, Cantonese, Japanese, Korean, Thai, Hindi, Arabic, Hebrew, Russian, Ukrainian and Greek. These are romanized readings, such as pinyin, Jyutping or romaji, not translations. The setting is remembered. Readings may need a moment to generate and AI-generated guides can contain errors.' },
   { id: 'translation', icon: '🌐', title: 'Choose the translation that helps you',
     body: 'Choose Translation language from the Practice menu. Bantera remembers the choice for that learning language on your device.',
-    detail: 'Where a direct pair is unavailable, newer app versions can translate through English if both steps are supported. Device support determines the available pairs, and language models may need downloading. You can change your choice while a download is in progress. A bridge translation can lose nuance.' },
+    detail: 'Choose an available translation language that helps you understand the exercise. Available languages depend on your device, and translation models may need downloading. You can change your choice while a download is in progress.' },
   { id: 'levels', icon: '↗', title: 'Know what you have practised and passed',
     body: 'Start at A0 and work through A1, A2, B1, B2, C1 and C2. The level picker distinguishes locked, practising and passed levels.',
     detail: 'Pass a 12-question level test with at least 10 correct answers to complete the level. C2 also has a completion test. A0 is Bantera’s beginner stage before A1. These app milestones are not an official CEFR assessment or language certificate.' },
