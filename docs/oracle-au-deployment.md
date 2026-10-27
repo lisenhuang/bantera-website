@@ -494,3 +494,43 @@ Never start both model-service containers against the same state directory.
 Model binaries/weights are unchanged from 1.0.1. Canonical server sources and
 notices remain under `/home/ubuntu/bantera-model-service`; protected runtime
 snapshots and proofs are in the immutable release directory.
+
+## 27 October 2026: TURN-only recommendation
+
+Verified release `bantera-20261027-13`: website **0.25.1**, API **1.50.1**.
+The Calls settings page recommends keeping TURN only enabled for more consistent
+connections across mobile networks, restrictive Wi-Fi and different devices.
+Existing relay cost/fail-closed and app-version limitations remain visible.
+Production was already set to relay; authenticated public settings, six relay-only
+ICE URLs and the rendered recommendation/switch were verified after deployment.
+All 128 public availability samples returned 200. Current release 13 and rollback
+release 12 are retained, with approximately 98 GiB free after cleanup. No database
+migration, new configuration, commit/push or store submission.
+
+## Call rollback: 27 October 2026
+
+At the owner's request, call cancellation work is paused after continued ringing
+and immediate termination after answering were reported. Activation record
+`bantera-20261027-14` restores the retained release-12 containers: API **1.50.0**,
+website **0.25.0** (its original website marker is `bantera-20261027-11`), and
+`cloudflared-20261027-12`. This is an image rollback, not a new source build.
+Source versions are bumped to API 1.50.2 / website 0.25.2 for the rollback diff.
+
+Local preflight, public API/version, website marker, homepage, download, login,
+public content and admin-auth checks passed. Both public markers remained healthy
+through a two-minute stability window. Completion: **2026-10-27 10:13:09 UTC**.
+The active record references release 14's manifest and the restored release 12
+containers; its previous-release record retains release 13 as an operational
+fallback. Release 13's call behavior is known to be problematic and must not be
+reintroduced as a call fix without further authorized investigation.
+
+No database restore, migration or user-data deletion occurred. The pre-existing
+TURN-only policy remains. **Compatible with published apps:** the restored API
+is their previous contract; the short-lived ringing-status extension was not
+published to either app store and is removed from the replacement iPhone build.
+No new configuration or secrets are required.
+
+Cleanup kept both retained application sets and their mounted configurations,
+removed no volumes/data, and left **98 GB free (50% used)**, unchanged from before
+the rollback. Public version checks passed again after cleanup. Historical
+release-13 entries above describe the reverted deployment, not the active code.
