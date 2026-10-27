@@ -3,9 +3,9 @@
 import { UserAvatar } from '../../_components/user-avatar';
 
 import { useEffect, useState, useTransition, useActionState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { AdminUserDetail } from '@/lib/dashboard-api';
+import { locationCountry, locationActivityDate } from '@/lib/admin-user-location';
 import { patchUserAction, deleteUserAction } from './actions';
 
 function formatDate(iso: string | null | undefined) {
@@ -157,7 +157,6 @@ function DeleteUserZone({ userId }: { userId: string }) {
 }
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [user, setUser] = useState<AdminUserDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -234,6 +233,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             <InfoRow label="Joined" value={formatDate(user.createdAt)} />
             <InfoRow label="Last login" value={formatDate(user.lastLoginAt)} />
           </div>
+
+          <section aria-labelledby="user-location-title" className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm p-5">
+            <h2 id="user-location-title" className="label-xs mb-3">Last recorded location</h2>
+            {user.lastLocation ? <>
+              <InfoRow label="City" value={user.lastLocation.city || 'Not available'} />
+              <InfoRow label="Country" value={locationCountry(user.lastLocation.countryCode)} />
+              <InfoRow label="Activity date (UTC)" value={locationActivityDate(user.lastLocation.activityDate)} />
+              <p className="mt-3 text-xs leading-5 text-gray-500 dark:text-gray-400">Approximate location from Cloudflare, updated periodically during app activity.</p>
+            </> : <p className="text-sm text-gray-500 dark:text-gray-400">No location recorded yet.</p>}
+          </section>
 
           {/* Identity providers */}
           <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm p-5">

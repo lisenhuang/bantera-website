@@ -3,7 +3,7 @@ import { getWordRankings, type WordRankingReport } from '@/lib/dashboard-api';
 import { rankingFilters, rankingHref, type RankingQuery } from '@/lib/word-rankings';
 
 const periods = [{ key: 'today', label: 'Today' }, { key: 'week', label: 'This week' }, { key: 'total', label: 'All time' }] as const;
-const metrics = [{ key: 'listened', label: 'Words listened' }, { key: 'spoken', label: 'Words spoken' }] as const;
+const metrics = [{ key: 'spoken', label: 'Words spoken' }, { key: 'listened', label: 'Words listened' }] as const;
 const tabStyle = (active: boolean) => `rounded-lg px-3 py-2 text-sm font-medium transition-colors ${active
   ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
   : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`;
@@ -18,7 +18,7 @@ export async function WordRankings({ token, query }: { token: string; query: Ran
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id="word-rankings-title" className="text-lg font-semibold text-gray-900 dark:text-white">Word activity rankings</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Users ranked by synced listening or speaking activity across all languages.</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Users ranked by synced speaking or listening activity across all languages.</p>
           </div>
           <a href={rankingHref(query)} className="shrink-0 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5">Refresh</a>
         </div>
@@ -49,8 +49,8 @@ export async function WordRankings({ token, query }: { token: string; query: Ran
               {report.users.map(user => <tr key={user.userId} className="hover:bg-gray-50 dark:hover:bg-white/5">
                 <td className="px-5 py-4 tabular-nums text-gray-500 sm:px-6 dark:text-gray-400">{user.rank.toLocaleString('en')}</td>
                 <th scope="row" className="min-w-40 px-3 py-4 font-medium"><Link href={`/dashboard/users/${user.userId}`} className="break-words text-indigo-600 hover:underline dark:text-indigo-400">{user.name?.trim() || 'Unnamed user'}<span className="mt-0.5 block font-mono text-xs font-normal text-gray-500 dark:text-gray-400">{user.userId.slice(0, 8)}</span></Link></th>
-                <td className={`px-5 py-4 text-right tabular-nums sm:px-6 ${filters.metric === 'listened' ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{user.listenedWords.toLocaleString('en')}</td>
                 <td className={`px-5 py-4 text-right tabular-nums sm:px-6 ${filters.metric === 'spoken' ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{user.spokenWords.toLocaleString('en')}</td>
+                <td className={`px-5 py-4 text-right tabular-nums sm:px-6 ${filters.metric === 'listened' ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{user.listenedWords.toLocaleString('en')}</td>
               </tr>)}
             </tbody>
           </table>

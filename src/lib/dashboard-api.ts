@@ -34,6 +34,9 @@ export type AdminUserListItem = {
   lastLoginAt: string | null;
   videoCount: number;
   avatarUrl: string | null;
+  countryCode?: string | null;
+  nativeLanguageFlag?: string | null;
+  learningLanguageFlag?: string | null;
 };
 
 export type AdminIdentityInfo = {
@@ -46,6 +49,8 @@ export type AdminUserStats = {
   uploadCount: number;
   videoCount: number;
 };
+
+export type AdminUserLocation = { countryCode: string | null; city: string | null; activityDate: string };
 
 export type AdminUserDetail = {
   id: string;
@@ -62,6 +67,7 @@ export type AdminUserDetail = {
   stats: AdminUserStats;
   avatarUrl: string | null;
   alwaysOnline: boolean;
+  lastLocation?: AdminUserLocation | null;
 };
 
 export type AdminVideoListItem = {

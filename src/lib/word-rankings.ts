@@ -3,7 +3,7 @@ export type RankingFilters = { period: 'today' | 'week' | 'total'; metric: 'list
 
 export function rankingFilters(query: RankingQuery): RankingFilters {
   const period = query.wordPeriod === 'week' || query.wordPeriod === 'total' ? query.wordPeriod : 'today';
-  const metric = query.wordMetric === 'spoken' ? 'spoken' : 'listened';
+  const metric = query.wordMetric === 'listened' ? 'listened' : 'spoken';
   const value = typeof query.wordOffset === 'string' ? Number(query.wordOffset) : 0;
   const offset = Number.isSafeInteger(value) && value >= 0 && value <= 1_000_000 ? value : 0;
   return { period, metric, offset };

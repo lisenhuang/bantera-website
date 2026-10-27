@@ -4,19 +4,17 @@ import { Suspense, useEffect, useState, useTransition } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import type { AdminUserListItem, AdminPagedResult } from '@/lib/dashboard-api';
+import { locationCountry } from '@/lib/admin-user-location';
 
 import { UserAvatar } from '../_components/user-avatar';
 
 const LIMIT = 20;
 
-const SORT_COLUMNS = [
+const COLUMNS = [
   { key: 'name', label: 'Name' },
-  { key: 'email', label: 'Email' },
+  { key: 'country', label: 'Country' },
   { key: 'nativeLanguage', label: 'Native' },
   { key: 'learningLanguage', label: 'Learning' },
-  { key: 'role', label: 'Role' },
-  { key: 'status', label: 'Status' },
-  { key: 'videoCount', label: 'Content' },
   { key: 'createdAt', label: 'Joined' },
   { key: 'lastLoginAt', label: 'Last Login' },
 ] as const;
@@ -26,7 +24,7 @@ function SortHeader({
   currentSort,
   currentDir,
 }: {
-  col: (typeof SORT_COLUMNS)[number];
+  col: (typeof COLUMNS)[number];
   currentSort: string;
   currentDir: string;
 }) {
@@ -53,31 +51,6 @@ function SortHeader({
         )}
       </Link>
     </th>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    active: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30',
-    suspended: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-500/30',
-    deleted: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30',
-  };
-  return (
-    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${map[status] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10'}`}>
-      {status}
-    </span>
-  );
-}
-
-function RoleBadge({ role }: { role: string }) {
-  return (
-    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${
-      role === 'admin'
-        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30'
-        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-white/10'
-    }`}>
-      {role}
-    </span>
   );
 }
 
@@ -185,21 +158,23 @@ function UsersContent() {
             <thead className="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
               <tr>
                 <th className="px-3 py-3 w-12" />
-                {SORT_COLUMNS.map((col) => (
-                  <SortHeader key={col.key} col={col} currentSort={sort} currentDir={dir} />
+                {COLUMNS.map((col) => (
+                  col.key === 'country'
+                    ? <th key={col.key} scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Country</th>
+                    : <SortHeader key={col.key} col={col} currentSort={sort} currentDir={dir} />
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {!result ? (
                 <tr>
-                  <td colSpan={SORT_COLUMNS.length + 1} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">
+                  <td colSpan={COLUMNS.length + 1} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">
                     Loading…
                   </td>
                 </tr>
               ) : result.items.length === 0 ? (
                 <tr>
-                  <td colSpan={SORT_COLUMNS.length + 1} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">
+                  <td colSpan={COLUMNS.length + 1} className="px-3 py-12 text-center text-gray-400 dark:text-gray-600 text-sm">
                     No users found
                   </td>
                 </tr>
@@ -217,18 +192,13 @@ function UsersContent() {
                       {user.name ?? <span className="text-gray-400">—</span>}
                     </td>
                     <td className="px-3 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {user.email ?? <span className="text-gray-400">—</span>}
+                      {locationCountry(user.countryCode)}
                     </td>
                     <td className="px-3 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {user.nativeLanguage ?? '—'}
+                      {user.nativeLanguage ? `${user.nativeLanguageFlag ?? '🌐'} ${user.nativeLanguage}` : '—'}
                     </td>
                     <td className="px-3 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {user.learningLanguage ?? '—'}
-                    </td>
-                    <td className="px-3 py-3"><RoleBadge role={user.role} /></td>
-                    <td className="px-3 py-3"><StatusBadge status={user.status} /></td>
-                    <td className="px-3 py-3 text-gray-600 dark:text-gray-400 text-right tabular-nums">
-                      {user.videoCount}
+                      {user.learningLanguage ? `${user.learningLanguageFlag ?? '🌐'} ${user.learningLanguage}` : '—'}
                     </td>
                     <td className="px-3 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {formatDate(user.createdAt)}

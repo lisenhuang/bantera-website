@@ -349,3 +349,27 @@ The deployed working tree also contains the previously prepared AI-consent priva
 copy. APK distribution files were not changed. No Git commit/push was performed.
 For rollback and full source/candidate provenance, see the backend runbook section
 for this release and `/home/ubuntu/releases/bantera-20261020-6` on Oracle AU.
+
+## 27 October 2026: Admin users, locations and word rankings
+
+Website **0.23.0**, release **bantera-20261027-4**, deployed with compatible
+backend **1.45.0**, completed **01:18:14 UTC**. Users now shows Name, Country,
+Native, Learning, Joined and Last Login. Country and language cells include flags;
+Email, Role, Status and Content columns are removed. User details show the last
+recorded city/country and activity date without displaying an IP address.
+
+The overview retains Word activity rankings, defaults to Words spoken and places
+spoken before listened. The separate Speaking leaderboard section is removed
+from the admin overview; app leaderboards are unchanged.
+
+Node 24 production build, focused ESLint and 25 tests passed. Backend's 31 focused
+tests include actual isolated PostgreSQL projection and activity-location checks.
+Candidate and public smoke checks each passed 14 contracts; all **130/130**
+monitored public responses returned 200. No authenticated dashboard login was
+performed. Public release markers and auth gates passed again after cleanup.
+No migration or new configuration is required for existing published clients.
+
+Retention kept the current and previous release; disk free space was 112 GB
+before building and 111 GB afterward. The verified database backup is 8,598,539
+bytes. No commit/push occurred. Rollback preserves database writes:
+`python3 /home/ubuntu/releases/bantera-20261027-4/deploy.py rollback`
