@@ -4,6 +4,7 @@ import { getAccessToken, getAdminAnalytics, type AdminAnalytics } from '@/lib/da
 import { LanguagePanels } from './_components/audience-panels';
 import { BarList, ColumnChart, LineChart, PartToWholeBar } from './_components/charts';
 import { WordRankings } from './_components/word-rankings';
+import { SpeakingLeaderboard } from './_components/speaking-leaderboard';
 import { rankingHref, type RankingQuery } from '@/lib/word-rankings';
 
 export const dynamic = 'force-dynamic';
@@ -121,6 +122,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           sub={`${kpis.uploads.toLocaleString('en')} uploads · ${kpis.aiAudio.toLocaleString('en')} AI audio`} />
       </div>
 
+      <SpeakingLeaderboard token={token} />
       <WordRankings token={token} query={query} />
 
       {/* Trends — the range filter sits above exactly what it scopes */}

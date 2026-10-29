@@ -1,5 +1,37 @@
 # Bantera deployment on Oracle AU
 
+## 29 October 2026: Māori visibility and configurable app leaderboard
+
+Website **0.28.0** and API **1.55.0** are verified live in release
+`bantera-20261029-4`. `/dashboard/practice` includes “Show Māori to everyone”,
+which remains **off** for admin-only testing. The dashboard's “App leaderboard
+period” control accepts 1–365 days and remains at **30 days**. Its preview reads
+the configured API report and uses the returned period and dates. Save success
+requires the backend to confirm the requested value. Existing analytics filters
+remain separate. No live setting was changed during deployment.
+
+Website typecheck, production build and **33 tests** passed; lint reported no
+errors and ten existing warnings. Candidate/public verification passed **32
+non-mutating checks**, including versions, protected routes, the actual Practice
+toggle, defaults, the exact 720-hour leaderboard window and admin-only metadata
+privacy. The authenticated leaderboard dashboard was not rendered live because
+its normal request would change real activity tracking; local tests and the
+production build cover that view. Both public domains were checked after cleanup.
+
+The initial promotion safely rolled back when a verification-script timestamp
+parser rejected valid .NET precision. The corrected check passed 0/3/6/7-digit
+cases; the same application images then completed promotion and the two-minute
+stability window. All **144/144** availability probes returned HTTP 200. Current
+release 4 and working rollback release 2 are retained. The never-promoted
+release-3 candidates were removed. No database migration or new configuration
+was required, and no volumes or backups were deleted. Final free disk was about
+**87.4 GiB**. See the backend runbook for full evidence and compatibility details.
+
+Rollback: `python3 /home/ubuntu/releases/bantera-20261029-4/deploy.py rollback`.
+It restores release 2 without restoring the database. No commit or push occurred.
+Bantera **3.35.0 (506)** was installed on Ethan's iPhone 17 Pro and confirmed in
+the device inventory, without launching the app.
+
 ## 29 October 2026: Practice repeat-window settings
 
 Website **0.26.0** and API **1.53.0** are live in release
@@ -153,7 +185,7 @@ The shared Cloudflare Tunnel also serves other domains. Preserve its tunnel iden
 6. Start the backend candidate using the current production environment on the existing database networks, with its host test port bound to loopback only. Startup applies migrations. Permit only backward-compatible migrations while the old application remains online.
 7. Verify backend `/version`, public lesson listing, authenticated-route rejection, migration state and startup logs. Start the website candidate, then verify `/`, `/download`, `/dashboard/login`, the AI admin login redirect, and its deployment marker.
 
-The server-only website build scaffolding uses Node 22 and pnpm, allowing build scripts for `protobufjs`, `sharp` and `unrs-resolver`. Retain the reviewed Dockerfile and dependency-build configuration in the release snapshot. Exclude production env files from the image; inject settings at runtime.
+The current server-only website build scaffolding uses Node 24 and pnpm with the repository's dependency-build configuration. Retain the reviewed Dockerfile and dependency-build configuration in the release snapshot. Exclude production env files from the image; inject settings at runtime.
 
 ## Rolling Cloudflare Tunnel handover
 

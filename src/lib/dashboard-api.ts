@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { isLeaderboardDays } from './speaking-leaderboard-settings';
 import { getApiBaseUrl } from './bantera-api';
 import type { RankingFilters } from './word-rankings';
 
@@ -761,13 +762,40 @@ export async function mutateRegularKey(token: string, method: 'POST' | 'PUT' | '
 
 export type SpeakingLeaderboardReport = {
   fromDate: string; throughDate: string; timeZone: string; asOf: string;
-  limit: number; participants: number; includesLegacyDates: boolean;
+  periodDays: number; limit: number; participants: number; includesLegacyDates: boolean;
   rows: { key: string; rank: number; name: string | null; avatarUrl: string | null;
     isMe: boolean; profileHidden: boolean; spokenWords: number;
     learningLanguage: string | null }[];
 };
 export async function getSpeakingLeaderboard(token: string): Promise<SpeakingLeaderboardReport> {
-  return adminFetch<SpeakingLeaderboardReport>('/api/speaking-leaderboard?days=30', token);
+  const report = await adminFetch<SpeakingLeaderboardReport>('/api/speaking-leaderboard/configured', token);
+  if (!isLeaderboardDays(report.periodDays)) throw new Error('Invalid leaderboard period.');
+  return report;
+}
+
+export type SpeakingLeaderboardSettings = { days: number };
+
+export async function getSpeakingLeaderboardSettings(token: string): Promise<SpeakingLeaderboardSettings> {
+  const settings = await adminFetch<SpeakingLeaderboardSettings>('/api/admin/speaking-leaderboard-settings', token);
+  if (!isLeaderboardDays(settings.days)) throw new Error('Invalid leaderboard settings.');
+  return settings;
+}
+
+export async function updateSpeakingLeaderboardSettings(token: string, settings: SpeakingLeaderboardSettings) {
+  const response = await fetch(`${getApiBaseUrl()}/api/admin/speaking-leaderboard-settings`, {
+    method: 'PUT', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(settings),
+  });
+  if (response.ok) {
+    const saved = await response.json().catch(() => null) as SpeakingLeaderboardSettings | null;
+    if (!isLeaderboardDays(saved?.days) || saved.days !== settings.days) {
+      return { ok: false as const, status: response.status, message: 'Could not confirm the saved period. Please refresh before trying again.' };
+    }
+    return { ok: true as const, settings: saved };
+  }
+  const error = await response.json().catch(() => null) as { message?: string } | null;
+  return { ok: false as const, status: response.status, message: error?.message ?? 'Could not save the leaderboard period.' };
 }
 
 export type AdminBugReport = {
@@ -778,17 +806,24 @@ export async function listBugReports(token: string, offset = 0): Promise<AdminPa
   return adminFetch<AdminPagedResult<AdminBugReport>>(`/api/admin/bug-reports?limit=20&offset=${offset}`, token);
 }
 
-export type PracticeSettings = { repeatWindow: number };
+export type PracticeSettings = { repeatWindow: number; maoriPublicEnabled: boolean };
 export async function getPracticeSettings(token: string): Promise<PracticeSettings> {
-  return adminFetch<PracticeSettings>('/api/admin/practice-settings', token);
+  const settings = await adminFetch<PracticeSettings>('/api/admin/practice-settings', token);
+  return { ...settings, maoriPublicEnabled: settings.maoriPublicEnabled === true };
 }
-export async function updatePracticeSettings(token: string, repeatWindow: number) {
+export async function updatePracticeSettings(token: string, settings: PracticeSettings) {
   const response = await fetch(`${getApiBaseUrl()}/api/admin/practice-settings`, {
     method: 'PUT', cache: 'no-store',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ repeatWindow }),
+    body: JSON.stringify(settings),
   });
-  if (response.ok) return { ok: true as const };
+  if (response.ok) {
+    const saved = await response.json().catch(() => null) as PracticeSettings | null;
+    if (saved?.repeatWindow !== settings.repeatWindow || saved?.maoriPublicEnabled !== settings.maoriPublicEnabled) {
+      return { ok: false as const, status: response.status, message: 'Could not confirm the saved settings. Please refresh before trying again.' };
+    }
+    return { ok: true as const, settings: saved };
+  }
   const error = await response.json().catch(() => null) as { message?: string } | null;
   return { ok: false as const, status: response.status, message: error?.message ?? 'Could not save practice settings.' };
 }
