@@ -1,5 +1,21 @@
 # Bantera deployment on Oracle AU
 
+## 29 October 2026: Practice repeat-window settings
+
+Website **0.26.0** and API **1.53.0** are live in release
+`bantera-20261029-2`. The new `/dashboard/practice` page lets admins save an
+exclusion window of 10–500 recent exercises, default 50. Only admins can read or
+write the API setting. Errors do not report a successful save. The form explains
+per-user/language/level scope, reuse, preparation costs, and current/Saved Practice
+exceptions. The backend stores the setting with update time and administrator.
+
+Website typecheck, lint (existing warnings), 25 tests and production build passed.
+Staged and public checks passed; 128/128 availability probes returned HTTP 200.
+The public website release marker, API version and protected-page redirect were
+verified after cleanup. A database backup and one working rollback release are
+retained. See the backend deployment runbook for the schema and rollback details.
+No commit/push or app installation was performed.
+
 ## Speaking leaderboard: 22 October 2026
 
 Release **bantera-20261021-9** publishes API **1.32.2** and website **0.17.1**.

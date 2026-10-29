@@ -777,3 +777,18 @@ export type AdminBugReport = {
 export async function listBugReports(token: string, offset = 0): Promise<AdminPagedResult<AdminBugReport>> {
   return adminFetch<AdminPagedResult<AdminBugReport>>(`/api/admin/bug-reports?limit=20&offset=${offset}`, token);
 }
+
+export type PracticeSettings = { repeatWindow: number };
+export async function getPracticeSettings(token: string): Promise<PracticeSettings> {
+  return adminFetch<PracticeSettings>('/api/admin/practice-settings', token);
+}
+export async function updatePracticeSettings(token: string, repeatWindow: number) {
+  const response = await fetch(`${getApiBaseUrl()}/api/admin/practice-settings`, {
+    method: 'PUT', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ repeatWindow }),
+  });
+  if (response.ok) return { ok: true as const };
+  const error = await response.json().catch(() => null) as { message?: string } | null;
+  return { ok: false as const, status: response.status, message: error?.message ?? 'Could not save practice settings.' };
+}

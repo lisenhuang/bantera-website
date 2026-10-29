@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { logoutAction } from '../login/actions';
 
 const NAV_ITEMS = [
+  { href: "/dashboard/practice", label: "Practice", exact: false, icon: <span aria-hidden className="w-5 text-center">▤</span> },
   { href: '/dashboard/model-tests', label: 'Māori model tests', exact: false, icon: <span aria-hidden className="w-5 text-center">◉</span> },
   { href: '/dashboard/bug-reports', label: 'Bug reports', exact: false, icon: <span aria-hidden className="w-5 text-center">⚑</span> },
   { href: '/dashboard/website', label: 'Website analytics', exact: false, icon: <span aria-hidden>↗</span> },
